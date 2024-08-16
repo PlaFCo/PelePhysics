@@ -1,7 +1,4 @@
-generator: ck2yaml
-input-files: [mechanism.inp, therm.dat]
-cantera-version: 2.6.0
-date: Wed, 13 Jul 2022 17:07:43 -0600
+date: Wed, 16 Aug 2024 
 
 units: {length: cm, time: s, quantity: mol, activation-energy: cal/mol}
 
