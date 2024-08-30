@@ -1,0 +1,407 @@
+description: |-
+  Circular Chemistry Engineering simplE air chemistry
+  M. Altin et al. (2024) "Title" Doctoral dissertation, Maastricht University, Maastricht - Appendix 5.A.1 and 5.A.2
+  21 neutral species reactions + 54 electron/ion impact reactions
+  Electron dissociation, ionization, and attachment reactions arE calculated with cross-sections using Bolsig+
+
+generator: ck2yaml
+input-files: [mechanism.inp]
+cantera-version: 3.0.1
+date: Fri, 30 Aug 2024 09:28:08 +0200
+
+units: {length: cm, time: s, quantity: mol, activation-energy: cal/mol}
+
+phases:
+- name: gas
+  thermo: ideal-gas
+  elements: [O, N, E]
+  species: [N2, N, O, O2, NO, N2O, NO2, N2O3, NO3]
+  kinetics: gas
+  transport: mixture-averaged
+  state: {T: 300.0, P: 1 atm}
+
+species:
+- name: N2
+  composition: {N: 2}
+  thermo:
+    model: NASA9
+    temperature-ranges: [200.0, 1000.0, 6000.0, 2.0e+04]
+    data:
+    - [2.210371497e+04, -381.846182, 6.08273836, -8.53091441e-03, 1.384646189e-05,
+      -9.62579362e-09, 2.519705809e-12, 710.846086, -10.76003744]
+    - [5.87712406e+05, -2239.249073, 6.06694922, -6.1396855e-04, 1.491806679e-07,
+      -1.923105485e-11, 1.061954386e-15, 1.283210415e+04, -15.86640027]
+    - [8.31013916e+08, -6.42073354e+05, 202.0264635, -0.03065092046, 2.486903333e-06,
+      -9.70595411e-11, 1.437538881e-15, 4.93870704e+06, -1672.09974]
+    note: Ref-Elm. Gurvich,1978 pt1 p280 pt2 p207. [tpis78]
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 97.53
+    diameter: 3.621
+    polarizability: 1.76
+    rotational-relaxation: 4.0
+- name: N
+  composition: {N: 1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [200.0, 1000.0, 6000.0, 2.0e+04]
+    data:
+    - [0.0, 0.0, 2.5, 0.0, 0.0, 0.0, 0.0, 5.61046378e+04, 4.193905036]
+    - [8.87650138e+04, -107.12315, 2.362188287, 2.916720081e-04, -1.7295151e-07,
+      4.01265788e-11, -2.677227571e-15, 5.69735133e+04, 4.865231506]
+    - [5.47518105e+08, -3.10757498e+05, 69.1678274, -6.84798813e-03, 3.8275724e-07,
+      -1.098367709e-11, 1.277986024e-16, 2.550585618e+06, -584.8769753]
+    note: Hf:Cox,1989. Moore,1975. Gordon,1999. [g 5/97]
+  transport:
+    model: gas
+    geometry: atom
+    well-depth: 71.4
+    diameter: 3.298
+    polarizability: 1.1
+- name: O
+  composition: {O: 1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [200.0, 1000.0, 6000.0, 2.0e+04]
+    data:
+    - [-7953.6113, 160.7177787, 1.966226438, 1.01367031e-03, -1.110415423e-06,
+      6.5175075e-10, -1.584779251e-13, 2.840362437e+04, 8.40424182]
+    - [2.619020262e+05, -729.872203, 3.31717727, -4.28133436e-04, 1.036104594e-07,
+      -9.43830433e-12, 2.725038297e-16, 3.39242806e+04, -0.667958535]
+    - [1.779004264e+08, -1.082328257e+05, 28.10778365, -2.975232262e-03,
+      1.854997534e-07, -5.79623154e-12, 7.191720164e-17, 8.89094263e+05,
+      -218.1728151]
+    note: D0(O2):Brix,1954. Moore,1976. Gordon,1999. [g 5/97]
+  transport:
+    model: gas
+    geometry: atom
+    well-depth: 80.0
+    diameter: 2.75
+    polarizability: 0.802
+- name: O2
+  composition: {O: 2}
+  thermo:
+    model: NASA9
+    temperature-ranges: [200.0, 1000.0, 6000.0, 2.0e+04]
+    data:
+    - [-3.42556342e+04, 484.700097, 1.119010961, 4.29388924e-03, -6.83630052e-07,
+      -2.0233727e-09, 1.039040018e-12, -3391.45487, 18.4969947]
+    - [-1.037939022e+06, 2344.830282, 1.819732036, 1.267847582e-03, -2.188067988e-07,
+      2.053719572e-11, -8.19346705e-16, -1.689010929e+04, 17.38716506]
+    - [4.9752943e+08, -2.866106874e+05, 66.9035225, -6.16995902e-03, 3.016396027e-07,
+      -7.4214166e-12, 7.27817577e-17, 2.293554027e+06, -553.062161]
+    note: Ref-Elm. Gurvich,1989 pt1 p94 pt2 p9. [tpis89]
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 107.4
+    diameter: 3.458
+    polarizability: 1.562
+    rotational-relaxation: 3.8
+- name: NO
+  composition: {N: 1, O: 1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [200.0, 1000.0, 6000.0, 2.0e+04]
+    data:
+    - [-1.143916503e+04, 153.6467592, 3.43146873, -2.668592368e-03, 8.48139912e-06,
+      -7.68511105e-09, 2.386797655e-12, 9098.21441, 6.72872549]
+    - [2.239018716e+05, -1289.651623, 5.43393603, -3.6560349e-04, 9.88096645e-08,
+      -1.416076856e-11, 9.38018462e-16, 1.750317656e+04, -8.50166909]
+    - [-9.57530354e+08, 5.91243448e+05, -138.4566826, 0.01694339403, -1.007351096e-06,
+      2.912584076e-11, -3.29510935e-16, -4.67750124e+06, 1242.081216]
+    note: Gurvich,1978,1989 pt1 p326 pt2 p203. [tpis89]
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 97.53
+    diameter: 3.621
+    dipole: 1.671
+    polarizability: 1.76
+    rotational-relaxation: 4.0
+- name: N2O
+  composition: {N: 2, O: 1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [4.14571488e+04, -635.015062, 6.02874401, 6.33511505e-04, 2.503851759e-06,
+      -2.869887956e-09, 9.20159671e-13, 1.178288623e+04, -10.02149969]
+    - [3.01106523e+05, -2236.748283, 9.02146657, -5.70730355e-04, 1.204841455e-07,
+      -1.336140302e-11, 6.03852425e-16, 2.098055049e+04, -30.4927642]
+    note: Nitrous Oxide JANAF Dec. 1964 [J12/64]
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 232.4
+    diameter: 3.828
+    dipole: 0.6
+    polarizability: 2.998
+    rotational-relaxation: 1.0
+- name: NO2
+  composition: {N: 1, O: 2}
+  thermo:
+    model: NASA9
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [-5.64203878e+04, 963.308572, -2.434510974, 0.01927760886, -1.874559328e-05,
+      9.14549773e-09, -1.777647635e-12, -1547.925037, 40.6785121]
+    - [7.21300157e+05, -3832.6152, 11.13963285, -2.238062246e-03, 6.54772343e-07,
+      -7.6113359e-11, 3.32836105e-15, 2.502497403e+04, -43.0513004]
+    note: Gurvich,1989 pt1 p332 pt2 p207. [g 4/99]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 200.0
+    diameter: 3.5
+    dipole: 2.607
+    polarizability: 2.91
+    rotational-relaxation: 1.0
+- name: N2O3
+  composition: {N: 2, O: 3}
+  thermo:
+    model: NASA9
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [-9.20444417e+04, 929.552015, 3.20366481, 0.01356473078, -6.26296607e-06,
+      -1.402915559e-09, 1.43162093e-12, 3313.62208, 18.44430953]
+    - [7.78388186e+05, -4483.02466, 16.66668024, -2.062143878e-03, 5.30954171e-07,
+      -6.19045122e-11, 2.692956658e-15, 3.36091245e+04, -67.39212388]
+    note: Gurvich,1989 pt1 p338 pt2 p211. [g 4/99]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 200.0
+    diameter: 3.5
+    dipole: 2.13
+    polarizability: 4.653
+    rotational-relaxation: 1.0
+- name: NO3
+  composition: {N: 1, O: 3}
+  thermo:
+    model: NASA9
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [3.40539841e+04, 226.6670652, -3.79308163, 0.041707327, -5.70991327e-05,
+      3.83415811e-08, -1.021969284e-11, 7088.1122, 42.73091713]
+    - [-3.94387271e+05, -824.426353, 10.61325843, -2.448749816e-04, 5.40606032e-08,
+      -6.19546675e-12, 2.870000149e-16, 8982.01173, -34.44666597]
+    note: Chase,1998 p1607. [j12/64]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 200.0
+    diameter: 3.9
+    polarizability: 3.0
+    rotational-relaxation: 1.0
+- name: E
+  composition: {E: 1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [99.0, 9.99999999e+06]
+    data:
+    - [0.0, 0.0, 2.5, 0.0, 0.0, 0.0, 0.0, 0.0, 4.37965939]
+    note: JVargas and calcthermo codes [HPL23]
+  transport:
+    model: gas
+    geometry: atom
+    well-depth: 850.0
+    diameter: 425.0
+    rotational-relaxation: 1.0
+- name: Np
+  composition: {N: 1, E: -1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [298.15, 3000.0]
+    data:
+    - [5237.07921, 2.299958315, 2.487488821, 2.737490756e-05, -3.134447576e-08,
+      1.850111332e-11, -4.447350984e-15, 2.256284738e+05, 5.07683507]
+    note: NSRDS-NBS 3 sec5 1975. [g 6/97]
+  transport:
+    model: gas
+    geometry: atom
+    well-depth: 71.4
+    diameter: 3.298
+    polarizability: 0.414
+    rotational-relaxation: 1.0
+- name: N2p
+  composition: {N: 2, E: -1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [99.0, 3700.0]
+    data:
+    - [831.592185, -17.1664869, 3.59512771, 1.55975697e-04, -2.78984766e-06,
+      7.34990825e-09, -4.56582108e-12, 1.79840919e+05, 3.95148004]
+    note: JVargas and calcthermo codes [HPL23]
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 97.53
+    diameter: 3.621
+    polarizability: 0.5
+    rotational-relaxation: 1.0
+- name: Op
+  composition: {O: 1, E: -1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [298.15, 3000.0]
+    data:
+    - [0.0, 0.0, 2.5, 0.0, 0.0, 0.0, 0.0, 1.879352842e+05, 4.39337676]
+    note: Spec:JPCRD v22 n5 1993. [g 8/97]
+  transport:
+    model: gas
+    geometry: atom
+    well-depth: 80.0
+    diameter: 2.75
+    polarizability: 0.036
+    rotational-relaxation: 1.0
+- name: On
+  composition: {O: 1, E: 1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [99.0, 3700.0]
+    data:
+    - [-3913.52021, 57.612567, 2.67276495, -1.61759441e-03, 4.30829202e-06,
+      -5.09416346e-09, 2.27922633e-12, 1.19056507e+04, 4.25445723]
+    note: JVargas and calcthermo codes [HPL23]
+  transport:
+    model: gas
+    geometry: atom
+    well-depth: 80.0
+    diameter: 2.75
+    polarizability: 0.018
+    rotational-relaxation: 1.0
+- name: O2p
+  composition: {O: 2, E: -1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [298.15, 1000.0, 6000.0, 2.0e+04]
+    data:
+    - [-8.60720545e+04, 1051.875934, -0.543238047, 6.57116654e-03, -3.27426375e-06,
+      5.94064534e-11, 3.23878479e-13, 1.345544668e+05, 29.0270975]
+    - [7.38465488e+04, -845.955954, 4.98516416, -1.61101089e-04, 6.42708399e-08,
+      -1.504939874e-11, 1.578465409e-15, 1.446321044e+05, -5.81123065]
+    - [-1.562125524e+09, 1.161406778e+06, -330.250472, 0.0471093752, -3.35446138e-06,
+      1.167968599e-10, -1.589754791e-15, -8.85786627e+06, 2852.035602]
+    note: TPIS 1989 v1 pt1 p98; pt2 p11. [tpis89]
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 107.4
+    diameter: 3.458
+    polarizability: 0.9
+    rotational-relaxation: 1.0
+- name: N4p
+  composition: {N: 4, E: -1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [298.15, 3000.0]
+    data:
+    - [0.0, 0.0, 3.32596515, 0.0143909181, -1.56797253e-05, 9.52287848e-09,
+      -2.53566648e-12, 2.15553183e+05, 7.8229064]
+    note: ATcT C 2011 HF298=1523.1+/-1.1 kJ from BURCAT.THR NASA7 [T 7/11]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 100.0
+    diameter: 3.5
+    rotational-relaxation: 1.0
+- name: NOp
+  composition: {N: 1, O: 1, E: -1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [298.15, 3000.0]
+    data:
+    - [1398.106635, -159.0446941, 5.1228954, -6.39438862e-03, 1.123918342e-05,
+      -7.98858126e-09, 2.107383677e-12, 1.187495132e+05, -4.39843181]
+    note: 'Cp,S,IP(NO): TPIS 1989 v1 pt1 p330;pt2 p205. [tpis89]'
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 97.53
+    diameter: 3.0
+    polarizability: 0.941
+    rotational-relaxation: 1.0
+- name: N3p
+  composition: {N: 3, E: -1}
+  thermo:
+    model: NASA9
+    temperature-ranges: [298.15, 3000.0]
+    data:
+    - [-1.347213411e+05, 1649.307518, -4.42245947, 0.02492863759, -2.617753893e-05,
+      1.412449742e-08, -3.124218733e-12, 1.737522288e+05, 49.8320692]
+    note: ATcT C 2011 HF298=1523.1+/-1.1 kJ [T 7/11]
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 100.0
+    diameter: 3.0
+    rotational-relaxation: 1.0
+
+reactions:
+- equation: N2 + O <=> NO + N  # Reaction 1
+  rate-constant: {A: 1.81e+14, b: 0.0, Ea: 7.63e+04}
+- equation: O + NO <=> O2 + N  # Reaction 2
+  rate-constant: {A: 6.87e+08, b: 1.13, Ea: 3.82e+04}
+- equation: O2 + M <=> O + O + M  # Reaction 3
+  type: three-body
+  rate-constant: {A: 1.17e+15, b: 0.0, Ea: 1.20e+05}
+  efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
+    N2O3: 1.0, NO3: 1.0}
+- equation: N2 + M <=> N + N + M  # Reaction 4
+  type: three-body
+  rate-constant: {A: 6.38e+15, b: 0.0, Ea: 2.26e+05}
+  efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
+    N2O3: 1.0, NO3: 1.0}
+- equation: NO + M <=> N + O + M  # Reaction 5
+  type: three-body
+  rate-constant: {A: 1.45e+15, b: 0.0, Ea: 1.48e+05}
+  efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
+    N2O3: 1.0, NO3: 1.0}
+- equation: N2O + M <=> N2 + O + M  # Reaction 6
+  type: three-body
+  rate-constant: {A: 7.23e+17, b: -0.73, Ea: 6.28e+04}
+  efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
+    N2O3: 1.0, NO3: 1.0}
+- equation: O + N2O => NO + NO  # Reaction 7
+  rate-constant: {A: 9.03e+13, b: 0.0, Ea: 2.77e+04}
+- equation: NO + NO => N2O + O  # Reaction 8
+  rate-constant: {A: 3.61e+12, b: 0.0, Ea: 6.54e+04}
+- equation: O + N2O <=> N2 + O2  # Reaction 9
+  rate-constant: {A: 3.67e+12, b: 0.0, Ea: 1.96e+06}
+- equation: NO + O + M => NO2 + M  # Reaction 10
+  type: three-body
+  rate-constant: {A: 4.71e+24, b: -2.87, Ea: 0.0}
+  efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
+    N2O3: 1.0, NO3: 1.0}
+    
+- equation: NO2 + M => NO + O + M  # Reaction 11
+  type: three-body
+  rate-constant: {A: 1.08e16, b: 0.0, Ea: 6.56e4}
+  efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
+    N2O3: 1.0, NO3: 1.0}
+- equation: NO2 + O => NO + O2  # Reaction 12
+  rate-constant: {A: 3.91e+12, b: 0.0, Ea: -238.0}
+- equation: NO + NO <=> N2 + O2  # Reaction 13
+  rate-constant: {A: 1.26e+13, b: 0.0, Ea: 6.02e+04}
+- equation: NO + N2O => N2 + NO2  # Reaction 14
+  rate-constant: {A: 1.85e13, b: 0.0, Ea: 4.95e+04}
+- equation: NO + NO + O2 => NO2 + NO2  # Reaction 15
+  rate-constant: {A: 1.2e+09, b: 0.0, Ea: -1050.0}
+- equation: NO2 + NO2 => NO + NO + O2  # Reaction 16 
+  rate-constant: {A: 1.63e+12, b: 0.0, Ea: 2.66e+04}
+- equation: N2O3 + M => NO + NO2 + M  # Reaction 17
+  type: three-body
+  rate-constant: {A: 6.5e+13, b: 0.0, Ea: 5220.0}
+  efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
+    N2O3: 1.0, NO3: 1.0}
+- equation: NO + NO2 + M => N2O3 + M  # Reaction 18
+  type: three-body
+  rate-constant: {A: 1.33e+33, b: -7.7, Ea: 0.0}
+  efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
+    N2O3: 1.0, NO3: 1.0}
+- equation: NO2 + NO2 => NO3 + NO  # Reaction 19
+  rate-constant: {A: 9.64e9, b: 0.73, Ea: 2.09e+04}
+- equation: NO3 + NO => NO2 + NO2  # Reaction 20
+  rate-constant: {A: 1.08e+13, b: 0.0, Ea: -215.0}
