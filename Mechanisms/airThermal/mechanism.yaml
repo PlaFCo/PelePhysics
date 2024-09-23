@@ -364,44 +364,27 @@ reactions:
   rate-constant: {A: 7.23e+17, b: -0.73, Ea: 6.28e+04}
   efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
     N2O3: 1.0, NO3: 1.0}
-- equation: O + N2O => NO + NO  # Reaction 7
+- equation: O + N2O <=> NO + NO  # Reaction 7
   rate-constant: {A: 9.03e+13, b: 0.0, Ea: 2.77e+04}
-- equation: NO + NO => N2O + O  # Reaction 8
-  rate-constant: {A: 3.61e+12, b: 0.0, Ea: 6.54e+04}
 - equation: O + N2O <=> N2 + O2  # Reaction 9
   rate-constant: {A: 3.67e+12, b: 0.0, Ea: 1.96e+06}
-- equation: NO + O + M => NO2 + M  # Reaction 10
-  type: three-body
-  rate-constant: {A: 4.71e+24, b: -2.87, Ea: 0.0}
-  efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
-    N2O3: 1.0, NO3: 1.0}
-    
-- equation: NO2 + M => NO + O + M  # Reaction 11
+- equation: NO2 + M <=> NO + O + M  # Reaction 11
   type: three-body
   rate-constant: {A: 1.08e16, b: 0.0, Ea: 6.56e4}
   efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
     N2O3: 1.0, NO3: 1.0}
-- equation: NO2 + O => NO + O2  # Reaction 12
+- equation: NO2 + O <=> NO + O2  # Reaction 12
   rate-constant: {A: 3.91e+12, b: 0.0, Ea: -238.0}
 - equation: NO + NO <=> N2 + O2  # Reaction 13
   rate-constant: {A: 1.26e+13, b: 0.0, Ea: 6.02e+04}
-- equation: NO + N2O => N2 + NO2  # Reaction 14
+- equation: NO + N2O <=> N2 + NO2  # Reaction 14
   rate-constant: {A: 1.85e13, b: 0.0, Ea: 4.95e+04}
-- equation: NO + NO + O2 => NO2 + NO2  # Reaction 15
-  rate-constant: {A: 1.2e+09, b: 0.0, Ea: -1050.0}
-- equation: NO2 + NO2 => NO + NO + O2  # Reaction 16 
+- equation: NO2 + NO2 <=> NO + NO + O2  # Reaction 16 
   rate-constant: {A: 1.63e+12, b: 0.0, Ea: 2.66e+04}
-- equation: N2O3 + M => NO + NO2 + M  # Reaction 17
+- equation: N2O3 + M <=> NO + NO2 + M  # Reaction 17
   type: three-body
   rate-constant: {A: 6.5e+13, b: 0.0, Ea: 5220.0}
   efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
     N2O3: 1.0, NO3: 1.0}
-- equation: NO + NO2 + M => N2O3 + M  # Reaction 18
-  type: three-body
-  rate-constant: {A: 1.33e+33, b: -7.7, Ea: 0.0}
-  efficiencies: {N2: 1.0, N: 1.0, O: 1.0, O2: 1.0, NO: 1.0, N2O: 1.0, NO2: 1.0,
-    N2O3: 1.0, NO3: 1.0}
-- equation: NO2 + NO2 => NO3 + NO  # Reaction 19
+- equation: NO2 + NO2 <=> NO3 + NO  # Reaction 19
   rate-constant: {A: 9.64e9, b: 0.73, Ea: 2.09e+04}
-- equation: NO3 + NO => NO2 + NO2  # Reaction 20
-  rate-constant: {A: 1.08e+13, b: 0.0, Ea: -215.0}
