@@ -1,6 +1,6 @@
 #include "mechanism.H"
-const int rmap[NUM_REACTIONS] = {2, 3, 4, 5,  8,  13, 0, 1,
-                                 6, 7, 9, 10, 11, 12, 14};
+const int rmap[NUM_REACTIONS] = {7, 9, 2, 3, 6,  13, 15, 0,
+                                 1, 4, 5, 8, 10, 11, 12, 14};
 
 // Returns 0-based map of reaction order
 void
@@ -16,16 +16,17 @@ GET_RMAP(int* _rmap)
 void
 CKINU(const int i, int& nspec, int ki[], int nu[])
 {
-  const int ns[NUM_GAS_REACTIONS] = {4, 4, 2, 2, 3, 3, 3, 4,
-                                     3, 4, 3, 4, 3, 3, 3};
+  const int ns[NUM_GAS_REACTIONS] = {4, 4, 2, 2, 3, 4, 3, 3,
+                                     4, 3, 3, 4, 3, 3, 3, 2};
   const int kiv[NUM_GAS_REACTIONS * 4] = {
-    0, 2, 1, 4, 4, 2, 1, 3, 3, 2, 0, 0, 0, 1, 0, 0, 4, 1, 2, 0,
-    5, 0, 2, 0, 5, 2, 4, 0, 5, 2, 0, 3, 6, 4, 2, 0, 6, 2, 4, 3,
-    4, 0, 3, 0, 5, 4, 0, 6, 6, 4, 3, 0, 7, 4, 6, 0, 6, 4, 8, 0};
+    0, 3, 2, 6, 6, 3, 2, 1, 1, 3, 0, 0, 0, 2, 0, 0, 5, 3, 6, 0, 5, 3,
+    0, 1, 6, 2, 3, 0, 6, 3, 4, 0, 4, 3, 6, 1, 5, 0, 3, 0, 6, 0, 1, 0,
+    5, 6, 0, 4, 6, 1, 4, 0, 8, 6, 4, 0, 4, 6, 7, 0, 9, 4, 0, 0};
   const int nuv[NUM_GAS_REACTIONS * 4] = {
-    -1, -1, 1, 1, -1, -1, 1, 1, -1, 2,  0, 0, -1, 2, 0, 0, -1, 1,  1, 0,
-    -1, 1,  1, 0, -1, -1, 2, 0, -1, -1, 1, 1, -1, 1, 1, 0, -1, -1, 1, 1,
-    -2, 1,  1, 0, -1, -1, 1, 1, -2, 2,  1, 0, -1, 1, 1, 0, -2, 1,  1, 0};
+    -1, -1, 1, 1, -1, -1, 1, 1, -1, 2, 0, 0, -1, 2,  0, 0,
+    -1, -1, 2, 0, -1, -1, 1, 1, -1, 1, 1, 0, -1, -1, 1, 0,
+    -1, -1, 1, 1, -1, 1,  1, 0, -2, 1, 1, 0, -1, -1, 1, 1,
+    -2, -1, 2, 0, -1, 1,  1, 0, -2, 1, 1, 0, -1, 2,  0, 0};
   if (i < 1) {
     // Return max num species per reaction
     nspec = 4;
@@ -52,12 +53,12 @@ CKKFKR(
   amrex::Real q_f[],
   amrex::Real q_r[])
 {
-  amrex::Real c[9]; // temporary storage
+  amrex::Real c[10]; // temporary storage
   amrex::Real PORT =
     1e6 * P / (8.31446261815324e+07 * T); // 1e6 * P/RT so c goes to SI units
 
   // Compute conversion, see Eq 10
-  for (int id = 0; id < 9; ++id) {
+  for (int id = 0; id < 10; ++id) {
     c[id] = x[id] * PORT;
   }
 
@@ -65,7 +66,7 @@ CKKFKR(
   progressRateFR(q_f, q_r, c, T);
 
   // convert to chemkin units
-  for (int id = 0; id < 15; ++id) {
+  for (int id = 0; id < 16; ++id) {
     q_f[id] *= 1.0e-6;
     q_r[id] *= 1.0e-6;
   }
@@ -80,7 +81,7 @@ progressRateFR(
   const amrex::Real invT = 1.0 / T;
   const amrex::Real logT = log(T);
   // compute the Gibbs free energy
-  amrex::Real g_RT[9];
+  amrex::Real g_RT[10];
   gibbs(g_RT, T);
 
   amrex::Real sc_qss[1];
@@ -110,41 +111,45 @@ CKNCF(int* ncf)
 {
   int kd = 3;
   // Zero ncf
-  for (int id = 0; id < kd * 9; ++id) {
+  for (int id = 0; id < kd * 10; ++id) {
     ncf[id] = 0;
   }
 
   // N2
   ncf[0 * kd + 1] = 2; // N
 
+  // O2
+  ncf[1 * kd + 0] = 2; // O
+
   // N
-  ncf[1 * kd + 1] = 1; // N
+  ncf[2 * kd + 1] = 1; // N
 
   // O
-  ncf[2 * kd + 0] = 1; // O
+  ncf[3 * kd + 0] = 1; // O
 
-  // O2
-  ncf[3 * kd + 0] = 2; // O
-
-  // NO
+  // NO2
   ncf[4 * kd + 1] = 1; // N
-  ncf[4 * kd + 0] = 1; // O
+  ncf[4 * kd + 0] = 2; // O
 
   // N2O
   ncf[5 * kd + 1] = 2; // N
   ncf[5 * kd + 0] = 1; // O
 
-  // NO2
+  // NO
   ncf[6 * kd + 1] = 1; // N
-  ncf[6 * kd + 0] = 2; // O
-
-  // N2O3
-  ncf[7 * kd + 1] = 2; // N
-  ncf[7 * kd + 0] = 3; // O
+  ncf[6 * kd + 0] = 1; // O
 
   // NO3
-  ncf[8 * kd + 1] = 1; // N
+  ncf[7 * kd + 1] = 1; // N
+  ncf[7 * kd + 0] = 3; // O
+
+  // N2O3
+  ncf[8 * kd + 1] = 2; // N
   ncf[8 * kd + 0] = 3; // O
+
+  // N2O4
+  ncf[9 * kd + 1] = 2; // N
+  ncf[9 * kd + 0] = 4; // O
 }
 
 // Returns the vector of strings of element names
@@ -161,33 +166,34 @@ CKSYME_STR(amrex::Vector<std::string>& ename)
 void
 CKSYMS_STR(amrex::Vector<std::string>& kname)
 {
-  kname.resize(9);
+  kname.resize(10);
   kname[0] = "N2";
-  kname[1] = "N";
-  kname[2] = "O";
-  kname[3] = "O2";
-  kname[4] = "NO";
+  kname[1] = "O2";
+  kname[2] = "N";
+  kname[3] = "O";
+  kname[4] = "NO2";
   kname[5] = "N2O";
-  kname[6] = "NO2";
-  kname[7] = "N2O3";
-  kname[8] = "NO3";
+  kname[6] = "NO";
+  kname[7] = "NO3";
+  kname[8] = "N2O3";
+  kname[9] = "N2O4";
 }
 
 // compute the sparsity pattern of the chemistry Jacobian
 void
 SPARSITY_INFO(int* nJdata, const int* consP, int NCELLS)
 {
-  amrex::GpuArray<amrex::Real, 100> Jac = {0.0};
-  amrex::GpuArray<amrex::Real, 9> conc = {0.0};
-  for (int n = 0; n < 9; n++) {
-    conc[n] = 1.0 / 9.000000;
+  amrex::GpuArray<amrex::Real, 121> Jac = {0.0};
+  amrex::GpuArray<amrex::Real, 10> conc = {0.0};
+  for (int n = 0; n < 10; n++) {
+    conc[n] = 1.0 / 10.000000;
   }
   aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
 
   int nJdata_tmp = 0;
-  for (int k = 0; k < 10; k++) {
-    for (int l = 0; l < 10; l++) {
-      if (Jac[10 * k + l] != 0.0) {
+  for (int k = 0; k < 11; k++) {
+    for (int l = 0; l < 11; l++) {
+      if (Jac[11 * k + l] != 0.0) {
         nJdata_tmp = nJdata_tmp + 1;
       }
     }
@@ -200,20 +206,20 @@ SPARSITY_INFO(int* nJdata, const int* consP, int NCELLS)
 void
 SPARSITY_INFO_SYST(int* nJdata, const int* consP, int NCELLS)
 {
-  amrex::GpuArray<amrex::Real, 100> Jac = {0.0};
-  amrex::GpuArray<amrex::Real, 9> conc = {0.0};
-  for (int n = 0; n < 9; n++) {
-    conc[n] = 1.0 / 9.000000;
+  amrex::GpuArray<amrex::Real, 121> Jac = {0.0};
+  amrex::GpuArray<amrex::Real, 10> conc = {0.0};
+  for (int n = 0; n < 10; n++) {
+    conc[n] = 1.0 / 10.000000;
   }
   aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
 
   int nJdata_tmp = 0;
-  for (int k = 0; k < 10; k++) {
-    for (int l = 0; l < 10; l++) {
+  for (int k = 0; k < 11; k++) {
+    for (int l = 0; l < 11; l++) {
       if (k == l) {
         nJdata_tmp = nJdata_tmp + 1;
       } else {
-        if (Jac[10 * k + l] != 0.0) {
+        if (Jac[11 * k + l] != 0.0) {
           nJdata_tmp = nJdata_tmp + 1;
         }
       }
@@ -228,20 +234,20 @@ SPARSITY_INFO_SYST(int* nJdata, const int* consP, int NCELLS)
 void
 SPARSITY_INFO_SYST_SIMPLIFIED(int* nJdata, const int* consP)
 {
-  amrex::GpuArray<amrex::Real, 100> Jac = {0.0};
-  amrex::GpuArray<amrex::Real, 9> conc = {0.0};
-  for (int n = 0; n < 9; n++) {
-    conc[n] = 1.0 / 9.000000;
+  amrex::GpuArray<amrex::Real, 121> Jac = {0.0};
+  amrex::GpuArray<amrex::Real, 10> conc = {0.0};
+  for (int n = 0; n < 10; n++) {
+    conc[n] = 1.0 / 10.000000;
   }
   aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);
 
   int nJdata_tmp = 0;
-  for (int k = 0; k < 10; k++) {
-    for (int l = 0; l < 10; l++) {
+  for (int k = 0; k < 11; k++) {
+    for (int l = 0; l < 11; l++) {
       if (k == l) {
         nJdata_tmp = nJdata_tmp + 1;
       } else {
-        if (Jac[10 * k + l] != 0.0) {
+        if (Jac[11 * k + l] != 0.0) {
           nJdata_tmp = nJdata_tmp + 1;
         }
       }
@@ -256,21 +262,21 @@ SPARSITY_INFO_SYST_SIMPLIFIED(int* nJdata, const int* consP)
 void
 SPARSITY_PREPROC_CSC(int* rowVals, int* colPtrs, const int* consP, int NCELLS)
 {
-  amrex::GpuArray<amrex::Real, 100> Jac = {0.0};
-  amrex::GpuArray<amrex::Real, 9> conc = {0.0};
-  for (int n = 0; n < 9; n++) {
-    conc[n] = 1.0 / 9.000000;
+  amrex::GpuArray<amrex::Real, 121> Jac = {0.0};
+  amrex::GpuArray<amrex::Real, 10> conc = {0.0};
+  for (int n = 0; n < 10; n++) {
+    conc[n] = 1.0 / 10.000000;
   }
   aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
 
   colPtrs[0] = 0;
   int nJdata_tmp = 0;
   for (int nc = 0; nc < NCELLS; nc++) {
-    int offset_row = nc * 10;
-    int offset_col = nc * 10;
-    for (int k = 0; k < 10; k++) {
-      for (int l = 0; l < 10; l++) {
-        if (Jac[10 * k + l] != 0.0) {
+    int offset_row = nc * 11;
+    int offset_col = nc * 11;
+    for (int k = 0; k < 11; k++) {
+      for (int l = 0; l < 11; l++) {
+        if (Jac[11 * k + l] != 0.0) {
           rowVals[nJdata_tmp] = l + offset_row;
           nJdata_tmp = nJdata_tmp + 1;
         }
@@ -286,10 +292,10 @@ void
 SPARSITY_PREPROC_CSR(
   int* colVals, int* rowPtrs, const int* consP, int NCELLS, int base)
 {
-  amrex::GpuArray<amrex::Real, 100> Jac = {0.0};
-  amrex::GpuArray<amrex::Real, 9> conc = {0.0};
-  for (int n = 0; n < 9; n++) {
-    conc[n] = 1.0 / 9.000000;
+  amrex::GpuArray<amrex::Real, 121> Jac = {0.0};
+  amrex::GpuArray<amrex::Real, 10> conc = {0.0};
+  for (int n = 0; n < 10; n++) {
+    conc[n] = 1.0 / 10.000000;
   }
   aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
 
@@ -297,10 +303,10 @@ SPARSITY_PREPROC_CSR(
     rowPtrs[0] = 1;
     int nJdata_tmp = 1;
     for (int nc = 0; nc < NCELLS; nc++) {
-      int offset = nc * 10;
-      for (int l = 0; l < 10; l++) {
-        for (int k = 0; k < 10; k++) {
-          if (Jac[10 * k + l] != 0.0) {
+      int offset = nc * 11;
+      for (int l = 0; l < 11; l++) {
+        for (int k = 0; k < 11; k++) {
+          if (Jac[11 * k + l] != 0.0) {
             colVals[nJdata_tmp - 1] = k + 1 + offset;
             nJdata_tmp = nJdata_tmp + 1;
           }
@@ -312,10 +318,10 @@ SPARSITY_PREPROC_CSR(
     rowPtrs[0] = 0;
     int nJdata_tmp = 0;
     for (int nc = 0; nc < NCELLS; nc++) {
-      int offset = nc * 10;
-      for (int l = 0; l < 10; l++) {
-        for (int k = 0; k < 10; k++) {
-          if (Jac[10 * k + l] != 0.0) {
+      int offset = nc * 11;
+      for (int l = 0; l < 11; l++) {
+        for (int k = 0; k < 11; k++) {
+          if (Jac[11 * k + l] != 0.0) {
             colVals[nJdata_tmp] = k + offset;
             nJdata_tmp = nJdata_tmp + 1;
           }
@@ -332,10 +338,10 @@ void
 SPARSITY_PREPROC_SYST_CSR(
   int* colVals, int* rowPtr, const int* consP, int NCELLS, int base)
 {
-  amrex::GpuArray<amrex::Real, 100> Jac = {0.0};
-  amrex::GpuArray<amrex::Real, 9> conc = {0.0};
-  for (int n = 0; n < 9; n++) {
-    conc[n] = 1.0 / 9.000000;
+  amrex::GpuArray<amrex::Real, 121> Jac = {0.0};
+  amrex::GpuArray<amrex::Real, 10> conc = {0.0};
+  for (int n = 0; n < 10; n++) {
+    conc[n] = 1.0 / 10.000000;
   }
   aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
 
@@ -343,14 +349,14 @@ SPARSITY_PREPROC_SYST_CSR(
     rowPtr[0] = 1;
     int nJdata_tmp = 1;
     for (int nc = 0; nc < NCELLS; nc++) {
-      int offset = nc * 10;
-      for (int l = 0; l < 10; l++) {
-        for (int k = 0; k < 10; k++) {
+      int offset = nc * 11;
+      for (int l = 0; l < 11; l++) {
+        for (int k = 0; k < 11; k++) {
           if (k == l) {
             colVals[nJdata_tmp - 1] = l + 1 + offset;
             nJdata_tmp = nJdata_tmp + 1;
           } else {
-            if (Jac[10 * k + l] != 0.0) {
+            if (Jac[11 * k + l] != 0.0) {
               colVals[nJdata_tmp - 1] = k + 1 + offset;
               nJdata_tmp = nJdata_tmp + 1;
             }
@@ -363,14 +369,14 @@ SPARSITY_PREPROC_SYST_CSR(
     rowPtr[0] = 0;
     int nJdata_tmp = 0;
     for (int nc = 0; nc < NCELLS; nc++) {
-      int offset = nc * 10;
-      for (int l = 0; l < 10; l++) {
-        for (int k = 0; k < 10; k++) {
+      int offset = nc * 11;
+      for (int l = 0; l < 11; l++) {
+        for (int k = 0; k < 11; k++) {
           if (k == l) {
             colVals[nJdata_tmp] = l + offset;
             nJdata_tmp = nJdata_tmp + 1;
           } else {
-            if (Jac[10 * k + l] != 0.0) {
+            if (Jac[11 * k + l] != 0.0) {
               colVals[nJdata_tmp] = k + offset;
               nJdata_tmp = nJdata_tmp + 1;
             }
@@ -388,25 +394,25 @@ void
 SPARSITY_PREPROC_SYST_SIMPLIFIED_CSC(
   int* rowVals, int* colPtrs, int* indx, const int* consP)
 {
-  amrex::GpuArray<amrex::Real, 100> Jac = {0.0};
-  amrex::GpuArray<amrex::Real, 9> conc = {0.0};
-  for (int n = 0; n < 9; n++) {
-    conc[n] = 1.0 / 9.000000;
+  amrex::GpuArray<amrex::Real, 121> Jac = {0.0};
+  amrex::GpuArray<amrex::Real, 10> conc = {0.0};
+  for (int n = 0; n < 10; n++) {
+    conc[n] = 1.0 / 10.000000;
   }
   aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);
 
   colPtrs[0] = 0;
   int nJdata_tmp = 0;
-  for (int k = 0; k < 10; k++) {
-    for (int l = 0; l < 10; l++) {
+  for (int k = 0; k < 11; k++) {
+    for (int l = 0; l < 11; l++) {
       if (k == l) {
         rowVals[nJdata_tmp] = l;
-        indx[nJdata_tmp] = 10 * k + l;
+        indx[nJdata_tmp] = 11 * k + l;
         nJdata_tmp = nJdata_tmp + 1;
       } else {
-        if (Jac[10 * k + l] != 0.0) {
+        if (Jac[11 * k + l] != 0.0) {
           rowVals[nJdata_tmp] = l;
-          indx[nJdata_tmp] = 10 * k + l;
+          indx[nJdata_tmp] = 11 * k + l;
           nJdata_tmp = nJdata_tmp + 1;
         }
       }
@@ -421,23 +427,23 @@ void
 SPARSITY_PREPROC_SYST_SIMPLIFIED_CSR(
   int* colVals, int* rowPtr, const int* consP, int base)
 {
-  amrex::GpuArray<amrex::Real, 100> Jac = {0.0};
-  amrex::GpuArray<amrex::Real, 9> conc = {0.0};
-  for (int n = 0; n < 9; n++) {
-    conc[n] = 1.0 / 9.000000;
+  amrex::GpuArray<amrex::Real, 121> Jac = {0.0};
+  amrex::GpuArray<amrex::Real, 10> conc = {0.0};
+  for (int n = 0; n < 10; n++) {
+    conc[n] = 1.0 / 10.000000;
   }
   aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);
 
   if (base == 1) {
     rowPtr[0] = 1;
     int nJdata_tmp = 1;
-    for (int l = 0; l < 10; l++) {
-      for (int k = 0; k < 10; k++) {
+    for (int l = 0; l < 11; l++) {
+      for (int k = 0; k < 11; k++) {
         if (k == l) {
           colVals[nJdata_tmp - 1] = l + 1;
           nJdata_tmp = nJdata_tmp + 1;
         } else {
-          if (Jac[10 * k + l] != 0.0) {
+          if (Jac[11 * k + l] != 0.0) {
             colVals[nJdata_tmp - 1] = k + 1;
             nJdata_tmp = nJdata_tmp + 1;
           }
@@ -448,13 +454,13 @@ SPARSITY_PREPROC_SYST_SIMPLIFIED_CSR(
   } else {
     rowPtr[0] = 0;
     int nJdata_tmp = 0;
-    for (int l = 0; l < 10; l++) {
-      for (int k = 0; k < 10; k++) {
+    for (int l = 0; l < 11; l++) {
+      for (int k = 0; k < 11; k++) {
         if (k == l) {
           colVals[nJdata_tmp] = l;
           nJdata_tmp = nJdata_tmp + 1;
         } else {
-          if (Jac[10 * k + l] != 0.0) {
+          if (Jac[11 * k + l] != 0.0) {
             colVals[nJdata_tmp] = k;
             nJdata_tmp = nJdata_tmp + 1;
           }
