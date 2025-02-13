@@ -18,18 +18,32 @@ struct GammaLaw
 
   static std::string identifier() { return "GammaLaw"; }
 
-  AMREX_GPU_HOST_DEVICE
-  AMREX_FORCE_INLINE
-  static void RY2R(const amrex::Real RY[], amrex::Real& R) { R = RY[0]; }
-
-  AMREX_GPU_HOST_DEVICE
-  AMREX_FORCE_INLINE
-  static void RY2RRinvY(
-    const amrex::Real RY[], amrex::Real& R, amrex::Real& Rinv, amrex::Real Y[])
+  // ReallArrayLike can be anything with an [] operator that returns
+  // amrex::Real&
+  template <typename RealArrayLike>
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE static void
+  RY2R(const RealArrayLike& RY, amrex::Real& R, int first = 0)
   {
-    R = RY[0];
+    R = 0.0;
+    for (int i = 0; i < NUM_SPECIES; i++) {
+      R += RY[first + i];
+    }
+  }
+
+  // ReallArrayLike can be anything with an [] operator that returns
+  // amrex::Real&
+  template <typename RealArrayLike1, typename RealArrayLike2>
+  AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE static void RY2RRinvY(
+    const RealArrayLike1& RY,
+    amrex::Real& R,
+    amrex::Real& Rinv,
+    RealArrayLike2&& Y)
+  {
+    RY2R(RY, R);
     Rinv = 1.0 / R;
-    Y[0] = 1.0;
+    for (int i = 0; i < NUM_SPECIES; i++) {
+      Y[i] = RY[i] * Rinv;
+    }
   }
 
   AMREX_GPU_HOST_DEVICE
@@ -478,10 +492,10 @@ struct GammaLaw
   AMREX_GPU_HOST_DEVICE
   GammaLaw(const EosParm<GammaLaw>* eparm)
   {
-    AMREX_ASSERT_WITH_MESSAGE(
-      eparm != nullptr,
-      "GammaLaw Eos initialized with eosparm, but eosparm was not initialized");
-    gamma = eparm->gamma;
+    // This should eventually error out if eparm is nullptr
+    // But for now we require that eparm->gamma=gamma anyway,
+    // and this supports some potential legacy use cases for now
+    gamma = (eparm != nullptr) ? eparm->gamma : gamma;
   }
 
   template <class... Args>

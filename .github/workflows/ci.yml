@@ -13,21 +13,21 @@ concurrency:
 
 jobs:
   Formatting:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Clone
         uses: actions/checkout@v4
       - name: Check formatting
-        uses: DoozyX/clang-format-lint-action@v0.16.2
+        uses: DoozyX/clang-format-lint-action@v0.18.2
         with:
           source: './Source ./Testing ./Mechanisms'
           exclude: '.'
           extensions: 'H,h,cpp'
-          clangFormatVersion: 16
+          clangFormatVersion: 18
 
   Codespell:
     needs: Formatting
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Clone
         uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
         run: codespell
 
   CEPTR:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -81,7 +81,7 @@ jobs:
 
   Transport-EOS-Reactions:
     needs: Formatting
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         comp: [gnu, llvm, cuda, hip, sycl]
@@ -131,9 +131,9 @@ jobs:
           echo "CCACHE_LOGFILE=${{github.workspace}}/ccache.log.txt" >> $GITHUB_ENV
           echo "CCACHE_MAXSIZE=1G" >> $GITHUB_ENV
           if [ "${{matrix.comp}}" == 'cuda' ]; then \
-            echo "CUDA_HOME=/usr/local/cuda-11.2" >> $GITHUB_ENV; \
-            echo "LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:${LD_LIBRARY_PATH}" >> $GITHUB_ENV; \
-            echo "/usr/local/cuda-11.2/bin" >> $GITHUB_PATH; \
+            echo "CUDA_HOME=/usr/local/cuda-12.6" >> $GITHUB_ENV; \
+            echo "LD_LIBRARY_PATH=/usr/local/cuda-12.6/lib64:${LD_LIBRARY_PATH}" >> $GITHUB_ENV; \
+            echo "/usr/local/cuda-12.6/bin" >> $GITHUB_PATH; \
           fi
       - name: Install Ccache
         run: |
@@ -150,6 +150,7 @@ jobs:
       - name: Dependencies
         working-directory: ${{env.TRANSPORT_WORKING_DIRECTORY}}
         run: |
+          ${{github.workspace}}/PelePhysics-${{matrix.comp}}/Submodules/amrex/.github/workflows/dependencies/ubuntu_free_disk_space.sh
           if [ "${{matrix.comp}}" == 'cuda' ]; then \
             ${{github.workspace}}/PelePhysics-${{matrix.comp}}/${{matrix.dependency_cmds}}; \
             echo "CUDA_HOME=${CUDA_HOME}"; \
@@ -271,8 +272,14 @@ jobs:
               pip install numpy
               ccache -z
               make -j ${{env.NPROCS}} Eos_Model=Fuego Chemistry_Model=dodecane_lu TINY_PROFILE=TRUE USE_CCACHE=TRUE ${{matrix.amrex_build_args}}
-              bash exec_ignDelay.sh
+              bash exec_ignDelay.sh firstpass
               python check_ignDelay.py
+              if [ $? -ne 0 ]; then exit 1; fi; \
+              rm log PPreaction.txt inputs/inputs.0d_refine
+              make realclean
+              make -j ${{env.NPROCS}} Eos_Model=Manifold Transport_Model=Manifold Manifold_Dim=1 Chemistry_Model=Null TINY_PROFILE=TRUE USE_CCACHE=TRUE ${{matrix.amrex_build_args}}
+              bash exec_ignDelay.sh manifold
+              python check_ignDelay.py 0.0766 10
               if [ $? -ne 0 ]; then exit 1; fi; \
           fi;
           make realclean

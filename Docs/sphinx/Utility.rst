@@ -12,6 +12,7 @@ In addition to routines for evaluating chemical reactions, transport properties,
 * Turbulent inflows (``TurbInflow``) on domain boundaries from saved turbulence data
 * Plt file management (``PltFileManager``)
 * Output of runtime ``Diagnostics``
+* Basic ``Utilities``, including unit conversions
 
 This section provides relevant notes on using these utilities across the Pele family of codes. There may be additional subtleties based on the code-specific implementation of these capabilities, in which case it will be necessary to refer to the documentation of the code of interest.
 
@@ -77,6 +78,7 @@ provided below. ::
   turbinflow.low.turb_conv_vel  = 5.                      # Velocity to move through the 3rd dimension to simulate time evolution
   turbinflow.low.turb_nplane    = 32                      # Number of planes to read and store at a time
   turbinflow.low.time_offset    = 0.0                     # Offset in time for reading through the 3rd dimension
+  turbinflow.low.verbose        = 0                       # verbosity level
 
   turbinflow.high.turb_file      = TurbFileHIT/TurbTEST   # All same as above, but for second injection patch
   turbinflow.high.dir            = 1
@@ -87,6 +89,7 @@ provided below. ::
   turbinflow.high.turb_conv_vel  = 5.
   turbinflow.high.turb_nplane    = 32
   turbinflow.high.time_offset    = 0.0006
+  turbinflow.high.verbose        = 2
 
 Plt File Management
 ===================
@@ -144,3 +147,26 @@ discussed in PeleC milestone reports. An example call to the filtering operation
    les_filter.apply_filter(bxtmp, flux[i], filtered_flux[i], Density, NUM_STATE);
 
 The user must ensure that the correct number of grow cells is present in the Fab or MultiFab.
+
+Utilities
+=============================
+The utilities namespace contains unit conversions, which are particularly useful for PeleLM(eX) users working with mixed unit systems. The following aliases, defined in a file header, enable straightforward conversions between MKS and CGS units for use in equation of state (``eos``) function calls:
+
+::
+
+   namespace m2c = pele::physics::utilities::mks2cgs;
+   namespace c2m = pele::physics::utilities::cgs2mks;
+
+For example, users can call ``eos.PYT2R`` as follows:
+
+::
+
+   auto eos = pele::physics::PhysicsType::eos();
+   amrex::Real P_mean = 101325.0_rt; // Pressure in Pa (MKS)
+   amrex::Real massfrac[NUM_SPECIES]; // Mass fractions tracked by PeleLM(eX)
+   amrex::Real Temp = 300.0_rt; // Temp in K
+   amrex::Real rho_cgs = 0.0_rt; // Density in g/cm^3 (CGS)
+   
+   // Calculate density in CGS units, then convert to MKS
+   eos.PYT2R(m2c::P(P_mean), massfrac, Temp, rho_cgs);
+   amrex::Real rho = c2m::Rho(rho_cgs); // Convert eos density to MKS
