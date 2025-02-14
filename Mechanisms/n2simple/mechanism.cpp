@@ -1,5 +1,5 @@
 #include "mechanism.H"
-const int rmap[NUM_REACTIONS] = {0};
+const int rmap[NUM_REACTIONS] = {0, 1};
 
 // Returns 0-based map of reaction order
 void
@@ -15,9 +15,9 @@ GET_RMAP(int* _rmap)
 void
 CKINU(const int i, int& nspec, int ki[], int nu[])
 {
-  const int ns[NUM_GAS_REACTIONS] = {2};
-  const int kiv[NUM_GAS_REACTIONS * 2] = {0, 1};
-  const int nuv[NUM_GAS_REACTIONS * 2] = {-1, 2};
+  const int ns[NUM_GAS_REACTIONS] = {2, 2};
+  const int kiv[NUM_GAS_REACTIONS * 2] = {0, 1, 0, 1};
+  const int nuv[NUM_GAS_REACTIONS * 2] = {-1, 2, -1, 2};
   if (i < 1) {
     // Return max num species per reaction
     nspec = 2;
@@ -57,7 +57,7 @@ CKKFKR(
   progressRateFR(q_f, q_r, c, T);
 
   // convert to chemkin units
-  for (int id = 0; id < 1; ++id) {
+  for (int id = 0; id < 2; ++id) {
     q_f[id] *= 1.0e-6;
     q_r[id] *= 1.0e-6;
   }

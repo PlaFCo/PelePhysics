@@ -1,15 +1,9 @@
 description: |-
-  Circular Chemistry Engineering simplE air chemistry
-  M. Altin et al. (2024) "Title" Doctoral dissertation, Maastricht University, Maastricht - Appendix 5.A.1 and 5.A.2
-  21 neutral species reactions + 54 electron/ion impact reactions
-  Electron dissociation, ionization, and attachment reactions arE calculated with cross-sections using Bolsig+
+  Reaction rate from Park 1989
+  10.2514/3.28771
 
-generator: ck2yaml
-input-files: [mechanism.inp]
-cantera-version: 3.0.1
-date: Wed, 16 Oct 2024 16:46:47 +0200
 
-units: {length: cm, time: s, quantity: mol, activation-energy: cal/mol}
+units: {length: cm, time: s, quantity: mol, activation-energy: K}
 
 phases:
 - name: gas
@@ -61,7 +55,7 @@ species:
     polarizability: 1.1
 
 reactions:
-- equation: N2 + M <=> N + N + M  # Reaction 4
-  type: three-body
-  rate-constant: {A: 1.12e+14, b: 0.0, Ea: 1.946e+05}
-  efficiencies: {N2: 1.0, N: 1.0}
+- equation: N2 + N  <=> N + N + N  # Reaction 1
+  rate-constant: {A: 1.66e+22, b: -1.6, Ea: 113200}
+- equation: N2 + N2 <=> N + N + N2  # Reaction 2
+  rate-constant: {A: 3.70e+21, b: -1.6, Ea: 113200}
