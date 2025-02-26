@@ -2931,6 +2931,7 @@ comp_qfqr(
 
   // Evaluate the kfs
   amrex::Real k_f, Corr;
+  amrex::Real redP;
 
   // reaction 0:  N2 + O <=> N + NO
   k_f = 180700000 * exp(-(38400.4637675582) * invT);
