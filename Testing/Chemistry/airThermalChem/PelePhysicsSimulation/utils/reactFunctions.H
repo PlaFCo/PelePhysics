@@ -12,8 +12,9 @@ doReact_ode_iE1(
   amrex::Vector<amrex::MultiFab>& fctCount,
   amrex::Vector<amrex::iMultiFab>& dummyMask,
   std::unique_ptr<pele::physics::reactions::ReactorBase>& reactor,
-  pele::physics::transport::TransportParams<
-    pele::physics::PhysicsType::transport_type>& trans_parms)
+  pele::physics::PeleParams<pele::physics::transport::TransParm<
+    pele::physics::PhysicsType::eos_type,
+    pele::physics::PhysicsType::transport_type>>& trans_parms)
 {
 
   BL_PROFILE_VAR_NS("React", ReactInLoop);
@@ -36,7 +37,7 @@ doReact_ode_iE1(
   }
 
   // transport needs
-  auto const* ltransparm = trans_parms.device_trans_parm();
+  auto const* ltransparm = trans_parms.device_parm();
   amrex::FArrayBox rho_fab(box, 1, amrex::The_Async_Arena());
   auto const& rho_a = rho_fab.array();
   amrex::FArrayBox Y_fab(box, NUM_SPECIES, amrex::The_Async_Arena());
@@ -71,9 +72,9 @@ doReact_ode_iE1(
   BL_PROFILE_VAR_START(ReactInLoop);
   std::ofstream myfile;
   myfile.open("results.txt");
-  myfile << "time,temperature,density,viscosity" << std::endl;
+  myfile << "time,temperature,density,Y[1],viscosity" << std::endl;
   myfile << 0 << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0] << ","
-         << mu_a.dataPtr()[0] << std::endl;
+        << Y_a.dataPtr()[1] <<"," << mu_a.dataPtr()[0] << std::endl;
   double timeElapsed = 0;
   for (int ii = 0; ii < ndt; ++ii) {
     tmp_fc = reactor->react(
@@ -103,7 +104,8 @@ doReact_ode_iE1(
     dt_incr = dt_lev / ndt;
     timeElapsed += dt_incr;
     amrex::Gpu::Device::streamSynchronize();
-    myfile << timeElapsed << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0]
+    myfile << timeElapsed << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0]<< ","
+ << Y_a.dataPtr()[1]
            << "," << mu_a.dataPtr()[0] << std::endl;
   }
   BL_PROFILE_VAR_STOP(ReactInLoop);

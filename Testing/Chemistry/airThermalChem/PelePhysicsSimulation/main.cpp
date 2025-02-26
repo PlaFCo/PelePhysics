@@ -54,10 +54,11 @@ main(int argc, char* argv[])
 
 
     // Initialize transport
-    pele::physics::transport::TransportParams<
-      pele::physics::PhysicsType::transport_type>
+    pele::physics::PeleParams<pele::physics::transport::TransParm<
+      pele::physics::PhysicsType::eos_type,
+      pele::physics::PhysicsType::transport_type>>
       trans_parms;
-    trans_parms.allocate();
+    trans_parms.initialize();
 
     // Initialize reactor object inside OMP region, including tolerances
     BL_PROFILE_VAR("main::reactor_info()", reactInfo);
