@@ -22,7 +22,6 @@ def production_rate(
     n_reactions = mechanism.n_reactions
 
     assert len(reaction_info.index) == 7
-
     itroe = reaction_info.index[0:2]
     isri = reaction_info.index[1:3]
     ilindemann = reaction_info.index[2:4]
@@ -174,6 +173,8 @@ def production_rate(
             )
         if nsri > 0:
             cw.writer(fstream, "amrex::Real redP, F, X, F_sri;")
+        if nlindemann > 0:
+            cw.writer(fstream, "amrex::Real redP;")
         cw.writer(fstream)
 
         # Loop like you're going through them in the mech.Linp order
