@@ -1,5 +1,5 @@
 void
-doReact_ode_iE1(
+integrate_isochoric(
   int& lev,
   amrex::Real& dt,
   int& ndt,
@@ -18,6 +18,7 @@ doReact_ode_iE1(
 {
 
   BL_PROFILE_VAR_NS("React", ReactInLoop);
+  int tmp_fc;
   const amrex::Box& box = mfi.tilebox();
   const int nc = box.numPts();
   auto const& rhoY = mf[lev].array(mfi);
@@ -30,13 +31,12 @@ doReact_ode_iE1(
   amrex::Real time = 0.0;
   amrex::Real dt_lev = dt / std::pow(2, lev);
   amrex::Real dt_incr = dt_lev / ndt;
-  int tmp_fc;
   if (omp_thread == 0) {
     amrex::Print() << "  [" << lev << "]"
                    << " integrating " << nc << " cells" << std::endl;
   }
 
-  // transport needs
+  // Get transport coeffs
   auto const* ltransparm = trans_parms.device_parm();
   amrex::FArrayBox rho_fab(box, 1, amrex::The_Async_Arena());
   auto const& rho_a = rho_fab.array();
@@ -52,7 +52,6 @@ doReact_ode_iE1(
   auto const& lam_a = lam_fab.array();
   amrex::FArrayBox chi_fab(box, NUM_SPECIES, amrex::The_Async_Arena());
   auto const& chi_a = chi_fab.array();
-  // Transport
   amrex::ParallelFor(box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
     rho_a(i, j, k) = 0.0;
     for (int n = 0; n < NUM_SPECIES; n++) {
@@ -68,7 +67,7 @@ doReact_ode_iE1(
       tbx, Y_a, T, rho_a, D_a, chi_a, mu_a, xi_a, lam_a, ltransparm);
   });
 
-  /* Solve */
+  // Solve
   BL_PROFILE_VAR_START(ReactInLoop);
   std::ofstream myfile;
   myfile.open("results.txt");
@@ -104,15 +103,13 @@ doReact_ode_iE1(
     dt_incr = dt_lev / ndt;
     timeElapsed += dt_incr;
     amrex::Gpu::Device::streamSynchronize();
-    myfile << timeElapsed << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0]<< ","
- << Y_a.dataPtr()[1]
-           << "," << mu_a.dataPtr()[0] << std::endl;
+    myfile << timeElapsed << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0]<< "," << Y_a.dataPtr()[1] << "," << mu_a.dataPtr()[0] << std::endl;
   }
   BL_PROFILE_VAR_STOP(ReactInLoop);
 }
 
 void
-doReact_ode_iE2(
+integrate_isobaric(
   int& lev,
   amrex::Real& dt,
   int& ndt,
@@ -215,7 +212,7 @@ doReact_ode_iE2(
 #endif
   BL_PROFILE_VAR_STOP(mainflatten);
 
-  /* Solve */
+  // Solve
   BL_PROFILE_VAR_START(ReactInLoop);
   for (int i = 0; i < nCells; i += ode_ncells) {
     tmp_fc[i] = 0;

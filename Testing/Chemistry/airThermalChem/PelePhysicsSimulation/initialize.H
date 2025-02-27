@@ -10,7 +10,7 @@
 AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 void
-initialize_data(
+initialize_solution(
   int i,
   int j,
   int k,

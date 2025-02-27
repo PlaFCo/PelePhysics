@@ -13,7 +13,7 @@
 #endif
 
 #include "mechanism.H"
-#include <GPU_misc.H>
+#include <initialize.H>
 
 #include <PelePhysics.H>
 #include <ReactorBase.H>
@@ -35,23 +35,22 @@ main(int argc, char* argv[])
     amrex::Real strt_time = amrex::ParallelDescriptor::second();
     BL_PROFILE_VAR("main::main()", pmain);
 
-    // ~~~~ Init: Read input, initialize transport, geom, data
+    // Init: Read input, initialize transport, geom, data
     // Parse the relevant inputs
     std::string chem_integrator;
-    bool do_plt;
     std::string pltfile;
+    std::string chkfile, reactFormat;
+    bool do_plt;
     int initFromChk, reactFunc, ode_ncells, ndt, ode_iE, use_typ_vals,
       max_grid_size;
-    std::string chkfile, reactFormat;
     amrex::Real dt, rtol, atol;
     std::array<int, 3> ncells;
     amrex::ParmParse pp;
     amrex::ParmParse ppode("ode");
-    parseInput(
+    parse_input(
       pp, ppode, chem_integrator, do_plt, pltfile, initFromChk,
       chkfile, reactFormat, reactFunc, ode_ncells, dt, ndt, ode_iE, rtol, atol,
       use_typ_vals, ncells, max_grid_size);
-
 
     // Initialize transport
     pele::physics::PeleParams<pele::physics::transport::TransParm<
@@ -73,12 +72,12 @@ main(int argc, char* argv[])
     amrex::Vector<amrex::BoxArray> grids;
     amrex::Vector<amrex::DistributionMapping> dmaps;
     BL_PROFILE_VAR("main::geometry_setup", GeomSetup);
-    initializeGeom(
+    initialize_geom(
       geoms, grids, dmaps, finest_level, ncells, ndt, dt, max_grid_size);
     BL_PROFILE_VAR_STOP(GeomSetup);
 
     // Initialize Data
-    BL_PROFILE_VAR("main::initialize_data()", InitData);
+    BL_PROFILE_VAR("main::initialize_solution()", InitData);
     int num_grow = 0;
     amrex::Vector<amrex::MultiFab> mf(finest_level + 1);
     amrex::Vector<amrex::MultiFab> rY_source_ext(finest_level + 1);
@@ -86,12 +85,12 @@ main(int argc, char* argv[])
     amrex::Vector<amrex::MultiFab> rY_source_energy_ext(finest_level + 1);
     amrex::Vector<amrex::MultiFab> fctCount(finest_level + 1);
     amrex::Vector<amrex::iMultiFab> dummyMask(finest_level + 1);
-    initializeData(
+    initialize_data(
       num_grow, mf, rY_source_ext, mfE, rY_source_energy_ext, fctCount,
       dummyMask, finest_level, geoms, grids, dmaps, ode_iE)
       BL_PROFILE_VAR_STOP(InitData);
 
-    // ~~~~ Reac
+    // Reac
     amrex::Print() << " \n STARTING THE ADVANCE \n";
 
     for (int lev = 0; lev <= finest_level; ++lev) {
@@ -111,13 +110,13 @@ main(int argc, char* argv[])
 #endif
         // Reaction at constant volume
         if (reactFunc == 1) {
-          doReact_ode_iE1(
+          integrate_isochoric(
             lev, dt, ndt, omp_thread, mfi, mf, rY_source_ext, mfE,
             rY_source_energy_ext, fctCount, dummyMask, reactor, trans_parms);
 
           // Reaction at constant pressure
         } else if (reactFunc == 2) {
-          doReact_ode_iE2(
+          integrate_isobaric(
             lev, dt, ndt, omp_thread, ode_ncells, mfi, mf, rY_source_ext, mfE,
             rY_source_energy_ext, fctCount, dummyMask, reactor);
         }
@@ -140,7 +139,7 @@ main(int argc, char* argv[])
       amrex::Print() << std::endl;
     }
 
-    // ~~~~ Finalize
+    // Finalize
     trans_parms.deallocate();
     BL_PROFILE_VAR_STOP(pmain);
     amrex::Real run_time = amrex::ParallelDescriptor::second() - strt_time;

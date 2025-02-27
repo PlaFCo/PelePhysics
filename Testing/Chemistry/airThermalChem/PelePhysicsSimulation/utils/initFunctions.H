@@ -1,5 +1,5 @@
 void
-parseInput(
+parse_input(
   amrex::ParmParse& pp,
   amrex::ParmParse& ppode,
   std::string& chem_integrator,
@@ -97,7 +97,7 @@ parseInput(
 
 
 void
-initializeGeom(
+initialize_geom(
   amrex::Vector<amrex::Geometry>& geoms,
   amrex::Vector<amrex::BoxArray>& grids,
   amrex::Vector<amrex::DistributionMapping>& dmaps,
@@ -148,7 +148,7 @@ initializeGeom(
 }
 
 void
-initializeData(
+initialize_data(
   int& num_grow,
   amrex::Vector<amrex::MultiFab>& mf,
   amrex::Vector<amrex::MultiFab>& rY_source_ext,
@@ -199,7 +199,7 @@ initializeData(
         rY_source_energy_ext[lev].array(mfi);
       amrex::ParallelFor(
         box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          initialize_data(
+          initialize_solution(
             i, j, k,  ode_iE, rY_a, rYs_a, E_a, rE_a, geomdata);
         });
     }
