@@ -1,4 +1,5 @@
 """Run a homogeneous reactor in Cantera."""
+#Iterates over initial temperature to find equilibrium composition
 import argparse
 
 import cantera as ct
@@ -7,50 +8,86 @@ import pandas as pd
 
 def main():
     """Run the reactor."""
-    parser = argparse.ArgumentParser(description="Cantera homogeneous reactor")
-    parser.add_argument("-f", "--fname", help="Mechanism file", type=str, required=True)
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser(description="Cantera homogeneous reactor")
+    # parser.add_argument("-f", "--fname", help="Mechanism file", type=str, required=True)
+    # args = parser.parse_args()
 
-    chem_name = "../../../Mechanisms/airThermal/mechanism.yaml"
+    chem_name = "../../../../Mechanisms/airThermal/mechanism.yaml"
     mechanism = ct.Solution(chem_name)
-    mechanism.TPX = 3000.0, 0.1 * ct.one_atm, "N2:0.8,O2:0.2"
-    mechanism.transport_model = "Mix"
-    # r = ct.IdealGasConstPressureReactor(mechanism)
-    r = ct.IdealGasReactor(mechanism)
-    sim = ct.ReactorNet([r])
-    time = 0.0
-    states = ct.SolutionArray(mechanism, extra=["t"])
-    dt = 10
-    ndt = 1000
+
+    temperature = 4000.0
+    Tnp1 = temperature
+    for temp_iter in range(0, 50):
+        mechanism.TPX = Tnp1, 0.1 * ct.one_atm, "N2:0.5,O2:0.5"
+        mechanism.transport_model = "Mix"
+        # r = ct.IdealGasConstPressureReactor(mechanism)
+        r = ct.IdealGasReactor(mechanism)
+        sim = ct.ReactorNet([r])
+        time = 0.0
+        states = ct.SolutionArray(mechanism, extra=["t"])
+        dt = 10
+        ndt = 1
+        time = dt/ndt
+        sim.advance(time)
+        Tnp1 = r.T
+
+
+        if (temp_iter >0):
+            f_Tn = Tnp1 - temperature
+            Tnp1 = Tn - f_Tn*(Tn-Tnm1)/(f_Tn-f_Tnm1)
+            Tnm1 = Tn
+            Tn = Tnp1
+            f_Tnm1 = f_Tn
+        else:
+            Tnm1 = temperature
+            f_Tn = Tnp1 - temperature
+            Tn = Tnp1 
+            Tnp1 = Tn - 0.5*f_Tn
+            f_Tnm1 = f_Tn
+
+        if (abs(Tn-temperature) < 1.0e-6):
+            break
+
+
+    # print(f"Tn->{Tnp1}  T={r.T}")
+    # mechanism.TPX = Tnp1, 0.1 * ct.one_atm, "N2:0.5,O2:0.5"
+    # mechanism.transport_model = "Mix"
+    # # r = ct.IdealGasConstPressureReactor(mechanism)
+    # r = ct.IdealGasReactor(mechanism)
+    # sim = ct.ReactorNet([r])
+    # time = 0.0
+    # states = ct.SolutionArray(mechanism, extra=["t"])
+    # dt = 10
+    # ndt = 1000
 
     mechanism()
 
-    lst = [
-        {
-            "time": time,
-            "temperature": mechanism.T,
-            "density": mechanism.density,
-            "viscosity": mechanism.viscosity,
-        }
-    ]
-    for _n in range(ndt):
-        time += dt / ndt
-        sim.advance(time)
-        states.append(r.thermo.state, t=time * 1e3)
-        lst.append(
-            {
-                "time": time,
-                "temperature": r.T,
-                "density": states[-1].density,
-                "viscosity": states[-1].viscosity,
-            }
-        )
+    # lst = [
+    #     {
+    #         "time": time,
+    #         "temperature": mechanism.T,
+    #         "density": mechanism.density,
+    #         "viscosity": mechanism.viscosity,
+    #     }
+    # ]
+    # for _n in range(ndt):
+    #     time += dt / ndt
+    #     sim.advance(time)
+    #     states.append(r.thermo.state, t=time * 1e3)
+    #     lst.append(
+    #         {
+    #             "time": time,
+    #             "temperature": r.T,
+    #             "density": states[-1].density,
+    #             "viscosity": states[-1].viscosity,
+    #         }
+    #     )
 
-    df = pd.DataFrame(lst)
+    # df = pd.DataFrame(lst)
 
-    # Write result to file
-    oname = "results.txt"
-    df.to_csv(oname, index=False)
+    # # Write result to file
+    # oname = "results.txt"
+    # df.to_csv(oname, index=False)
 
 
 if __name__ == "__main__":

@@ -154,7 +154,7 @@ main(int argc, char* argv[])
         dummyMask, finest_level, geoms, grids, dmaps, ode_iE, Tnp1)
       BL_PROFILE_VAR_STOP(InitData);
 
-      if (std::abs(Tn-Tnm1) < 1.0e-3) {
+      if (std::abs(Tn-temperature) < 1.0e-3) {
         amrex::Print() << temp_iter <<": Tn->" << Tn << "  T="<<temperature<<  "\n";
         break;
       }
