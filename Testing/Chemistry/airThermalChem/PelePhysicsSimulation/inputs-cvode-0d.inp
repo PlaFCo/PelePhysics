@@ -1,3 +1,6 @@
+
+state.finaltemperature = 3512
+
 ncells = 1 1 1
 max_grid_size  = 1
 reactFormat = Array4
@@ -6,7 +9,7 @@ chem_integrator = "ReactorCvode"
 ode.dt  = 10
 ode.ndt = 1000
 ode.ode_ncells = 1
-ode.reactor_type  = 1 # 1=full e, 2=full h
+ode.reactor_type  = 2 # 1=full e, 2=full h
 ode.verbose = 0
 ode.use_typ_vals = 0
 ode.rtol = 1e-10

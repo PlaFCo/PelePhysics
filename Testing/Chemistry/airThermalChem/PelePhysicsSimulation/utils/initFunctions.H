@@ -2,6 +2,7 @@ void
 parse_input(
   amrex::ParmParse& pp,
   amrex::ParmParse& ppode,
+  amrex::ParmParse& ppstate,
   std::string& chem_integrator,
   bool& do_plt,
   std::string& pltfile,
@@ -17,7 +18,8 @@ parse_input(
   amrex::Real& atol,
   int& use_typ_vals,
   std::array<int, 3>& ncells,
-  int& max_grid_size)
+  int& max_grid_size,
+  amrex::Real& temperature)
 {
   chem_integrator = "";
   pp.get("chem_integrator", chem_integrator);
@@ -59,6 +61,9 @@ parse_input(
   ndt = 1;
   ppode.query("ndt", ndt); // number of solver calls per dt
 
+  // 1: e (PeleC), !1: h (PeleLM)  <------ FIXME!
+  // 1: e, isochoric with energy equation
+  // 2: h, isobaric with enthalpy equation
   ode_iE = 2;
   ppode.query(
     "reactor_type",
@@ -75,9 +80,9 @@ parse_input(
 
   amrex::Print() << "ODE solver: " << chem_integrator << std::endl;
   amrex::Print() << "Type of reactor: "
-                 << (ode_iE == 1 ? "e (PeleC)" : "h (PeleLM)")
+                 << (ode_iE == 1 ? "e, isochoric, (PeleC)" : "h, isobaric, (PeleLM)")
                  << std::endl; // <---- FIXME
-  amrex::Print() << "N2 :  Oxy: O2" << std::endl;
+  amrex::Print() << "N2 : O2" << std::endl;
 
   // ~~~~ Geometry
   ncells = {AMREX_D_DECL(1, 1, 1)};
@@ -93,6 +98,10 @@ parse_input(
   }
   max_grid_size = 16;
   pp.query("max_grid_size", max_grid_size);
+
+
+  ppstate.get("finaltemperature", temperature);
+  amrex::Print() << "target final temperatur:" << temperature << std::endl;
 }
 
 
@@ -160,7 +169,8 @@ initialize_data(
   amrex::Vector<amrex::Geometry>& geoms,
   amrex::Vector<amrex::BoxArray>& grids,
   amrex::Vector<amrex::DistributionMapping>& dmaps,
-  int& ode_iE)
+  int& ode_iE,
+  amrex::Real temperature)
 {
 
   // -----------------------------------------------------------------------------
@@ -197,10 +207,58 @@ initialize_data(
       amrex::Array4<amrex::Real> const& E_a = mfE[lev].array(mfi);
       amrex::Array4<amrex::Real> const& rE_a =
         rY_source_energy_ext[lev].array(mfi);
+      auto const& temp = temperature;
       amrex::ParallelFor(
         box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
           initialize_solution(
-            i, j, k,  ode_iE, rY_a, rYs_a, E_a, rE_a, geomdata);
+            i, j, k,  ode_iE, rY_a, rYs_a, E_a, rE_a, geomdata, temp);
+        });
+    }
+  }
+}
+
+
+
+void
+reset_temperature(
+  int& num_grow,
+  amrex::Vector<amrex::MultiFab>& mf,
+  amrex::Vector<amrex::MultiFab>& rY_source_ext,
+  amrex::Vector<amrex::MultiFab>& mfE,
+  amrex::Vector<amrex::MultiFab>& rY_source_energy_ext,
+  amrex::Vector<amrex::MultiFab>& fctCount,
+  amrex::Vector<amrex::iMultiFab>& dummyMask,
+  int& finest_level,
+  amrex::Vector<amrex::Geometry>& geoms,
+  amrex::Vector<amrex::BoxArray>& grids,
+  amrex::Vector<amrex::DistributionMapping>& dmaps,
+  int& ode_iE,
+  amrex::Real new_temperature)
+{
+
+  // -----------------------------------------------------------------------------
+  // Initialize data
+  // -----------------------------------------------------------------------------
+  for (int lev = 0; lev <= finest_level; ++lev) {
+    const auto geomdata = geoms[lev].data();
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (amrex::Gpu::notInLaunchRegion())
+#endif
+    for (amrex::MFIter mfi(mf[lev], amrex::TilingIfNotGPU()); mfi.isValid();
+         ++mfi) {
+
+      const amrex::Box& box = mfi.tilebox();
+
+      amrex::Array4<amrex::Real> const& rY_a = mf[lev].array(mfi);
+      amrex::Array4<amrex::Real> const& rYs_a = rY_source_ext[lev].array(mfi);
+      amrex::Array4<amrex::Real> const& E_a = mfE[lev].array(mfi);
+      amrex::Array4<amrex::Real> const& rE_a =
+        rY_source_energy_ext[lev].array(mfi);
+      auto const& temp = new_temperature;
+      amrex::ParallelFor(
+        box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          initialize_solution(
+            i, j, k,  ode_iE, rY_a, rYs_a, E_a, rE_a, geomdata, temp);
         });
     }
   }

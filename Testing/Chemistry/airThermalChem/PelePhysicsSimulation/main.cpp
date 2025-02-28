@@ -18,7 +18,6 @@
 #include <PelePhysics.H>
 #include <ReactorBase.H>
 
-// Leanify main script
 #include "utils/initFunctions.H"
 #include "utils/reactFunctions.H"
 
@@ -43,14 +42,15 @@ main(int argc, char* argv[])
     bool do_plt;
     int initFromChk, reactFunc, ode_ncells, ndt, ode_iE, use_typ_vals,
       max_grid_size;
-    amrex::Real dt, rtol, atol;
+    amrex::Real dt, rtol, atol, temperature;
     std::array<int, 3> ncells;
     amrex::ParmParse pp;
     amrex::ParmParse ppode("ode");
+    amrex::ParmParse ppstate("state");
     parse_input(
-      pp, ppode, chem_integrator, do_plt, pltfile, initFromChk,
+      pp, ppode, ppstate, chem_integrator, do_plt, pltfile, initFromChk,
       chkfile, reactFormat, reactFunc, ode_ncells, dt, ndt, ode_iE, rtol, atol,
-      use_typ_vals, ncells, max_grid_size);
+      use_typ_vals, ncells, max_grid_size, temperature);
 
     // Initialize transport
     pele::physics::PeleParams<pele::physics::transport::TransParm<
@@ -87,46 +87,77 @@ main(int argc, char* argv[])
     amrex::Vector<amrex::iMultiFab> dummyMask(finest_level + 1);
     initialize_data(
       num_grow, mf, rY_source_ext, mfE, rY_source_energy_ext, fctCount,
-      dummyMask, finest_level, geoms, grids, dmaps, ode_iE)
-      BL_PROFILE_VAR_STOP(InitData);
+      dummyMask, finest_level, geoms, grids, dmaps, ode_iE, temperature)
+    BL_PROFILE_VAR_STOP(InitData);
 
-    // Reac
+    // React
     amrex::Print() << " \n STARTING THE ADVANCE \n";
 
-    for (int lev = 0; lev <= finest_level; ++lev) {
-      amrex::Real lvl_strt = amrex::ParallelDescriptor::second();
-      BL_PROFILE_VAR("Advance_Level" + std::to_string(lev), Advance);
+    amrex::Real f_Tn;
+    amrex::Real f_Tnm1;
+    amrex::Real Tn;
+    amrex::Real Tnm1;
+    amrex::Real Tnp1 = temperature + 500;
+    for( int temp_iter = 0; temp_iter < 50; temp_iter++) {
+
+      for (int lev = 0; lev <= finest_level; ++lev) {
+        amrex::Real lvl_strt = amrex::ParallelDescriptor::second();
+        BL_PROFILE_VAR("Advance_Level" + std::to_string(lev), Advance);
 #ifdef AMREX_USE_OMP
-      const auto tiling = amrex::MFItInfo().SetDynamic(true);
+        const auto tiling = amrex::MFItInfo().SetDynamic(true);
 #pragma omp parallel
 #else
-      const bool tiling = amrex::TilingIfNotGPU();
+        const bool tiling = amrex::TilingIfNotGPU();
 #endif
       for (amrex::MFIter mfi(mf[lev], tiling); mfi.isValid(); ++mfi) {
 
-        int omp_thread = 0;
+          int omp_thread = 0;
 #ifdef AMREX_USE_OMP
-        omp_thread = omp_get_thread_num();
+          omp_thread = omp_get_thread_num();
 #endif
-        // Reaction at constant volume
-        if (reactFunc == 1) {
-          integrate_isochoric(
-            lev, dt, ndt, omp_thread, mfi, mf, rY_source_ext, mfE,
-            rY_source_energy_ext, fctCount, dummyMask, reactor, trans_parms);
-
-          // Reaction at constant pressure
-        } else if (reactFunc == 2) {
-          integrate_isobaric(
-            lev, dt, ndt, omp_thread, ode_ncells, mfi, mf, rY_source_ext, mfE,
-            rY_source_energy_ext, fctCount, dummyMask, reactor);
+          // Reaction at constant volume
+          if (reactFunc == 1) {
+            integrate_isochoric(
+              lev, dt, ndt, omp_thread, mfi, mf, rY_source_ext, mfE,
+              rY_source_energy_ext, fctCount, dummyMask, reactor, trans_parms);
+            Tnp1 = mf[lev].array(mfi, NUM_SPECIES)(0, 0, 0);
+          } else if (reactFunc == 2) {
+            integrate_isobaric(
+              lev, dt, ndt, omp_thread, ode_ncells, mfi, mf, rY_source_ext, mfE,
+              rY_source_energy_ext, fctCount, dummyMask, reactor);
+            Tnp1 = mf[lev].array(mfi, NUM_SPECIES)(0, 0, 0);
+          }
         }
+        BL_PROFILE_VAR_STOP(Advance);
+        amrex::Real lvl_run_time = amrex::ParallelDescriptor::second() - lvl_strt;
+        amrex::ParallelDescriptor::ReduceRealMax(
+          lvl_run_time, amrex::ParallelDescriptor::IOProcessorNumber());
+
       }
-      BL_PROFILE_VAR_STOP(Advance);
-      amrex::Real lvl_run_time = amrex::ParallelDescriptor::second() - lvl_strt;
-      amrex::ParallelDescriptor::ReduceRealMax(
-        lvl_run_time, amrex::ParallelDescriptor::IOProcessorNumber());
-      amrex::Print() << "   >> Level " << lev << " advance: " << lvl_run_time
-                     << "\n";
+      if (temp_iter>0){
+        f_Tn = Tnp1 - temperature;
+        Tnp1 = Tn - f_Tn*(Tn-Tnm1)/(f_Tn-f_Tnm1); 
+        Tnm1 = Tn;
+        Tn = Tnp1;
+        f_Tnm1 = f_Tn;
+      }
+      else{
+        Tnm1 = temperature;
+        f_Tn = Tnp1-temperature;
+        Tn = Tnp1;
+        Tnp1 = Tn - 0.5* f_Tn;
+        f_Tnm1 = f_Tn;
+      }
+      
+      reset_temperature(
+        num_grow, mf, rY_source_ext, mfE, rY_source_energy_ext, fctCount,
+        dummyMask, finest_level, geoms, grids, dmaps, ode_iE, Tnp1)
+      BL_PROFILE_VAR_STOP(InitData);
+
+      if (std::abs(Tn-Tnm1) < 1.0e-3) {
+        amrex::Print() << temp_iter <<": Tn->" << Tn << "  T="<<temperature<<  "\n";
+        break;
+      }
     }
 
     // TODO multilevel max.

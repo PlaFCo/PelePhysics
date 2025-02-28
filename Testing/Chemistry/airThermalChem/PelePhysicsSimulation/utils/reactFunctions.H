@@ -31,10 +31,10 @@ integrate_isochoric(
   amrex::Real time = 0.0;
   amrex::Real dt_lev = dt / std::pow(2, lev);
   amrex::Real dt_incr = dt_lev / ndt;
-  if (omp_thread == 0) {
-    amrex::Print() << "  [" << lev << "]"
-                   << " integrating " << nc << " cells" << std::endl;
-  }
+  // if (omp_thread == 0) {
+  //   amrex::Print() << "  [" << lev << "]"
+  //                  << " integrating " << nc << " cells" << std::endl;
+  // }
 
   // Get transport coeffs
   auto const* ltransparm = trans_parms.device_parm();
@@ -106,6 +106,7 @@ integrate_isochoric(
     myfile << timeElapsed << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0]<< "," << Y_a.dataPtr()[1] << "," << mu_a.dataPtr()[0] << std::endl;
   }
   BL_PROFILE_VAR_STOP(ReactInLoop);
+  myfile.close();
 }
 
 void
@@ -143,11 +144,11 @@ integrate_isobaric(
   ode_ncells = nc;
 #endif
   extra_cells = nc - (nc / ode_ncells) * ode_ncells;
-  if (omp_thread == 0) {
-    amrex::Print() << " Integrating " << nc << " cells with a " << ode_ncells
-                   << " ode cell buffer ";
-    amrex::Print() << "(" << extra_cells << " extra cells) \n";
-  }
+  // if (omp_thread == 0) {
+  //   amrex::Print() << " Integrating " << nc << " cells with a " << ode_ncells
+  //                  << " ode cell buffer ";
+  //   amrex::Print() << "(" << extra_cells << " extra cells) \n";
+  // }
 
   BL_PROFILE_VAR_START(Allocs);
   int nCells = nc + extra_cells;
