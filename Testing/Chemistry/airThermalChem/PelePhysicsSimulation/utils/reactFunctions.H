@@ -1,5 +1,5 @@
 void
-integrate_isochoric(
+integrate_Array4(
   int& lev,
   amrex::Real& dt,
   int& ndt,
@@ -110,7 +110,7 @@ integrate_isochoric(
 }
 
 void
-integrate_isobaric(
+integrate_1dArray(
   int& lev,
   amrex::Real& dt,
   int& ndt,

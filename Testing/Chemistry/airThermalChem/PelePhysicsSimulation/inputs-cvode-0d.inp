@@ -1,13 +1,13 @@
 
-state.finaltemperature = 3512
+state.finaltemperature = 4000
 
 ncells = 1 1 1
 max_grid_size  = 1
 reactFormat = Array4
 chem_integrator = "ReactorCvode"
 
-ode.dt  = 10
-ode.ndt = 1000
+ode.dt  = 100
+ode.ndt = 1
 ode.ode_ncells = 1
 ode.reactor_type  = 2 # 1=full e, 2=full h
 ode.verbose = 0
@@ -29,6 +29,7 @@ cvode.max_order = 4
 ode.implicit_solve = 1
 ode.use_erkstep    = 0
 
+amrex.v = 0
 amrex.fpe_trap_invalid = 1
 amrex.fpe_trap_zero = 1
 amrex.fpe_trap_overflow = 1

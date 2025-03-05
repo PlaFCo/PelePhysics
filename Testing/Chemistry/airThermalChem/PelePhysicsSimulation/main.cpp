@@ -98,7 +98,12 @@ main(int argc, char* argv[])
     amrex::Real Tn;
     amrex::Real Tnm1;
     amrex::Real Tnp1 = temperature + 500;
+    amrex::Vector<double> solution(NUM_SPECIES + 1);
     for( int temp_iter = 0; temp_iter < 50; temp_iter++) {
+      reset_temperature(
+        num_grow, mf, rY_source_ext, mfE, rY_source_energy_ext, fctCount,
+        dummyMask, finest_level, geoms, grids, dmaps, ode_iE, Tnp1)
+      BL_PROFILE_VAR_STOP(InitData);
 
       for (int lev = 0; lev <= finest_level; ++lev) {
         amrex::Real lvl_strt = amrex::ParallelDescriptor::second();
@@ -115,17 +120,35 @@ main(int argc, char* argv[])
 #ifdef AMREX_USE_OMP
           omp_thread = omp_get_thread_num();
 #endif
-          // Reaction at constant volume
           if (reactFunc == 1) {
-            integrate_isochoric(
+            integrate_Array4(
               lev, dt, ndt, omp_thread, mfi, mf, rY_source_ext, mfE,
               rY_source_energy_ext, fctCount, dummyMask, reactor, trans_parms);
+
             Tnp1 = mf[lev].array(mfi, NUM_SPECIES)(0, 0, 0);
+            amrex::Real rho = 0.0;
+            for(int i = 0; i < NUM_SPECIES; i++){
+              rho += mf[lev].array(mfi, i)(0, 0, 0);
+            }
+            for(int i = 0; i < NUM_SPECIES; i++){
+              solution[i] = mf[lev].array(mfi, i)(0, 0, 0)/rho;
+            }
+            solution[NUM_SPECIES] = Tnp1;
           } else if (reactFunc == 2) {
-            integrate_isobaric(
+            integrate_1dArray(
               lev, dt, ndt, omp_thread, ode_ncells, mfi, mf, rY_source_ext, mfE,
               rY_source_energy_ext, fctCount, dummyMask, reactor);
+            
             Tnp1 = mf[lev].array(mfi, NUM_SPECIES)(0, 0, 0);
+            amrex::Real rho = 0.0;
+            for(int i = 0; i < NUM_SPECIES; i++){
+              rho += mf[lev].array(mfi, i)(0, 0, 0);
+            }
+            for(int i = 0; i < NUM_SPECIES; i++){
+              solution[i] = mf[lev].array(mfi, i)(0, 0, 0)/rho;
+            }
+            solution[NUM_SPECIES] = Tnp1;
+
           }
         }
         BL_PROFILE_VAR_STOP(Advance);
@@ -148,27 +171,23 @@ main(int argc, char* argv[])
         Tnp1 = Tn - 0.5* f_Tn;
         f_Tnm1 = f_Tn;
       }
-      
-      reset_temperature(
-        num_grow, mf, rY_source_ext, mfE, rY_source_energy_ext, fctCount,
-        dummyMask, finest_level, geoms, grids, dmaps, ode_iE, Tnp1)
-      BL_PROFILE_VAR_STOP(InitData);
-
-      if (std::abs(Tn-temperature) < 1.0e-3) {
+      amrex::Print() << "next Tnp1->" << Tnp1 <<  "\n";
+      if (std::abs(Tn-Tnm1) < 1.0e-3) {
         amrex::Print() << temp_iter <<": Tn->" << Tn << "  T="<<temperature<<  "\n";
         break;
       }
     }
 
-    // TODO multilevel max.
     {
-      amrex::Vector<double> typ_vals(NUM_SPECIES + 1);
-      amrex::Print() << "ode.typ_vals= ";
+      std::ofstream myfile;
+      myfile.open("./PelePhysicsSimulation/pele_simulation.txt");
       for (int i = 0; i < NUM_SPECIES + 1; ++i) {
-        amrex::Print() << std::max(1.e-10, mf[0].max(i)) << " ";
+        myfile << solution[i] << " ";
       }
-      amrex::Print() << std::endl;
+      myfile << Tn << " ";
+      myfile.close();
     }
+
 
     // Finalize
     trans_parms.deallocate();

@@ -1,9 +1,11 @@
 """Run a homogeneous reactor in Cantera."""
 #Iterates over initial temperature to find equilibrium composition
 import argparse
+import pathlib
 
 import cantera as ct
 import pandas as pd
+import numpy
 
 
 def main():
@@ -12,20 +14,23 @@ def main():
     # parser.add_argument("-f", "--fname", help="Mechanism file", type=str, required=True)
     # args = parser.parse_args()
 
-    chem_name = "../../../../Mechanisms/airThermal/mechanism.yaml"
+    local_dir = str(pathlib.Path(__file__).parent.resolve())
+    mechanism_dir = local_dir.split("/Testing/")[0]
+    airthermal_dir = mechanism_dir + "/Mechanisms/airThermal"
+    chem_name = airthermal_dir + "/mechanism.yaml"
     mechanism = ct.Solution(chem_name)
 
     temperature = 4000.0
     Tnp1 = temperature
     for temp_iter in range(0, 50):
         mechanism.TPX = Tnp1, 0.1 * ct.one_atm, "N2:0.5,O2:0.5"
-        mechanism.transport_model = "Mix"
+        mechanism.transport_model = "mixture-averaged"
         # r = ct.IdealGasConstPressureReactor(mechanism)
         r = ct.IdealGasReactor(mechanism)
         sim = ct.ReactorNet([r])
         time = 0.0
         states = ct.SolutionArray(mechanism, extra=["t"])
-        dt = 10
+        dt = 100
         ndt = 1
         time = dt/ndt
         sim.advance(time)
@@ -60,8 +65,14 @@ def main():
     # dt = 10
     # ndt = 1000
 
-    mechanism()
-
+    # mechanism()
+    results = numpy.append(mechanism.X,mechanism.T)
+    # print(results)
+    with open(local_dir + "/cantera_simulation.txt", 'w') as myfile:
+        for variable in results:
+            myfile.write(str(variable) + ' ')
+        myfile.write(str(Tn) + ' ')
+        
     # lst = [
     #     {
     #         "time": time,
