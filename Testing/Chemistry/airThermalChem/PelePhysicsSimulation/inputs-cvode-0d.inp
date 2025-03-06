@@ -6,8 +6,8 @@ max_grid_size  = 1
 reactFormat = Array4
 chem_integrator = "ReactorCvode"
 
-ode.dt  = 100
-ode.ndt = 1
+ode.dt  = 1000
+ode.ndt = 100
 ode.ode_ncells = 1
 ode.reactor_type  = 2 # 1=full e, 2=full h
 ode.verbose = 0

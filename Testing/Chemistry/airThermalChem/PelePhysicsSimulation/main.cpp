@@ -93,12 +93,16 @@ main(int argc, char* argv[])
     // React
     amrex::Print() << " \n STARTING THE ADVANCE \n";
 
+    amrex::Real norm;
     amrex::Real f_Tn;
     amrex::Real f_Tnm1;
     amrex::Real Tn;
     amrex::Real Tnm1;
-    amrex::Real Tnp1 = temperature + 500;
+    amrex::Real Tnp1 = temperature;
+    amrex::GpuArray<amrex::Real, NUM_SPECIES> x;
+    amrex::GpuArray<amrex::Real, NUM_SPECIES> y;
     amrex::Vector<double> solution(NUM_SPECIES + 1);
+    auto eos = pele::physics::PhysicsType::eos();
     for( int temp_iter = 0; temp_iter < 50; temp_iter++) {
       reset_temperature(
         num_grow, mf, rY_source_ext, mfE, rY_source_energy_ext, fctCount,
@@ -130,8 +134,14 @@ main(int argc, char* argv[])
             for(int i = 0; i < NUM_SPECIES; i++){
               rho += mf[lev].array(mfi, i)(0, 0, 0);
             }
+            norm = 0.0;
             for(int i = 0; i < NUM_SPECIES; i++){
-              solution[i] = mf[lev].array(mfi, i)(0, 0, 0)/rho;
+              y[i] = mf[lev].array(mfi, i)(0, 0, 0)/rho;
+              norm += y[i];
+            }
+            eos.Y2X(&y[0], &x[0]);
+            for(int i = 0; i < NUM_SPECIES; i++){
+              solution[i] = x[i];
             }
             solution[NUM_SPECIES] = Tnp1;
           } else if (reactFunc == 2) {
@@ -144,8 +154,14 @@ main(int argc, char* argv[])
             for(int i = 0; i < NUM_SPECIES; i++){
               rho += mf[lev].array(mfi, i)(0, 0, 0);
             }
+            norm = 0.0;
             for(int i = 0; i < NUM_SPECIES; i++){
-              solution[i] = mf[lev].array(mfi, i)(0, 0, 0)/rho;
+              y[i] = mf[lev].array(mfi, i)(0, 0, 0)/rho;
+              norm += y[i];
+            }
+            eos.Y2X(&y[0], &x[0]);
+            for(int i = 0; i < NUM_SPECIES; i++){
+              solution[i] = x[i];
             }
             solution[NUM_SPECIES] = Tnp1;
 
@@ -168,11 +184,11 @@ main(int argc, char* argv[])
         Tnm1 = temperature;
         f_Tn = Tnp1-temperature;
         Tn = Tnp1;
-        Tnp1 = Tn - 0.5* f_Tn;
+        Tnp1 = temperature + 0.5* f_Tn;
         f_Tnm1 = f_Tn;
       }
       amrex::Print() << "next Tnp1->" << Tnp1 <<  "\n";
-      if (std::abs(Tn-Tnm1) < 1.0e-3) {
+      if (std::abs(Tn-Tnm1) < 1.0e-6) {
         amrex::Print() << temp_iter <<": Tn->" << Tn << "  T="<<temperature<<  "\n";
         break;
       }
