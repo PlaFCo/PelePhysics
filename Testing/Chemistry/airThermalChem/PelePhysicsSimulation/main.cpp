@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <cstdio>
 
 #include <AMReX_MultiFab.H>
 #include <AMReX_iMultiFab.H>
@@ -182,28 +183,26 @@ main(int argc, char* argv[])
       }
       else{
         Tnm1 = temperature;
-        f_Tn = Tnp1-temperature;
+        f_Tn = Tnp1 - temperature;
         Tn = Tnp1;
         Tnp1 = temperature + 0.5* f_Tn;
         f_Tnm1 = f_Tn;
       }
-      amrex::Print() << "next Tnp1->" << Tnp1 <<  "\n";
-      if (std::abs(Tn-Tnm1) < 1.0e-6) {
-        amrex::Print() << temp_iter <<": Tn->" << Tn << "  T="<<temperature<<  "\n";
+      amrex::Print() << std::scientific << "next Tnp1->" << Tnp1 <<  "\n";
+      if (std::abs(f_Tn) < 1.0e-6) {
+        amrex::Print() << std::scientific << temp_iter <<": Tn->" << f_Tn+temperature << "  T="<<temperature<<  "\n";
         break;
       }
     }
 
-    {
-      std::ofstream myfile;
-      myfile.open("./PelePhysicsSimulation/pele_simulation.txt");
-      for (int i = 0; i < NUM_SPECIES + 1; ++i) {
-        myfile << solution[i] << " ";
-      }
-      myfile << Tn << " ";
-      myfile.close();
+    FILE * fp;
+    fp = fopen("/home/duarte/PlaFCo/PelePhysics/Testing/Chemistry/airThermalChem/PelePhysicsSimulation/pele_simulation.txt", "w");
+    for (int i = 0; i < NUM_SPECIES; ++i) {
+      fprintf(fp, "%30.29e ", solution[i]);
     }
-
+    fprintf(fp, "%30.29e ", f_Tn+temperature);
+    fprintf(fp, "%30.29e ", Tnp1);
+    fclose(fp);
 
     // Finalize
     trans_parms.deallocate();

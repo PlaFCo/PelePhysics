@@ -28,14 +28,14 @@ def main():
     cantera_data = numpy.loadtxt(local_dir + "/CanteraSimulation/cantera_simulation.txt")
     pele_data = numpy.loadtxt(local_dir + "/PelePhysicsSimulation/pele_simulation.txt")
 
-    # sanity checks
+    # sanity check
     print("Sum(X[:]) equilibrium->",numpy.sum(equilibrium_data[:-2]))
     print("Sum(X[:]) cantera->",numpy.sum(cantera_data[:-2]))
     print("Sum(X[:]) pele->",numpy.sum(pele_data[:-2]))
 
     # plot molar fractions
-    plt.plot(cantera_data[:-2],marker='s',label="Cantera")
-    plt.plot(pele_data[:-2]/numpy.sum(pele_data[:-2]),marker='v',label="PelePhysics")
+    plt.plot(cantera_data[:-2],    marker='s',label="Cantera")
+    plt.plot(pele_data[:-2],       marker='v',label="PelePhysics")
     plt.plot(equilibrium_data[:-2],marker='+',label="Equilibrium")
     plt.xlabel("species id")
     plt.xticks(range(len(species_names)),species_names,rotation=90)
@@ -47,10 +47,10 @@ def main():
     plt.clf()
 
     # plot final and initial temperatures
-    plt.scatter(1.0,cantera_data[-2],marker='s',label="Cantera final")
-    plt.scatter(0.0,cantera_data[-1],marker='s',label="Cantera initial")
-    plt.scatter(1.0,pele_data[-2],   marker='v',label="PelePhysics final")
-    plt.scatter(0.0,pele_data[-1],   marker='v',label="PelePhysics initial")
+    plt.scatter(1.0,cantera_data[-2],    marker='s',label="Cantera final")
+    plt.scatter(0.0,cantera_data[-1],    marker='s',label="Cantera initial")
+    plt.scatter(1.0,pele_data[-2],       marker='v',label="PelePhysics final")
+    plt.scatter(0.0,pele_data[-1],       marker='v',label="PelePhysics initial")
     plt.scatter(1.0,equilibrium_data[-2],marker='+',label="Equilibrium final")
     plt.xlabel("a.u.")
     plt.ylabel("Temperature (K)")

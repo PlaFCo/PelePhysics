@@ -44,14 +44,14 @@ def main():
             Tnp1 = temperature + 0.5*f_Tn
             f_Tnm1 = f_Tn
 
-        if (abs(Tn-Tnm1) < 1.0e-6):
+        if (abs(f_Tn) < 1.0e-6):
             break
 
-    results = numpy.append(mechanism.X,mechanism.T)
+    results = numpy.append(mechanism.X,f_Tn+temperature)
     with open(local_dir + "/cantera_simulation.txt", 'w') as myfile:
         for variable in results:
-            myfile.write(str(variable) + ' ')
-        myfile.write(str(Tn) + ' ')
+            myfile.write(f'{variable:30.29e} ')
+        myfile.write(f'{Tn:30.29e} ')
 
 if __name__ == "__main__":
     main()

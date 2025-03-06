@@ -21,8 +21,8 @@ def main():
     results = numpy.append(mechanism.X,mechanism.T)
     with open(local_dir + "/cantera_equilibrium.txt", 'w') as myfile:
         for variable in results:
-            myfile.write(str(variable) + ' ')
-        myfile.write(str(0.0) + ' ')
+           myfile.write(f'{variable:30.29e} ')
+        myfile.write(f'{0.0:30.29e} ')
 
     with open(local_dir + "/species_names.txt", "w") as species_names_file:
         for  name in mechanism.species_names:
