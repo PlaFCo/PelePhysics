@@ -235,6 +235,7 @@ struct Fuego
     T = P * wbar / (R * Constants::RU);
   }
 
+#ifndef PELE_USE_NLTE
   AMREX_GPU_HOST_DEVICE
   AMREX_FORCE_INLINE
   static void RTY2WDOT(
@@ -251,6 +252,42 @@ struct Fuego
       WDOT[n] *= mw(n);
     }
   }
+#else
+  AMREX_GPU_HOST_DEVICE
+  AMREX_FORCE_INLINE
+  static void RTY2WDOT(
+    const amrex::Real R,
+    const amrex::Real T,
+    const amrex::Real Y[NUM_SPECIES],
+    amrex::Real WDOT[NUM_SPECIES])
+  {
+    amrex::Real C[NUM_SPECIES];
+    CKYTCR(R, T, Y, C);
+    CKWC(T,T, C, WDOT);
+
+    for (int n = 0; n < NUM_SPECIES; n++) {
+      WDOT[n] *= mw(n);
+    }
+  }
+#endif
+
+AMREX_GPU_HOST_DEVICE
+AMREX_FORCE_INLINE
+static void RTTY2WDOT(
+  const amrex::Real R,
+  const amrex::Real T,
+  const amrex::Real Te,
+  const amrex::Real Y[NUM_SPECIES],
+  amrex::Real WDOT[NUM_SPECIES])
+{
+  amrex::Real C[NUM_SPECIES];
+  CKYTCR(R, T, Y, C);
+  CKWC(T, Te, C, WDOT);
+
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    WDOT[n] *= mw(n);
+  }
+}
 
 #ifdef AMREX_USE_HIP
   // avoid register spillage on AMD, might be able to remove in future
@@ -268,8 +305,36 @@ struct Fuego
   {
     amrex::Real C[NUM_SPECIES];
     CKYTCR(R, T, Y, C);
+#ifndef PELE_USE_NLTE
     DWDOT(JAC, C, &T, &HP);
+#else
+    DWDOT(JAC, C, &T, &T, &HP);
+#endif
   }
+
+#ifdef PELE_USE_NLTE
+  // This is the version of RTTY2JAC that includes Te, which is used in NLTE
+  // calculations. It is not used in the standard Fuego EOS.
+#ifdef AMREX_USE_HIP
+  // avoid register spillage on AMD, might be able to remove in future
+  __attribute__((noinline))
+#else
+  AMREX_FORCE_INLINE
+#endif
+  AMREX_GPU_HOST_DEVICE static void
+  RTTY2JAC(
+    const amrex::Real R,
+    const amrex::Real T,
+    const amrex::Real Te,
+    const amrex::Real Y[NUM_SPECIES],
+    amrex::Real JAC[],
+    const int HP)
+  {
+    amrex::Real C[NUM_SPECIES];
+    CKYTCR(R, T, Y, C);
+    DWDOT(JAC, C, &T, &Te, &HP);
+  }
+#endif // PELE_USE_NLTE
 
   AMREX_GPU_HOST_DEVICE
   AMREX_FORCE_INLINE

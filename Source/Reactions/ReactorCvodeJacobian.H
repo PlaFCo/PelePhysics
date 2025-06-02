@@ -41,7 +41,17 @@ int cJac(
   N_Vector tmp1,
   N_Vector tmp2,
   N_Vector tmp3);
-
+#ifdef PELE_USE_NLTE
+int cJacTe(
+  amrex::Real tn,
+  N_Vector u,
+  N_Vector fy,
+  SUNMatrix J,
+  void* user_data,
+  N_Vector tmp1,
+  N_Vector tmp2,
+  N_Vector tmp3);
+#endif // PELE_USE_NLTE
 #ifndef AMREX_USE_GPU
 int cJac_sps(
   amrex::Real tn,
@@ -52,7 +62,17 @@ int cJac_sps(
   N_Vector tmp1,
   N_Vector tmp2,
   N_Vector tmp3);
-
+#ifdef PELE_USE_NLTE
+int cJacTe_sps(
+  amrex::Real tn,
+  N_Vector u,
+  N_Vector fy,
+  SUNMatrix J,
+  void* user_data,
+  N_Vector tmp1,
+  N_Vector tmp2,
+  N_Vector tmp3);
+#endif // PELE_USE_NLTE
 #ifdef PELE_USE_KLU
 int cJac_KLU(
   amrex::Real tn,
@@ -63,6 +83,17 @@ int cJac_KLU(
   N_Vector tmp1,
   N_Vector tmp2,
   N_Vector tmp3);
+#ifdef PELE_USE_NLTE
+int cJacTe_KLU(
+  amrex::Real tn,
+  N_Vector y,
+  N_Vector fy,
+  SUNMatrix J,
+  void* user_data,
+  N_Vector tmp1,
+  N_Vector tmp2,
+  N_Vector tmp3);
+#endif // PELE_USE_NLTE
 #endif
 #endif
 } // namespace pele::physics::reactions::cvode

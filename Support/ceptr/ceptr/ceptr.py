@@ -10,6 +10,35 @@ import cantera as ct
 
 import ceptr.converter as converter
 
+class electronTempRateData(ct.ExtensibleRateData):
+    __slots__ = ("T",)
+
+    def update(self, interface):
+        gas = interface.adjacent['gas'] # assume gas phase is adjacent to us
+        self.T = gas.T
+        return True
+
+
+@ct.extension(name="electron-temperature", data=electronTempRateData)
+class electronTempRate(ct.ExtensibleRate):
+    __slots__ = ("A", "b", "Ea")
+    def set_parameters(self, params, units):
+        self.A = params.convert_rate_coeff("A", units)
+        self.b = params["b"]
+        self.Ea = params.convert_activation_energy("Ea", "K")
+
+    def get_parameters(self, params):
+        params.set_quantity("A", self.A, self.conversion_units)
+        params["b"] = self.b
+        params.set_activation_energy("Ea", self.Ea, "K")
+
+    def validate(self, equation, soln):
+        if self.A < 0:
+            raise ValueError(f"Found negative 'A' for reaction {equation}")
+
+    def eval(self, data):
+        return self.A * data.T**self.b * exp(-self.Ea/data.T)
+# A custom interface rate & rate data type
 
 def parse_lst_file(lst):
     """Return mechanism paths give a file containing a list of mechanism files."""

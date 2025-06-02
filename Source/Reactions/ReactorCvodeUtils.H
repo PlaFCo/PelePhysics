@@ -175,7 +175,11 @@ fKernelComputeallAJ(
   eos.RTY2C(rho_pt, temp_pt, massfrac.arr, activity.arr);
 
   int consP = reactor_type == ReactorTypes::h_reactor_type;
+#ifdef PELE_USE_NLTE
+  DWDOT_SIMPLIFIED(Jmat_pt.arr, activity.arr, &temp_pt, &temp_pt, &consP);
+#else
   DWDOT_SIMPLIFIED(Jmat_pt.arr, activity.arr, &temp_pt, &consP);
+#endif //PELE_USE_NLTE
 
   int jac_offset = ncell * NNZ;
   amrex::Real* csr_jac_cell = csr_jac_d + jac_offset;

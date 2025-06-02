@@ -39,6 +39,26 @@ public:
 #endif
     ) = 0;
 
+#ifdef PELE_USE_NLTE
+  virtual int reactTe(
+    const amrex::Box& box,
+    amrex::Array4<amrex::Real> const& rY_in,
+    amrex::Array4<amrex::Real> const& rYsrc_in,
+    amrex::Array4<amrex::Real> const& T_in,
+    amrex::Array4<amrex::Real> const& Te_in,
+    amrex::Array4<amrex::Real> const& rEner_in,
+    amrex::Array4<amrex::Real> const& rEner_src_in,
+    amrex::Array4<amrex::Real> const& FC_in,
+    amrex::Array4<int> const& mask,
+    amrex::Real& dt_react,
+    amrex::Real& time
+#ifdef AMREX_USE_GPU
+    ,
+    amrex::gpuStream_t stream
+#endif
+    ) = 0;
+#endif // PELE_USE_NLTE
+
   virtual int react(
     amrex::Real* rY_in,
     amrex::Real* rYsrc_in,

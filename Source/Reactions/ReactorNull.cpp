@@ -66,8 +66,12 @@ ReactorNull::react(
       eos.REY2T(rho_loc, energy_loc, Y_loc, T_loc);
     } else if (captured_reactor_type == ReactorTypes::h_reactor_type) {
       eos.RHY2T(rho_loc, energy_loc, Y_loc, T_loc);
+#ifdef PELE_USE_NLTE
+    } else if (captured_reactor_type == ReactorTypes::hfa_reactor_type) {
+      eos.RHY2T(rho_loc, energy_loc, Y_loc, T_loc);
+#endif // PELE_USE_NLTE 
     } else {
-      amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
+      amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3.");
     }
     T_in(i, j, k, 0) = T_loc;
     FC_in(i, j, k, 0) = 0.0;

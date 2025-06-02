@@ -634,12 +634,34 @@ struct SRK
   {
     amrex::Real C[NUM_SPECIES];
     RTY2C(R, T, Y, C);
+#ifndef PELE_USE_NLTE
     CKWC(T, C, WDOT);
-
+#else
+    CKWC(T, T, C, WDOT);
+#endif
     for (int n = 0; n < NUM_SPECIES; n++) {
       WDOT[n] *= mw(n);
     }
   }
+
+#ifdef PELE_USE_NLTE
+  AMREX_GPU_HOST_DEVICE
+  AMREX_FORCE_INLINE
+  void RTTY2WDOT(
+    const amrex::Real R,
+    const amrex::Real T,
+    const amrex::Real Te,
+    const amrex::Real Y[NUM_SPECIES],
+    amrex::Real WDOT[NUM_SPECIES])
+  {
+    amrex::Real C[NUM_SPECIES];
+    RTY2C(R, T, Y, C);
+    CKWC(T, Te, C, WDOT);
+    for (int n = 0; n < NUM_SPECIES; n++) {
+      WDOT[n] *= mw(n);
+    }
+  }
+#endif
 
   AMREX_GPU_HOST_DEVICE
   AMREX_FORCE_INLINE

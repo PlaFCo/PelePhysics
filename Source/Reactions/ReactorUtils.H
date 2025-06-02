@@ -213,10 +213,82 @@ box_flatten(
     eos.REY2T(rho, Enrg_loc, mass_frac, temp);
   } else if (reactor_type == ReactorTypes::h_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+  } else if (reactor_type == ReactorTypes::hfa_reactor_type) {
+    eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
   } else {
-    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
+    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3.");
   }
   y_vect[vec_index<OrderType>(NUM_SPECIES, icell, ncells)] = temp;
+}
+
+
+template <typename OrderType>
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE void
+box_flattente(
+  const int icell,
+  const int i,
+  const int j,
+  const int k,
+  const int ncells,
+  const int reactor_type,
+  const bool clean_init_massfrac,
+  amrex::Array4<const amrex::Real> const& rhoY,
+  amrex::Array4<const amrex::Real> const& frcExt,
+  amrex::Array4<const amrex::Real> const& temperature,
+  amrex::Array4<const amrex::Real> const& temperature_e,
+  amrex::Array4<const amrex::Real> const& rhoE,
+  amrex::Array4<const amrex::Real> const& frcEExt,
+  amrex::Real* y_vect,
+  amrex::Real* src_vect,
+  amrex::Real* vect_energy,
+  amrex::Real* src_vect_energy)
+{
+  amrex::Real mass_frac[NUM_SPECIES];
+  amrex::Real rho = 0.0;
+  amrex::Real rho_old = 0.0;
+  if (clean_init_massfrac) {
+    for (int n = 0; n < NUM_SPECIES; n++) {
+      rho_old += rhoY(i, j, k, n);
+    }
+  }
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    const int idx = vec_index<OrderType>(n, icell, ncells);
+    const int idx2 = spec_index<OrderType>(n, icell, ncells);
+    const amrex::Real rhoYn =
+      (clean_init_massfrac)
+        ? amrex::min<amrex::Real>(
+            amrex::max<amrex::Real>(0.0, rhoY(i, j, k, n)), rho_old)
+        : rhoY(i, j, k, n);
+    y_vect[idx] = rhoYn;
+    src_vect[idx2] = frcExt(i, j, k, n);
+    rho += rhoYn;
+    mass_frac[n] = rhoYn;
+  }
+  const amrex::Real rho_inv = 1.0 / rho;
+  for (amrex::Real& Yn : mass_frac) {
+    Yn *= rho_inv;
+  }
+
+  amrex::Real temp = temperature(i, j, k, 0);
+  amrex::Real tempe = temperature_e(i, j, k, 0);
+  std::cout << "box_flatten  tempe: " << tempe << std::endl;
+  vect_energy[icell] = rhoE(i, j, k, 0);
+  src_vect_energy[icell] = frcEExt(i, j, k, 0);
+
+  amrex::Real Enrg_loc = vect_energy[icell] * rho_inv;
+  auto eos = pele::physics::PhysicsType::eos();
+  if (reactor_type == ReactorTypes::e_reactor_type) {
+    eos.REY2T(rho, Enrg_loc, mass_frac, temp);
+  } else if (reactor_type == ReactorTypes::h_reactor_type) {
+    eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+  } else if (reactor_type == ReactorTypes::hfa_reactor_type) {
+    eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+  } else {
+    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3.");
+  }
+  y_vect[vec_index<OrderType>(NUM_SPECIES, icell, ncells)] = temp;
+  y_vect[vec_index<OrderType>(NUM_SPECIES+1, icell, ncells)] = tempe;
+  std::cout << "yvect " << y_vect[vec_index<OrderType>(NUM_SPECIES+1, icell, ncells)] << std::endl;
 }
 
 template <typename OrderType>
@@ -283,10 +355,89 @@ box_unflatten(
     eos.REY2T(rho, Enrg_loc, mass_frac, temp);
   } else if (reactor_type == ReactorTypes::h_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+  } else if (reactor_type == ReactorTypes::hfa_reactor_type) {
+    eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
   } else {
     amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
   }
   temperature(i, j, k, 0) = temp;
+  FC_in(i, j, k, 0) = static_cast<amrex::Real>(FCunt);
+}
+
+
+template <typename OrderType>
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE void
+box_unflattente(
+  const int icell,
+  const int i,
+  const int j,
+  const int k,
+  const int ncells,
+  const int reactor_type,
+  const bool clean_init_massfrac,
+  amrex::Array4<amrex::Real> const& rhoY,
+  amrex::Array4<amrex::Real> const& temperature,
+  amrex::Array4<amrex::Real> const& temperature_e,
+  amrex::Array4<amrex::Real> const& rhoE,
+  amrex::Array4<amrex::Real> const& frcEExt,
+  amrex::Array4<amrex::Real> const& FC_in,
+  const amrex::Real* y_vect,
+  const amrex::Real* vect_energy,
+  long int const& FCunt,
+  amrex::Real dt)
+{
+  // Get the old Ys & rho as well as the clipped version
+  // that went into CVODE
+  amrex::Real rhoY_oldclipped[NUM_SPECIES];
+  amrex::Real rho_old = 0.0;
+  amrex::Real rho_oldclipped = 0.0;
+  if (clean_init_massfrac) {
+    for (int n = 0; n < NUM_SPECIES; n++) {
+      rho_old += rhoY(i, j, k, n);
+    }
+    for (int n = 0; n < NUM_SPECIES; n++) {
+      rhoY_oldclipped[n] = amrex::min<amrex::Real>(
+        amrex::max<amrex::Real>(0.0, rhoY(i, j, k, n)), rho_old);
+      rho_oldclipped += rhoY_oldclipped[n];
+    }
+  }
+
+  amrex::Real mass_frac[NUM_SPECIES];
+  amrex::Real rho = 0.0;
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    // With clean_init_massfrac, new rhoY equal old one + CVODE increment
+    const amrex::Real rhoYn =
+      (clean_init_massfrac)
+        ? rhoY(i, j, k, n) + (y_vect[vec_index<OrderType>(n, icell, ncells)] -
+                              rhoY_oldclipped[n]) *
+                               rho_old / rho_oldclipped
+        : y_vect[vec_index<OrderType>(n, icell, ncells)];
+    rhoY(i, j, k, n) = rhoYn;
+    rho += rhoYn;
+    mass_frac[n] = rhoYn;
+  }
+  const amrex::Real rho_inv = 1.0 / rho;
+  for (amrex::Real& Yn : mass_frac) {
+    Yn *= rho_inv;
+  }
+
+  amrex::Real temp = y_vect[vec_index<OrderType>(NUM_SPECIES, icell, ncells)];
+  amrex::Real tempe = y_vect[vec_index<OrderType>(NUM_SPECIES+1, icell, ncells)];
+  rhoE(i, j, k, 0) = vect_energy[icell] + dt * frcEExt(i, j, k, 0);
+
+  amrex::Real Enrg_loc = rhoE(i, j, k, 0) * rho_inv;
+  auto eos = pele::physics::PhysicsType::eos();
+  if (reactor_type == ReactorTypes::e_reactor_type) {
+    eos.REY2T(rho, Enrg_loc, mass_frac, temp);
+  } else if (reactor_type == ReactorTypes::h_reactor_type) {
+    eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+  } else if (reactor_type == ReactorTypes::hfa_reactor_type) {
+    eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+  } else {
+    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
+  }
+  temperature(i, j, k, 0) = temp;
+  temperature_e(i, j, k, 0) = tempe;
   FC_in(i, j, k, 0) = static_cast<amrex::Real>(FCunt);
 }
 
@@ -381,27 +532,40 @@ fKernelSpec(
   const amrex::Real nrg_pt =
     (rhoe_init[icell] + rhoesrc_ext[icell] * dt_save) * rho_pt_inv;
 
-  amrex::Real temp_pt =
-    yvec_d[vec_index<OrderType>(NUM_SPECIES, icell, ncells)];
-
+    
   amrex::Real Cv_pt = 1.0;
   amrex::GpuArray<amrex::Real, NUM_SPECIES> ei_pt = {0.0};
+  amrex::GpuArray<amrex::Real, NUM_SPECIES> cdots_pt = {0.0};
 #ifndef USE_MANIFOLD_EOS
   if (reactor_type == ReactorTypes::e_reactor_type) {
-    eos.REY2T(rho_pt, nrg_pt, massfrac.arr, temp_pt);
-    eos.RTY2Ei(rho_pt, temp_pt, massfrac.arr, ei_pt.arr);
-    eos.RTY2Cv(rho_pt, temp_pt, massfrac.arr, Cv_pt);
+      amrex::Real temp_pt =
+      yvec_d[vec_index<OrderType>(NUM_SPECIES, icell, ncells)];
+      eos.REY2T(rho_pt, nrg_pt, massfrac.arr, temp_pt);
+      eos.RTY2Ei(rho_pt, temp_pt, massfrac.arr, ei_pt.arr);
+      eos.RTY2Cv(rho_pt, temp_pt, massfrac.arr, Cv_pt);
+      eos.RTY2WDOT(rho_pt, temp_pt, massfrac.arr, cdots_pt.arr);
   } else if (reactor_type == ReactorTypes::h_reactor_type) {
-    eos.RHY2T(rho_pt, nrg_pt, massfrac.arr, temp_pt);
-    eos.RTY2Hi(rho_pt, temp_pt, massfrac.arr, ei_pt.arr);
-    eos.RTY2Cp(rho_pt, temp_pt, massfrac.arr, Cv_pt);
+      amrex::Real temp_pt =
+      yvec_d[vec_index<OrderType>(NUM_SPECIES, icell, ncells)];
+      eos.RHY2T(rho_pt, nrg_pt, massfrac.arr, temp_pt);
+      eos.RTY2Hi(rho_pt, temp_pt, massfrac.arr, ei_pt.arr);
+      eos.RTY2Cp(rho_pt, temp_pt, massfrac.arr, Cv_pt);
+      eos.RTY2WDOT(rho_pt, temp_pt, massfrac.arr, cdots_pt.arr);
+  }  else if (reactor_type == ReactorTypes::hfa_reactor_type) {
+      amrex::Real temp_pt =
+      yvec_d[vec_index<OrderType>(NUM_SPECIES, icell, ncells)];
+      amrex::Real tempe_pt =
+      yvec_d[vec_index<OrderType>(NUM_SPECIES + 1, icell, ncells)];
+      std::cout << "tempe_pt " << tempe_pt << std::endl;
+      eos.RHY2T(rho_pt, nrg_pt, massfrac.arr, temp_pt);
+      eos.RTY2Hi(rho_pt, temp_pt, massfrac.arr, ei_pt.arr);
+      eos.RTY2Cp(rho_pt, temp_pt, massfrac.arr, Cv_pt);
+      eos.RTTY2WDOT(rho_pt, temp_pt, tempe_pt, massfrac.arr, cdots_pt.arr);
+      ydot_d[vec_index<OrderType>(NUM_SPECIES + 1, icell, ncells)] = 0.0;
   } else {
-    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
+    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3.");
   }
 #endif
-
-  amrex::GpuArray<amrex::Real, NUM_SPECIES> cdots_pt = {0.0};
-  eos.RTY2WDOT(rho_pt, temp_pt, massfrac.arr, cdots_pt.arr);
 
   amrex::Real rhoesrc = rhoesrc_ext[icell];
   for (int n = 0; n < NUM_SPECIES; n++) {
