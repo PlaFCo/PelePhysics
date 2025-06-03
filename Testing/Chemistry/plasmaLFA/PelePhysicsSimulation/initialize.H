@@ -8,7 +8,7 @@
 #include <PelePhysics.H>
 
 
-amrex::Real efield_func(
+amrex::Real redEfield_func(
   const amrex::Real x,
   const amrex::Real y,
   const amrex::Real z)
@@ -18,29 +18,66 @@ amrex::Real efield_func(
   return std::cos(x)*std::cos(y);
 }
 
-amrex::Real efield_to_tempe(const amrex::Real efield)
+
+// Nitrogen
+amrex::Real redEfield_to_tempe(const amrex::Real redEfield)
 {
   // Convert electric field to electron temperature
-  // This is a placeholder; replace with the actual conversion
-  return efield * 1e3; // Example conversion factor
+  amrex::Real redEfield2 = redEfield*redEfield;
+  amrex::Real redEfield3 = redEfield2 * redEfield;
+  amrex::Real redEfield4 = redEfield3 * redEfield;
+  amrex::Real redEfield5 = redEfield4 * redEfield;
+  amrex::Real redEfield6 = redEfield5 * redEfield;
+  amrex::Real redEfield7 = redEfield6 * redEfield;
+  amrex::Real coeff[8] = { 2.80762643e-09, -3.44166229e-07,  1.72107619e-05, -4.52557319e-04,
+  6.73930552e-03, -5.73558598e-02,  2.73334591e-01,  1.44603888e-02};
+  amrex::Real tempe = coeff[0] + coeff[1]*redEfield + coeff[2]*redEfield2 + coeff[3]*redEfield3
+    + coeff[4]*redEfield4 + coeff[5]*redEfield5 + coeff[6]*redEfield6 + coeff[7]*redEfield7;
+  return tempe // Example conversion factor
 }
 
-amrex::Real tempe_to_efield(const amrex::Real tempe)
+amrex::Real tempe_to_redEfield(const amrex::Real tempe)
 {
   // Convert electric field to electron temperature
-  // This is a placeholder; replace with the actual conversion
-  amrex::Real factor = 1.0/efield_to_tempe(1.0); // If linear
-  return factor * tempe; // Example conversion factor
+  amrex::Real tempe2 = tempe*tempe;
+  amrex::Real tempe3 = tempe2 * tempe;
+  amrex::Real tempe4 = tempe3 * tempe;
+  amrex::Real tempe5 = tempe4 * tempe;
+  amrex::Real tempe6 = tempe5 * tempe;
+  amrex::Real tempe7 = tempe6 * tempe;
+  amrex::Real coeff[8] = { 2.50105883e+04, -5.44366566e+04,  4.71853693e+04, -2.05715135e+04,
+  4.73687754e+03, -5.51369499e+02, 3.27139044e+01, -5.39064133e-01};
+  return coeff[0] + coeff[1]*tempe + coeff[2]*tempe2 + coeff[3]*tempe3
+    + coeff[4]*tempe4 + coeff[5]*tempe5 + coeff[6]*tempe6 + coeff[7]*tempe7;
 }
 
-amrex::Real efield_to_hsrc(
-  const amrex::Real efield,
+amrex::Real electron_mobilityN2(
+  amrex::Real redEfield)
+  {
+    amrex::Real log_redEfield = std::log10(redEfield);
+    amrex::Real log_redEfield2 = log_redEfield * log_redEfield;
+    amrex::Real log_redEfield3 = log_redEfield2 * log_redEfield;
+    amrex::Real log_redEfield4 = log_redEfield3 * log_redEfield;
+    amrex::Real log_redEfield5 = log_redEfield4 * log_redEfield;
+    amrex::Real log_redEfield6 = log_redEfield5 * log_redEfield;
+    amrex::Real log_redEfield7 = log_redEfield6 * log_redEfield;
+    amrex::Real coeff[8] = {-5.07985187e+23,  3.76472668e+22,  4.04491067e+24, -1.87198611e+24,
+ -9.29756879e+24,  1.04424317e+25, -5.18591049e+24,  4.08807283e+24};
+    return coeff[0] + coeff[1]*log_redEfield + coeff[2]*log_redEfield2 + coeff[3]*log_redEfield3
+      + coeff[4]*log_redEfield4 + coeff[5]*log_redEfield5 + coeff[6]*log_redEfield6 + coeff[7]*log_redEfield7;
+  }
+
+amrex::Real redEfield_to_hsrc(
+  const amrex::Real redEfield,
   const amrex::Real rhoYe)
 {
   // Convert electric field to energy source term
   // This is a placeholder; replace with the actual conversion
+  amrex::Real ne = rhoYe / 9.109e-31; // Convert mass density to number density
   const amrex::Real factor = 1e-6; // Example conversion factor
-  return  rhoYe * efield*efield * factor;
+  const amrex::Real C = 1.602e-19; // Elementary charge in Coulombs
+  amrex::Real redMob = electron_mobilityN2(redEfield);
+  return  ne * redEfield*redEfield * redMob * C; // J m^-3 s^-1
 }
 
 AMREX_GPU_HOST_DEVICE
@@ -155,9 +192,9 @@ initialize_solution2t(
   rhoY(i, j, k, NUM_SPECIES) = temp;
   rhoE(i, j, k, 0) = energy * density;
 
-  amrex::Real efield_value = efield_func(x, y, z);
-  tempe = efield_to_tempe(efield_value);
-  amrex::Real joule_source = efield_to_hsrc(efield_value, density * Y[E_ID]);
+  amrex::Real redEfield_value = redEfield_func(x, y, z);
+  tempe = redEfield_to_tempe(redEfield_value);
+  amrex::Real joule_source = redEfield_to_hsrc(redEfield_value, density * Y[E_ID]);
   
   rhoE(i, j, k, 1) = tempe;
   frcEExt(i, j, k, 0) = joule_source;
