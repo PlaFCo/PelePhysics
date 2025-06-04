@@ -269,7 +269,6 @@ struct Fuego
       WDOT[n] *= mw(n);
     }
   }
-#endif
 
 AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
@@ -288,6 +287,7 @@ static void RTTY2WDOT(
     WDOT[n] *= mw(n);
   }
 }
+#endif
 
 #ifdef AMREX_USE_HIP
   // avoid register spillage on AMD, might be able to remove in future

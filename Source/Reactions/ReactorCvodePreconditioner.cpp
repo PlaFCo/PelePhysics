@@ -183,7 +183,7 @@ Precond(
   auto* udata = static_cast<CVODEUserData*>(user_data);
   auto reactor_type = udata->reactor_type;
   auto* P = udata->P;
-  auto* Jbd = udata->Jbd;
+  auto* Jbd = udata->Jbd; // FIXME when NTLE
   auto* pivot = udata->pivot;
 
   // MW CGS
@@ -306,10 +306,10 @@ Precond_sparse(
   CVODEUserData* udata = static_cast<CVODEUserData*>(user_data);
   auto ncells = udata->ncells;
   auto reactor_type = udata->reactor_type;
-  auto JSPSmat = udata->JSPSmat;
+  auto JSPSmat = udata->JSPSmat;   // FIXME when NTLE
   auto colPtrs = udata->colPtrs;
   auto rowVals = udata->rowVals;
-  auto Jdata = udata->Jdata;
+  auto Jdata = udata->Jdata;       // FIXME when NTLE
   auto Symbolic = udata->Symbolic;
   auto Numeric = udata->Numeric;
   auto Common = udata->Common;
@@ -485,10 +485,10 @@ Precond_custom(
   auto* udata = static_cast<CVODEUserData*>(user_data);
   auto ncells = udata->ncells;
   auto reactor_type = udata->reactor_type;
-  auto* JSPSmat = udata->JSPSmat;
+  auto* JSPSmat = udata->JSPSmat;   // FIXME when NTLE
   auto* rowPtrs = udata->rowPtrs;
   auto* colVals = udata->colVals;
-  auto* Jdata = udata->Jdata;
+  auto* Jdata = udata->Jdata;      // FIXME when NTLE
 
   // MW CGS
   amrex::Real mw[NUM_SPECIES] = {0.0};

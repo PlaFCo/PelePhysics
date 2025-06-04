@@ -1606,7 +1606,7 @@ aJacobian_precond(
 {
 
 #if defined(PELE_COMPILE_AJACOBIAN) || !defined(AMREX_USE_HIP)
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 16; i++) { // FIXME Jac should be (nbspecies+2)**2 indices are off
     J[i] = 0.0;
   }
 
@@ -1794,6 +1794,7 @@ DWDOT_SIMPLIFIED(
 
   // dwdot[k]/dT
   // dTdot/d[X]
+  // FIXME indices are off
   for (int k = 0; k < 3; k++) {
     J[12 + k] *= 1.e-6;
     J[k * 4 + 3] *= 1.e6;
@@ -1811,7 +1812,7 @@ aJacobian(
 {
 
 #if defined(PELE_COMPILE_AJACOBIAN) || !defined(AMREX_USE_HIP)
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 16; i++) { // FIXME Jac should be (nbspecies+2)**2 indices are off
     J[i] = 0.0;
   }
 
@@ -2014,6 +2015,7 @@ DWDOT(
 
   // dwdot[k]/dT
   // dTdot/d[X]
+  // FIXME indices are off
   for (int k = 0; k < 3; k++) {
     J[12 + k] *= 1.e-6;
     J[k * 4 + 3] *= 1.e6;

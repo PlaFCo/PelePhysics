@@ -153,7 +153,7 @@ cJac(
 
 #ifdef PELE_USE_NLTE
 int
-cJacTe(
+cJacTe(                    // FIXME looks like a copy from cJac, but need Te
   amrex::Real /* tn */,
   N_Vector u,
   N_Vector /* fu */,
@@ -312,7 +312,7 @@ cJac_sps(
 #ifdef PELE_USE_NLTE
 // Analytical SPARSE CSR Jacobian evaluation
 int
-cJacTe_sps(
+cJacTe_sps(                    // FIXME looks like a copy from cJac, but need Te
   amrex::Real /* tn */,
   N_Vector u,
   N_Vector /* fu */,
@@ -343,7 +343,7 @@ cJacTe_sps(
   }
   rowPtrs_tmp[0] = (sunindextype)rowPtrs_c[0];
   // Fixed rowPtrs
-  for (int i = 0; i < ncells * (NUM_SPECIES + 1); i++) {
+  for (int i = 0; i < ncells * (NUM_SPECIES + 2); i++) {
     rowPtrs_tmp[i + 1] = (sunindextype)rowPtrs_c[i + 1];
   }
 
@@ -352,7 +352,7 @@ cJacTe_sps(
   amrex::Real temp_save_lcl = 0.0;
   for (int tid = 0; tid < ncells; tid++) {
     // Offset in case several cells
-    int offset = tid * (NUM_SPECIES + 1);
+    int offset = tid * (NUM_SPECIES + 2);
     int offset_J = tid * NNZ;
     // rho MKS
     amrex::Real rho = 0.0;
@@ -366,24 +366,25 @@ cJacTe_sps(
       massfrac[i] = ydata[offset + i] * rhoinv;
     }
     amrex::Real temp = ydata[offset + NUM_SPECIES];
+    amrex::Real tempE = ydata[offset + NUM_SPECIES + 1];
 
     // Do we recompute Jac ?
-    amrex::Real Jmat_tmp[(NUM_SPECIES + 1) * (NUM_SPECIES + 1)] = {0.0};
+    amrex::Real Jmat_tmp[(NUM_SPECIES + 2) * (NUM_SPECIES + 2)] = {0.0};
     if (fabs(temp - temp_save_lcl) > 1.0) {
       const int consP =
         static_cast<int>(reactor_type == ReactorTypes::h_reactor_type);
       auto eos = pele::physics::PhysicsType::eos();
-      eos.RTY2JAC(rho, temp, massfrac, Jmat_tmp, consP);
+      eos.RTTY2JAC(rho, temp, tempE, massfrac, Jmat_tmp, consP);
       temp_save_lcl = temp;
-      // rescale
+      // rescale FIXME check that indices are OK here for NLTE
       for (int i = 0; i < NUM_SPECIES; i++) {
         for (int k = 0; k < NUM_SPECIES; k++) {
-          Jmat_tmp[k * (NUM_SPECIES + 1) + i] *= mw(i) * imw(k);
+          Jmat_tmp[k * (NUM_SPECIES + 2) + i] *= mw(i) * imw(k);
         }
-        Jmat_tmp[i * (NUM_SPECIES + 1) + NUM_SPECIES] *= imw(i);
+        Jmat_tmp[i * (NUM_SPECIES + 2) + NUM_SPECIES] *= imw(i);
       }
       for (int i = 0; i < NUM_SPECIES; i++) {
-        Jmat_tmp[NUM_SPECIES * (NUM_SPECIES + 1) + i] *= mw(i);
+        Jmat_tmp[NUM_SPECIES * (NUM_SPECIES + 2) + i] *= mw(i);
       }
     }
     // Go from Dense to Sparse
@@ -392,7 +393,7 @@ cJacTe_sps(
       for (int j = 0; j < nbVals; j++) {
         int idx = colVals_c[rowPtrs_c[i - 1] + j];
         Jdata[offset_J + rowPtrs_c[i - 1] + j] =
-          Jmat_tmp[(i - 1) + (NUM_SPECIES + 1) * idx];
+          Jmat_tmp[(i - 1) + (NUM_SPECIES + 2) * idx];
       }
     }
   }
@@ -492,7 +493,7 @@ cJac_KLU(
 }
 #ifdef PELE_USE_NLTE
 int
-cJacTe_KLU(
+cJacTe_KLU(                    // FIXME looks like a copy from cJac, but need Te
   amrex::Real /* tn */,
   N_Vector u,
   N_Vector /* fu */,
@@ -524,7 +525,7 @@ cJacTe_KLU(
   }
   // Fixed colPtrs
   colptrs_tmp[0] = colPtrs[0][0];
-  for (int i = 0; i < ncells * (NUM_SPECIES + 1); i++) {
+  for (int i = 0; i < ncells * (NUM_SPECIES + 2); i++) {  // FIME NUM_SPECIES + 2
     colptrs_tmp[i + 1] = colPtrs[0][i + 1];
   }
 
@@ -532,7 +533,7 @@ cJacTe_KLU(
   amrex::Real temp_save_lcl = 0.0;
   for (int tid = 0; tid < ncells; tid++) {
     // Offset in case several cells
-    int offset = tid * (NUM_SPECIES + 1);
+    int offset = tid * (NUM_SPECIES + 2);    // FIME NUM_SPECIES + 2
     // rho
     amrex::Real rho = 0.0;
     for (int i = 0; i < NUM_SPECIES; i++) {
@@ -545,33 +546,34 @@ cJacTe_KLU(
       massfrac[i] = ydata[offset + i] * rhoinv;
     }
     amrex::Real temp = ydata[offset + NUM_SPECIES];
+    amrex::Real tempE = ydata[offset + NUM_SPECIES + 1];
 
     // Do we recompute Jac ?
-    amrex::Real Jmat_tmp[(NUM_SPECIES + 1) * (NUM_SPECIES + 1)] = {0.0};
+    amrex::Real Jmat_tmp[(NUM_SPECIES + 2) * (NUM_SPECIES + 2)] = {0.0};
     if (fabs(temp - temp_save_lcl) > 1.0) {
       const int consP = reactor_type == ReactorTypes::h_reactor_type;
       auto eos = pele::physics::PhysicsType::eos();
-      eos.RTY2JAC(rho, temp, massfrac, Jmat_tmp, consP);
+      eos.RTTY2JAC(rho, temp, tempE, massfrac, Jmat_tmp, consP);
       temp_save_lcl = temp;
       // rescale
       for (int i = 0; i < NUM_SPECIES; i++) {
         for (int k = 0; k < NUM_SPECIES; k++) {
-          Jmat_tmp[k * (NUM_SPECIES + 1) + i] *= mw(i) * imw(k);
+          Jmat_tmp[k * (NUM_SPECIES + 2) + i] *= mw(i) * imw(k);
         }
-        Jmat_tmp[i * (NUM_SPECIES + 1) + NUM_SPECIES] *= imw(i);
+        Jmat_tmp[i * (NUM_SPECIES + 2) + NUM_SPECIES] *= imw(i);
       }
       for (int i = 0; i < NUM_SPECIES; i++) {
-        Jmat_tmp[NUM_SPECIES * (NUM_SPECIES + 1) + i] *= mw(i);
+        Jmat_tmp[NUM_SPECIES * (NUM_SPECIES + 2) + i] *= mw(i);  // FIXME not sure about the NUM_SPECIES + 2 here also may need to fix dTe row
       }
     }
     // Go from Dense to Sparse
     BL_PROFILE_VAR("DensetoSps", DtoS);
-    for (int i = 1; i < NUM_SPECIES + 2; i++) {
+    for (int i = 1; i < NUM_SPECIES + 3; i++) {
       int nbVals = colPtrs[0][i] - colPtrs[0][i - 1];
       for (int j = 0; j < nbVals; j++) {
         int idx = rowVals[0][colPtrs[0][i - 1] + j];
         Jdata[colPtrs[0][offset + i - 1] + j] =
-          Jmat_tmp[(i - 1) * (NUM_SPECIES + 1) + idx];
+          Jmat_tmp[(i - 1) * (NUM_SPECIES + 2) + idx];
       }
     }
     BL_PROFILE_VAR_STOP(DtoS);
