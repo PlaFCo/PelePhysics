@@ -147,14 +147,23 @@ fKernelComputeallAJ(
   amrex::Real* csr_val_arg)
 {
   CVODEUserData* udata = static_cast<CVODEUserData*>(user_data);
+#ifdef PELE_USE_NLTE
+  int neqs = NUM_SPECIES + 2; // 2 temp
+#else
   int neqs = NUM_SPECIES + 1;
+#endif //PELE_USE_NLTE
   auto csr_jac_d = udata->csr_jac_d;
   auto csr_row_count_d = udata->csr_row_count_d;
   auto csr_col_index_d = udata->csr_col_index_d;
 
   amrex::GpuArray<amrex::Real, NUM_SPECIES> activity{0.0};
+#ifdef PELE_USE_NLTE
+  amrex::GpuArray<amrex::Real, (NUM_SPECIES + 2) * (NUM_SPECIES + 2)> Jmat_pt{
+    0.0};
+#else
   amrex::GpuArray<amrex::Real, (NUM_SPECIES + 1) * (NUM_SPECIES + 1)> Jmat_pt{
     0.0};
+#endif //PELE_USE_NLTE
 
   int u_offset = ncell * neqs;
   amrex::Real* u_curr = u_d + u_offset;
@@ -170,13 +179,16 @@ fKernelComputeallAJ(
   }
 
   amrex::Real temp_pt = u_curr[NUM_SPECIES];
+#ifdef PELE_USE_NLTE
+  amrex::Real tempE_pt = u_curr[NUM_SPECIES + 1];
+#endif //PELE_USE_NLTE
 
   auto eos = pele::physics::PhysicsType::eos();
   eos.RTY2C(rho_pt, temp_pt, massfrac.arr, activity.arr);
 
   int consP = reactor_type == ReactorTypes::h_reactor_type;
 #ifdef PELE_USE_NLTE
-  DWDOT_SIMPLIFIED(Jmat_pt.arr, activity.arr, &temp_pt, &temp_pt, &consP);
+  DWDOT_SIMPLIFIED(Jmat_pt.arr, activity.arr, &temp_pt, &tempE_pt, &consP);
 #else
   DWDOT_SIMPLIFIED(Jmat_pt.arr, activity.arr, &temp_pt, &consP);
 #endif //PELE_USE_NLTE
@@ -191,7 +203,7 @@ fKernelComputeallAJ(
     Jmat_pt[i * neqs + NUM_SPECIES] *= imw(i);
     Jmat_pt[NUM_SPECIES * neqs + i] *= mw(i);
   }
-  for (int i = 1; i < NUM_SPECIES + 2; i++) {
+  for (int i = 1; i < NUM_SPECIES + 2; i++) {  // FIXME NLTE cannot remember at this time what the Jac for the Newton is exactly for T, but need to include Te
     int nbVals = csr_row_count_d[i] - csr_row_count_d[i - 1];
     for (int j = 0; j < nbVals; j++) {
       int idx = csr_col_index_d[csr_row_count_d[i - 1] + j - 1] - 1;
@@ -230,7 +242,7 @@ fKernelComputeAJsys(
   amrex::Real* csr_jac_cell = csr_jac_d + jac_offset;
   amrex::Real* csr_val_cell = csr_val_arg + jac_offset;
 
-  for (int i = 1; i < NUM_SPECIES + 2; i++) {
+  for (int i = 1; i < NUM_SPECIES + 2; i++) { //FIXME so we include Te for PELE_USE_NLTE
     int nbVals = csr_row_count_d[i] - csr_row_count_d[i - 1];
     for (int j = 0; j < nbVals; j++) {
       int idx = csr_col_index_d[csr_row_count_d[i - 1] + j - 1] - 1;
@@ -257,7 +269,11 @@ fKernelComputeAJchem(
   amrex::Real* u_d,
   amrex::Real* Jdata)
 {
+#ifdef PELE_USE_NLTE
+  const int neqs = NUM_SPECIES + 2;
+#else
   const int neqs = NUM_SPECIES + 1;
+#endif
   int u_offset = icell * neqs;
   amrex::Real* u_curr = u_d + u_offset;
 
@@ -271,11 +287,18 @@ fKernelComputeAJchem(
     massfrac[n] = u_curr[n] / rho_pt;
   }
   amrex::Real temp_pt = u_curr[NUM_SPECIES];
+#ifdef PELE_USE_NLTE
+  amrex::Real tempE_pt = u_curr[NUM_SPECIES + 1];
+#endif
 
   const int consP = reactor_type == ReactorTypes::h_reactor_type;
   amrex::GpuArray<amrex::Real, neqs * neqs> Jmat_pt = {0.0};
   auto eos = pele::physics::PhysicsType::eos();
+#ifdef PELE_USE_NLTE
+  eos.RTTY2JAC(rho_pt, temp_pt, tempE_pt, massfrac.arr, Jmat_pt.arr, consP);
+#else
   eos.RTY2JAC(rho_pt, temp_pt, massfrac.arr, Jmat_pt.arr, consP);
+#endif
 
   // Scale Jacobian
   for (int i = 0; i < NUM_SPECIES; i++) {
@@ -290,7 +313,7 @@ fKernelComputeAJchem(
   int jac_offset = icell * NNZ;
   amrex::Real* Jcurr = Jdata + jac_offset;
 
-  for (int i = 1; i < NUM_SPECIES + 2; i++) {
+  for (int i = 1; i < NUM_SPECIES + 2; i++) { //FIXME so we include Te for PELE_USE_NLTE
     int nbVals = csr_row_count_d[i] - csr_row_count_d[i - 1];
     for (int j = 0; j < nbVals; j++) {
       int idx_cell = csr_col_index_d[csr_row_count_d[i - 1] + j];

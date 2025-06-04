@@ -1564,7 +1564,7 @@ aJacobian_precond(
 {
 
 #if defined(PELE_COMPILE_AJACOBIAN) || !defined(AMREX_USE_HIP)
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 16; i++) { // FIXME Jac should be (nbspecies+2)**2 indices are off
     J[i] = 0.0;
   }
 
@@ -1635,6 +1635,10 @@ aJacobian_precond(
   J[12] -= 0.0; //dqdT; // dwdot[N2]/dT
   J[13] += 0.0; //dqdT; // dwdot[N2p]/dT
   J[14] += 0.0; //dqdT; // dwdot[E]/dT
+  // d()/dTe
+  //J[20] -= 0.0; //dqdT; // dwdot[N2]/dTe
+  //J[21] -= 0.0; //dqdT; // dwdot[N2p]/dTe
+  //J[22] -= 0.0; //dqdT; // dwdot[E]/dTe
 
   // reaction 1: E + N2p + M <=> E + N2 + M
   // a third-body and non-pressure-fall-off reaction
@@ -1726,6 +1730,7 @@ DWDOT_SIMPLIFIED(
 
   // dwdot[k]/dT
   // dTdot/d[X]
+  // FIXME indices are off
   for (int k = 0; k < 3; k++) {
     J[12 + k] *= 1.e-6;
     J[k * 4 + 3] *= 1.e6;
@@ -1739,7 +1744,7 @@ aJacobian(
 {
 
 #if defined(PELE_COMPILE_AJACOBIAN) || !defined(AMREX_USE_HIP)
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 16; i++) { // FIXME Jac should be (nbspecies+2)**2 indices are off
     J[i] = 0.0;
   }
 
@@ -1810,6 +1815,10 @@ aJacobian(
   J[12] -= 0.0; //dqdT; // dwdot[N2]/dT
   J[13] += 0.0; //dqdT; // dwdot[N2p]/dT
   J[14] += 0.0; //dqdT; // dwdot[E]/dT
+  // d()/dTe
+  //J[20] -= 0.0; //dqdT; // dwdot[N2]/dTe
+  //J[21] -= 0.0; //dqdT; // dwdot[N2p]/dTe
+  //J[22] -= 0.0; //dqdT; // dwdot[E]/dTe
 
   // reaction 1: E + N2p + M <=> E + N2 + M
   // a third-body and non-pressure-fall-off reaction
@@ -1920,6 +1929,7 @@ DWDOT(
 
   // dwdot[k]/dT
   // dTdot/d[X]
+  // FIXME indices are off
   for (int k = 0; k < 3; k++) {
     J[12 + k] *= 1.e-6;
     J[k * 4 + 3] *= 1.e6;

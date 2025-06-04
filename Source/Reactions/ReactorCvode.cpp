@@ -107,7 +107,7 @@ ReactorCvode::initCvode(
     amrex::Abort(
       "solve_type=sparse_direct only available with CUDA with YCOrder");
 #endif
-#ifdef PELE_USE_NLTE
+#ifdef PELE_USE_NLTE // FIXME 
   } else if (a_udata->solve_type == cvode::customDirect && m_reactor_type > 2) {
 #if defined(AMREX_USE_CUDA) && defined(PELE_CVODE_FORCE_YCORDER)
     a_LS = cvode::SUNLinSol_dense_custom(
@@ -202,6 +202,27 @@ ReactorCvode::initCvode(
   // Analytical Jac. data for direct solver
   // Sparse/custom/magma direct uses the same Jacobian functions
   if (a_udata->analytical_jacobian == 1) {
+#ifdef PELE_USE_NLTE
+    if (m_reactor_type > 2) {
+#ifdef PELE_CVODE_FORCE_YCORDER
+      flag = CVodeSetJacFn(a_cvode_mem, cvode::cJacTe);
+      if (utils::check_flag(&flag, "CVodeSetJacFn", 1)) {
+        return (1);
+      }
+#else
+      amrex::Abort("analytical_jacobian only available with YCOrder");
+#endif
+    } else {
+#ifdef PELE_CVODE_FORCE_YCORDER
+      flag = CVodeSetJacFn(a_cvode_mem, cvode::cJac);
+      if (utils::check_flag(&flag, "CVodeSetJacFn", 1)) {
+        return (1);
+      }
+#else
+      amrex::Abort("analytical_jacobian only available with YCOrder");
+#endif
+    }
+#else // PELE_USE_NLTE
 #ifdef PELE_CVODE_FORCE_YCORDER
     flag = CVodeSetJacFn(a_cvode_mem, cvode::cJac);
     if (utils::check_flag(&flag, "CVodeSetJacFn", 1)) {
@@ -209,20 +230,8 @@ ReactorCvode::initCvode(
     }
 #else
     amrex::Abort("analytical_jacobian only available with YCOrder");
-#endif
-  }
-#ifdef PELE_USE_NLTE
-  else if (a_udata->analytical_jacobian == 1 && m_reactor_type > 2) {
-#ifdef PELE_CVODE_FORCE_YCORDER
-    flag = CVodeSetJacFn(a_cvode_mem, cvode::cJacTe);
-    if (utils::check_flag(&flag, "CVodeSetJacFn", 1)) {
-      return (1);
-    }
-#else
-    amrex::Abort("analytical_jacobian only available with YCOrder");
-#endif
-  }
 #endif // PELE_USE_NLTE
+  }
 
   // Analytical Jac. data for iterative solver preconditioner
   if (a_udata->precond_type == cvode::sparseSimpleAJac) {
@@ -439,43 +448,42 @@ ReactorCvode::initCvode(
   }
 
   // Analytical Jac. data for direct solver
-#ifdef PELE_USE_NLTE
+#ifdef PELE_USE_NLTE // FIXME not all options available
   if (m_reactor_type > 2){
-  if (a_udata->analytical_jacobian == 1) {
+    if (a_udata->analytical_jacobian == 1) {
 #ifdef PELE_CVODE_FORCE_YCORDER
-    if (a_udata->solve_type == cvode::denseDirect) {
+      if (a_udata->solve_type == cvode::denseDirect) {
+        // Set the user-supplied Jacobian routine Jac
+        flag = CVodeSetJacFn(a_cvode_mem, cvode::cJacTe);
+        if (utils::check_flag(&flag, "CVodeSetJacFn", 1) != 0) {
+          return (1);
+        }
+      }
+#else
+      amrex::Abort("analytical_jacobian only available with YCOrder");
+#endif
+    } else if (a_udata->solve_type == cvode::sparseDirect) {
+#if defined(PELE_USE_KLU) && defined(PELE_CVODE_FORCE_YCORDER)
+      // Set the user-supplied KLU Jacobian routine Jac
+      flag = CVodeSetJacFn(a_cvode_mem, cvode::cJacTe_KLU);
+      if (utils::check_flag(&flag, "CVodeSetJacFn", 1))
+        return (1);
+#else
+      amrex::Abort(
+        "solve_type=sparse_direct not valid without KLU library and YCOrder");
+#endif
+    } else if (a_udata->solve_type == cvode::customDirect) {
+#ifdef PELE_CVODE_FORCE_YCORDER
       // Set the user-supplied Jacobian routine Jac
-      flag = CVodeSetJacFn(a_cvode_mem, cvode::cJacTe);
+      flag = CVodeSetJacFn(a_cvode_mem, cvode::cJacTe_sps);
       if (utils::check_flag(&flag, "CVodeSetJacFn", 1) != 0) {
         return (1);
       }
+#else
+      amrex::Abort("solve_type=custom_direct only available with YCOrder");
+#endif
     }
-#else
-    amrex::Abort("analytical_jacobian only available with YCOrder");
-#endif
-  } else if (a_udata->solve_type == cvode::sparseDirect) {
-#if defined(PELE_USE_KLU) && defined(PELE_CVODE_FORCE_YCORDER)
-    // Set the user-supplied KLU Jacobian routine Jac
-    flag = CVodeSetJacFn(a_cvode_mem, cvode::cJacTe_KLU);
-    if (utils::check_flag(&flag, "CVodeSetJacFn", 1))
-      return (1);
-#else
-    amrex::Abort(
-      "solve_type=sparse_direct not valid without KLU library and YCOrder");
-#endif
-  } else if (a_udata->solve_type == cvode::customDirect) {
-#ifdef PELE_CVODE_FORCE_YCORDER
-    // Set the user-supplied Jacobian routine Jac
-    flag = CVodeSetJacFn(a_cvode_mem, cvode::cJacTe_sps);
-    if (utils::check_flag(&flag, "CVodeSetJacFn", 1) != 0) {
-      return (1);
-    }
-#else
-    amrex::Abort("solve_type=custom_direct only available with YCOrder");
-#endif
-  }
-}
-else 
+  } else 
 #endif // PELE_USE_NLTE
 {
     if (a_udata->analytical_jacobian == 1) {

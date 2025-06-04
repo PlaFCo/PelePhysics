@@ -213,10 +213,12 @@ box_flatten(
     eos.REY2T(rho, Enrg_loc, mass_frac, temp);
   } else if (reactor_type == ReactorTypes::h_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+#ifdef PELE_USE_NLTE
   } else if (reactor_type == ReactorTypes::hfa_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+#endif // PELE_USE_NLTE
   } else {
-    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3.");
+    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
   }
   y_vect[vec_index<OrderType>(NUM_SPECIES, icell, ncells)] = temp;
 }
@@ -281,10 +283,12 @@ box_flattente(
     eos.REY2T(rho, Enrg_loc, mass_frac, temp);
   } else if (reactor_type == ReactorTypes::h_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+#ifdef PELE_USE_NLTE
   } else if (reactor_type == ReactorTypes::hfa_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+#endif // PELE_USE_NLTE
   } else {
-    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3.");
+    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
   }
   y_vect[vec_index<OrderType>(NUM_SPECIES, icell, ncells)] = temp;
   y_vect[vec_index<OrderType>(NUM_SPECIES+1, icell, ncells)] = tempe;
@@ -355,8 +359,10 @@ box_unflatten(
     eos.REY2T(rho, Enrg_loc, mass_frac, temp);
   } else if (reactor_type == ReactorTypes::h_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+#ifdef PELE_USE_NLTE
   } else if (reactor_type == ReactorTypes::hfa_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+#endif // PELE_USE_NLTE
   } else {
     amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
   }
@@ -431,8 +437,10 @@ box_unflattente(
     eos.REY2T(rho, Enrg_loc, mass_frac, temp);
   } else if (reactor_type == ReactorTypes::h_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+#ifdef PELE_USE_NLTE
   } else if (reactor_type == ReactorTypes::hfa_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+#endif // PELE_USE_NLTE
   } else {
     amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
   }
@@ -551,6 +559,7 @@ fKernelSpec(
       eos.RTY2Hi(rho_pt, temp_pt, massfrac.arr, ei_pt.arr);
       eos.RTY2Cp(rho_pt, temp_pt, massfrac.arr, Cv_pt);
       eos.RTY2WDOT(rho_pt, temp_pt, massfrac.arr, cdots_pt.arr);
+#ifdef PELE_USE_NLTE
   }  else if (reactor_type == ReactorTypes::hfa_reactor_type) {
       amrex::Real temp_pt =
       yvec_d[vec_index<OrderType>(NUM_SPECIES, icell, ncells)];
@@ -562,8 +571,9 @@ fKernelSpec(
       eos.RTY2Cp(rho_pt, temp_pt, massfrac.arr, Cv_pt);
       eos.RTTY2WDOT(rho_pt, temp_pt, tempe_pt, massfrac.arr, cdots_pt.arr);
       ydot_d[vec_index<OrderType>(NUM_SPECIES + 1, icell, ncells)] = 0.0;
+#endif // PELE_USE_NLTE
   } else {
-    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3.");
+    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3 if NLTE.");
   }
 #endif
 

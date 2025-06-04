@@ -71,7 +71,7 @@ ReactorNull::react(
       eos.RHY2T(rho_loc, energy_loc, Y_loc, T_loc);
 #endif // PELE_USE_NLTE 
     } else {
-      amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3.");
+      amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3 if NLTE.");
     }
     T_in(i, j, k, 0) = T_loc;
     FC_in(i, j, k, 0) = 0.0;
