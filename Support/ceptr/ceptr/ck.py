@@ -2003,17 +2003,29 @@ def cksms(fstream, mechanism, species_info):
     cw.writer(fstream, "}")
 
 
-def ckwc(fstream, mechanism, species_info):
+def ckwc(fstream, mechanism, species_info, reaction_info):
     """Write ckwc."""
     n_species = species_info.n_species
+    assert len(reaction_info.index) == 8
+    ielectron = reaction_info.index[6:8]
+    nelectron = ielectron[1] - ielectron[0]
+    
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("compute the production rate for each species"))
-    cw.writer(
-        fstream,
-        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWC"
-        + cc.sym
-        + "(const amrex::Real T, amrex::Real C[], amrex::Real wdot[])",
-    )
+    if nelectron >0:
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWC"
+            + cc.sym
+            + "(const amrex::Real T, const amrex::Real Te, amrex::Real C[], amrex::Real wdot[])",
+        )
+    else:
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWC"
+            + cc.sym
+            + "(const amrex::Real T, const amrex::Real /*Te*/, amrex::Real C[], amrex::Real wdot[])",
+        )
     cw.writer(fstream, "{")
 
     # convert C to SI units
@@ -2026,7 +2038,10 @@ def ckwc(fstream, mechanism, species_info):
     # call productionRate
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
-    cw.writer(fstream, "productionRate(wdot, C, T);")
+    if nelectron > 0:
+        cw.writer(fstream, "productionRate(wdot, C, T, Te);")
+    else:
+        cw.writer(fstream, "productionRate(wdot, C, T, 0.0);")
 
     # convert C and wdot to chemkin units
     cw.writer(fstream)
@@ -2039,19 +2054,32 @@ def ckwc(fstream, mechanism, species_info):
     cw.writer(fstream, "}")
 
 
-def ckwyp(fstream, mechanism, species_info):
+def ckwyp(fstream, mechanism, species_info, reaction_info):
     """Write ckwyp."""
     n_species = species_info.n_species
+    assert len(reaction_info.index) == 8
+    ielectron = reaction_info.index[6:8]
+    nelectron = ielectron[1] - ielectron[0]
+
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns the molar production rate of species"))
     cw.writer(fstream, cw.comment("Given P, T, and mass fractions"))
-    cw.writer(
-        fstream,
-        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYP"
-        + cc.sym
-        + "(const amrex::Real P, const amrex::Real T,"
-        + "const amrex::Real y[], amrex::Real wdot[])",
-    )
+    if nelectron >0:
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYP"
+            + cc.sym
+            + "(const amrex::Real P, const amrex::Real T, const amrex::Real Te,"
+            + "const amrex::Real y[], amrex::Real wdot[])",
+        )
+    else:
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYP"
+            + cc.sym
+            + "(const amrex::Real P, const amrex::Real T, const amrex::Real /*Te*/,"
+            + "const amrex::Real y[], amrex::Real wdot[])",
+        )
     cw.writer(fstream, "{")
 
     cw.writer(
@@ -2096,7 +2124,10 @@ def ckwyp(fstream, mechanism, species_info):
     # call productionRate
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
-    cw.writer(fstream, "productionRate(wdot, c, T);")
+    if nelectron > 0:
+        cw.writer(fstream, "productionRate(wdot, c, T, Te);")
+    else:
+        cw.writer(fstream, "productionRate(wdot, c, T, 0.0);")
 
     # convert wdot to chemkin units
     cw.writer(fstream)
@@ -2107,19 +2138,32 @@ def ckwyp(fstream, mechanism, species_info):
     cw.writer(fstream, "}")
 
 
-def ckwxp(fstream, mechanism, species_info):
+def ckwxp(fstream, mechanism, species_info, reaction_info):
     """Write ckwxp."""
     n_species = species_info.n_species
+    assert len(reaction_info.index) == 8
+    ielectron = reaction_info.index[6:8]
+    nelectron = ielectron[1] - ielectron[0]
+    
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns the molar production rate of species"))
     cw.writer(fstream, cw.comment("Given P, T, and mole fractions"))
-    cw.writer(
-        fstream,
-        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXP"
-        + cc.sym
-        + "(const amrex::Real P, const amrex::Real T,"
-        + "const amrex::Real x[], amrex::Real wdot[])",
-    )
+    if nelectron >0:
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXP"
+            + cc.sym
+            + "(const amrex::Real P, const amrex::Real T, const amrex::Real Te,"
+            + "const amrex::Real x[], amrex::Real wdot[])",
+        )
+    else:
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXP"
+            + cc.sym
+            + "(const amrex::Real P, const amrex::Real T, const amrex::Real /*Te*/,"
+            + "const amrex::Real x[], amrex::Real wdot[])",
+        )
     cw.writer(fstream, "{")
 
     cw.writer(
@@ -2144,7 +2188,10 @@ def ckwxp(fstream, mechanism, species_info):
     # call productionRate
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
-    cw.writer(fstream, "productionRate(wdot, c, T);")
+    if nelectron > 0:
+        cw.writer(fstream, "productionRate(wdot, c, T, Te);")
+    else:
+        cw.writer(fstream, "productionRate(wdot, c, T, 0.0);")
 
     # convert wdot to chemkin units
     cw.writer(fstream)
@@ -2155,20 +2202,34 @@ def ckwxp(fstream, mechanism, species_info):
     cw.writer(fstream, "}")
 
 
-def ckwyr(fstream, mechanism, species_info):
+def ckwyr(fstream, mechanism, species_info, reaction_info):
     """Write ckwyr."""
     n_species = species_info.n_species
+    assert len(reaction_info.index) == 8
+    ielectron = reaction_info.index[6:8]
+    nelectron = ielectron[1] - ielectron[0]
+    
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns the molar production rate of species"))
     cw.writer(fstream, cw.comment("Given rho, T, and mass fractions"))
-    cw.writer(
-        fstream,
-        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYR"
-        + cc.sym
-        + "(const amrex::Real rho, const amrex::Real T, const amrex::Real"
-        " y[], "
-        " amrex::Real wdot[])",
-    )
+    if nelectron >0:
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYR"
+            + cc.sym
+            + "(const amrex::Real rho, const amrex::Real T, const amrex::Real Te, const amrex::Real"
+            " y[], "
+            " amrex::Real wdot[])",
+        )
+    else:
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYR"
+            + cc.sym
+            + "(const amrex::Real rho, const amrex::Real T, const amrex::Real /*Te*/, const amrex::Real"
+            " y[], "
+            " amrex::Real wdot[])",
+        )
     cw.writer(fstream, "{")
 
     cw.writer(
@@ -2190,7 +2251,10 @@ def ckwyr(fstream, mechanism, species_info):
     # call productionRate
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("call productionRate"))
-    cw.writer(fstream, "productionRate(wdot, c, T);")
+    if nelectron > 0:
+        cw.writer(fstream, "productionRate(wdot, c, T, Te);")
+    else:
+        cw.writer(fstream, "productionRate(wdot, c, T, 0.0);")
 
     # convert wdot to chemkin units
     cw.writer(fstream)
@@ -2201,20 +2265,34 @@ def ckwyr(fstream, mechanism, species_info):
     cw.writer(fstream, "}")
 
 
-def ckwxr(fstream, mechanism, species_info):
+def ckwxr(fstream, mechanism, species_info, reaction_info):
     """Write ckwxr."""
     n_species = species_info.n_species
+    assert len(reaction_info.index) == 8
+    ielectron = reaction_info.index[6:8]
+    nelectron = ielectron[1] - ielectron[0]
+    
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns the molar production rate of species"))
     cw.writer(fstream, cw.comment("Given rho, T, and mole fractions"))
-    cw.writer(
-        fstream,
-        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXR"
-        + cc.sym
-        + "(const amrex::Real rho, const amrex::Real T, const amrex::Real"
-        " x[], "
-        " amrex::Real wdot[])",
-    )
+    if nelectron >0:
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXR"
+            + cc.sym
+            + "(const amrex::Real rho, const amrex::Real T, const amrex::Real Te, const amrex::Real"
+            " x[], "
+            " amrex::Real wdot[])",
+        )
+    else:
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXR"
+            + cc.sym
+            + "(const amrex::Real rho, const amrex::Real T, const amrex::Real /*Te*/, const amrex::Real"
+            " x[], "
+            " amrex::Real wdot[])",
+        )
     cw.writer(fstream, "{")
 
     cw.writer(
@@ -2250,7 +2328,10 @@ def ckwxr(fstream, mechanism, species_info):
     # call productionRate
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
-    cw.writer(fstream, "productionRate(wdot, c, T);")
+    if nelectron > 0:
+        cw.writer(fstream, "productionRate(wdot, c, T, Te);")
+    else:
+        cw.writer(fstream, "productionRate(wdot, c, T, 0.0);")
 
     # convert wdot to chemkin units
     cw.writer(fstream)

@@ -21,6 +21,9 @@ def ajac(
     """Write jacobian for a reaction."""
     n_species = species_info.n_species
     n_reactions = mechanism.n_reactions
+    assert len(reaction_info.index) == 8
+    ielectron = reaction_info.index[6:8]
+    nelectron = ielectron[1] - ielectron[0]
 
     cw.writer(fstream)
     if precond:
@@ -28,32 +31,45 @@ def ajac(
     else:
         cw.writer(fstream, cw.comment("compute the reaction Jacobian"))
     cw.writer(fstream, "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE")
-    if n_reactions > 0:
+    if nelectron > 0:
         if precond:
             cw.writer(
                 fstream,
                 "void aJacobian_precond(amrex::Real *  J, const"
-                " amrex::Real *  sc, const amrex::Real T, const int HP)",
+                " amrex::Real *  sc, const amrex::Real T, const amrex::Real Te, const int HP)",
             )
         else:
             cw.writer(
                 fstream,
                 "void aJacobian(amrex::Real * J, const amrex::Real * sc,"
-                " const amrex::Real T, const int consP)",
+                " const amrex::Real T, const amrex::Real Te, const int consP)",
+            )     
+    elif n_reactions > 0:
+        if precond:
+            cw.writer(
+                fstream,
+                "void aJacobian_precond(amrex::Real *  J, const"
+                " amrex::Real *  sc, const amrex::Real T, const amrex::Real /*Te*/, const int HP)",
+            )
+        else:
+            cw.writer(
+                fstream,
+                "void aJacobian(amrex::Real * J, const amrex::Real * sc,"
+                " const amrex::Real T, const amrex::Real /*Te*/, const int consP)",
             )
     else:
         if precond:
             cw.writer(
                 fstream,
                 "void aJacobian_precond(amrex::Real *  J, const"
-                " amrex::Real *  /*sc*/, const amrex::Real /*T*/, const"
+                " amrex::Real *  /*sc*/, const amrex::Real /*T*/, const amrex::Real /*Te*/, const"
                 " int /*HP*/)",
             )
         else:
             cw.writer(
                 fstream,
                 "void aJacobian(amrex::Real * J, const amrex::Real *"
-                " /*sc*/, const amrex::Real /*T*/, const int /*consP*/)",
+                " /*sc*/, const amrex::Real /*T*/, const amrex::Real /*Te*/, const int /*consP*/)",
             )
     cw.writer(fstream, "{")
 
@@ -86,7 +102,6 @@ def ajac(
         cw.writer(fstream, f"for (int i=0; i<{(n_species + 1) ** 2}; i++) {{")
         cw.writer(fstream, "J[i] = 0.0;")
         cw.writer(fstream, "}")
-
         if n_reactions > 0:
             cw.writer(fstream)
 
@@ -100,6 +115,10 @@ def ajac(
             cw.writer(fstream, "const amrex::Real invT = 1.0 / T;")
             cw.writer(fstream, "const amrex::Real invT2 = invT * invT;")
             cw.writer(fstream, "const amrex::Real logT = log(T);")
+            if nelectron > 0:
+                cw.writer(fstream, "const amrex::Real invTe = 1.0 / Te;")
+                cw.writer(fstream, "const amrex::Real invTe2 = invTe * invTe;")
+                cw.writer(fstream, "const amrex::Real logTe = log(Te);")
 
             cw.writer(fstream)
 
@@ -175,6 +194,8 @@ def ajac(
                 "amrex::Real phi_f, k_f, k_r, phi_r, Kc, q, q_nocor, Corr, alpha;",
             )
             cw.writer(fstream, "amrex::Real dlnkfdT, dlnk0dT, dlnKcdT, dkrdT, dqdT;")
+            if nelectron > 0:
+                cw.writer(fstream, "amrex::Real dlnkfdTe, dlnk0dTe, dlnKcdTe, dkrdTe, dqdTe;")
             cw.writer(fstream, f"amrex::Real dqdci, dcdc_fac, dqdc[{n_species}];")
             cw.writer(fstream, "amrex::Real Pr, fPr, F, k_0, logPr;")
             cw.writer(
@@ -568,7 +589,17 @@ def ajac_reaction_d(
     is_sri = reaction.rate.sub_type == "Sri"
     is_lindemann = reaction.rate.sub_type == "Lindemann"
     aeuc = cu.activation_energy_units()
-    if not third_body and not falloff and not plog:
+
+    is_electron_temperature = reaction.rate.type == "electron-temperature"
+
+    if is_electron_temperature:
+        # Case 5 is_electron_temperature
+        ctuc = cu.prefactor_units(cc.ureg("kmol/m**3"), 1 - dim)
+        pef =  (reaction.rate.A * ctuc).to_base_units()
+        beta = reaction.rate.b # reaction.rate.temperature_exponent
+        ae =   reaction.rate.Ea 
+        assert not reaction.reversible, "Electron temperature with reversible reaction not implemented."
+    elif not third_body and not falloff and not plog:
         # Case 3 !PD, !TB
         cw.writer(
             fstream,
@@ -636,7 +667,7 @@ def ajac_reaction_d(
 
     has_alpha = False
     corr_s = ""
-    if not third_body and not falloff:
+    if (not third_body and not falloff) or is_electron_temperature:
         pass
     elif (
         not falloff
@@ -658,7 +689,7 @@ def ajac_reaction_d(
     sum_nuk = 0
     all_reactants = copy.deepcopy(reaction.reactants)
     all_products = copy.deepcopy(reaction.products)
-    if reaction.third_body:
+    if reaction.third_body and not is_electron_temperature:
         if len(reaction.third_body.efficiencies) == 1:
             if isclose(reaction.third_body.default_efficiency, 0.0):
                 all_reactants = dict(
@@ -781,57 +812,80 @@ def ajac_reaction_d(
         f"phi_f = {qss_ps};",
     )
     cw.writer(fstream, f"k_f = {pef.m:.15g}")
-    if (ae.m == 0) and (beta == 0):
-        cw.writer(fstream, "           ;")
-    elif ae.m == 0:
+    if is_electron_temperature > 0:
         cw.writer(
             fstream,
-            f"            * exp({beta:.15g} * logT);",
+            f"            * exp({beta:.15g} * logTe -"
+            f" ({ae:.15g}) * invTe);",
         )
-    elif beta == 0:
-        cw.writer(
-            fstream,
-            "            * exp(-"
-            f" ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g}) * invT);",
-        )
-    else:
-        cw.writer(
-            fstream,
-            f"            * exp({beta:.15g} * logT -"
-            f" ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g}) * invT);",
-        )
-    if remove_forward:
-        cw.writer(fstream, cw.comment("Remove forward reaction"))
-        cw.writer(
-            fstream,
-            cw.comment(
-                f"dlnkfdT = {beta:.15g} * invT +"
-                f" ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g}) * invT2;"
-            ),
-        )
-        cw.writer(fstream, "dlnkfdT = 0.0;")
-    else:
-        if (beta == 0) and (ae.m == 0):
+        if remove_forward:
+            cw.writer(fstream, cw.comment("Remove forward reaction"))
             cw.writer(
                 fstream,
-                "dlnkfdT = 0.0;",
+                cw.comment(
+                    f"dlnkfdTe = {beta:.15g} * invTe +"
+                    f" ({(ae).m:.15g}) * invTe2;"
+                ),
             )
+            cw.writer(fstream, "dlnkfdTe = 0.0;")
+        else:
+            cw.writer(
+                fstream,
+                f"dlnkfdT = {beta:.15g} * invTe +"
+                f" ({ae:.15g}) * invTe2;",
+            )
+    else:
+        if (ae.m == 0) and (beta == 0):
+            cw.writer(fstream, "           ;")
         elif ae.m == 0:
             cw.writer(
                 fstream,
-                f"dlnkfdT = {beta:.15g} * invT;",
+                f"            * exp({beta:.15g} * logT);",
             )
         elif beta == 0:
             cw.writer(
                 fstream,
-                f"dlnkfdT = ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g}) * invT2;",
+                "            * exp(-"
+                f" ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g}) * invT);",
             )
         else:
             cw.writer(
                 fstream,
-                f"dlnkfdT = {beta:.15g} * invT +"
-                f" ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g}) * invT2;",
+                f"            * exp({beta:.15g} * logT -"
+                f" ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g}) * invT);",
             )
+        if remove_forward:
+            cw.writer(fstream, cw.comment("Remove forward reaction"))
+            cw.writer(
+                fstream,
+                cw.comment(
+                    f"dlnkfdT = {beta:.15g} * invT +"
+                    f" ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g}) * invT2;"
+                ),
+            )
+            cw.writer(fstream, "dlnkfdT = 0.0;")
+        else:
+            if (beta == 0) and (ae.m == 0):
+                cw.writer(
+                    fstream,
+                    "dlnkfdT = 0.0;",
+                )
+            elif ae.m == 0:
+                cw.writer(
+                    fstream,
+                    f"dlnkfdT = {beta:.15g} * invT;",
+                )
+            elif beta == 0:
+                cw.writer(
+                    fstream,
+                    f"dlnkfdT = ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g}) * invT2;",
+                )
+            else:
+                cw.writer(
+                    fstream,
+                    f"dlnkfdT = {beta:.15g} * invT +"
+                    f" ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g}) * invT2;",
+                )
 
     if falloff:
         cw.writer(fstream, cw.comment("pressure-fall-off"))
@@ -1005,6 +1059,8 @@ def ajac_reaction_d(
                     fstream,
                     f"dqdT = {corr_s}dlnkfdT*k_f*phi_f + dlnCorrdT*q;",
                 )
+        elif is_electron_temperature:
+            cw.writer(fstream, f"dqdT = 0.0;")
         else:
             if remove_forward:
                 cw.writer(fstream, cw.comment("Remove forward reaction"))
@@ -1532,6 +1588,9 @@ def dphase_space(mechanism, species_info, reagents, r, reaction_orders, syms):
 def dproduction_rate(fstream, mechanism, species_info, reaction_info, precond=False):
     """Write the reaction jacobian."""
     n_species = species_info.n_species
+    assert len(reaction_info.index) == 8
+    ielectron = reaction_info.index[6:8]
+    nelectron = ielectron[1] - ielectron[0]
 
     cw.writer(fstream)
     if precond:
@@ -1541,21 +1600,37 @@ def dproduction_rate(fstream, mechanism, species_info, reaction_info, precond=Fa
                 "compute an approx to the reaction Jacobian (for preconditioning)"
             ),
         )
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
-            " DWDOT_SIMPLIFIED(amrex::Real *  J, const amrex::Real *  sc,"
-            " const amrex::Real *  Tp, const int * HP)",
-        )
+        if nelectron > 0:
+            cw.writer(
+                fstream,
+                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
+                " DWDOT_SIMPLIFIED(amrex::Real *  J, const amrex::Real *  sc,"
+                " const amrex::Real *  Tp, const amrex::Real *  Tep, const int * HP)",
+            )
+        else:
+            cw.writer(
+                fstream,
+                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
+                " DWDOT_SIMPLIFIED(amrex::Real *  J, const amrex::Real *  sc,"
+                " const amrex::Real *  Tp, const amrex::Real *  /*Tep*/, const int * HP)",
+            )
+            
     else:
         cw.writer(fstream, cw.comment("compute the reaction Jacobian"))
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
-            " DWDOT(amrex::Real *  J, const amrex::Real *  sc, const"
-            " amrex::Real *  Tp, const int * consP)",
-        )
-
+        if nelectron > 0:
+            cw.writer(
+                fstream,
+                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
+                " DWDOT(amrex::Real *  J, const amrex::Real *  sc, const"
+                " amrex::Real *  Tp, amrex::Real *  Tep, const int * consP)",
+            )
+        else:
+            cw.writer(
+                fstream,
+                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
+                " DWDOT(amrex::Real *  J, const amrex::Real *  sc, const"
+                " amrex::Real *  Tp, amrex::Real *  /*Tep*/, const int * consP)",
+            )
     cw.writer(fstream, "{")
     cw.writer(fstream, f"amrex::Real c[{n_species}];")
     cw.writer(fstream)
@@ -1565,9 +1640,15 @@ def dproduction_rate(fstream, mechanism, species_info, reaction_info, precond=Fa
 
     cw.writer(fstream)
     if precond:
-        cw.writer(fstream, "aJacobian_precond(J, c, *Tp, *HP);")
+        if nelectron > 0:
+            cw.writer(fstream, "aJacobian_precond(J, c, *Tp, *Tep, *HP);")
+        else:
+            cw.writer(fstream, "aJacobian_precond(J, c, *Tp, *Tp, *HP);")
     else:
-        cw.writer(fstream, "aJacobian(J, c, *Tp, *consP);")
+        if nelectron > 0:
+            cw.writer(fstream, "aJacobian(J, c, *Tp, *Tep, *consP);")
+        else:
+            cw.writer(fstream, "aJacobian(J, c, *Tp, *Tp, *consP);")
 
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("dwdot[k]/dT"))

@@ -16,7 +16,7 @@
 
 #define NUM_GAS_ELEMENTS 2  // Elements in the homogeneous phase
 #define NUM_GAS_SPECIES 3   // Species in the homogeneous phase
-#define NUM_GAS_REACTIONS 2 // Reactions in the homogeneous phase
+#define NUM_GAS_REACTIONS 3 // Reactions in the homogeneous phase
 
 #define SITE_DENSITY 0.000000E+00 // mol/cm^2
 
@@ -45,11 +45,16 @@ void CKINU(const int i, int& nspec, int* ki, int* nu);
 void CKKFKR(
   const amrex::Real P,
   const amrex::Real T,
+  const amrex::Real Te,
   const amrex::Real* x,
   amrex::Real* q_f,
   amrex::Real* q_r);
 void progressRateFR(
-  amrex::Real* q_f, amrex::Real* q_r, amrex::Real* sc, amrex::Real T, amrex::Real Te);
+  amrex::Real* q_f,
+  amrex::Real* q_r,
+  amrex::Real* sc,
+  amrex::Real T,
+  amrex::Real Te);
 //  SPARSE INFORMATION
 void SPARSITY_INFO(int* nJdata, const int* consP, int NCELLS);
 void SPARSITY_INFO_SYST(int* nJdata, const int* consP, int NCELLS);
@@ -71,7 +76,7 @@ CKINDX(int& mm, int& kk, int& ii, int& nfit)
 {
   mm = 2;
   kk = 3;
-  ii = 2;
+  ii = 3;
   nfit = -1; // Why do you need this anyway ?
 }
 
@@ -1303,13 +1308,17 @@ comp_qfqr(
   const amrex::Real logTe)
 {
 
-  // reaction 0: N2 + E => E + N2p + E
-  qf[0] = sc[0] * sc[2];
-  qr[0] = 0.0;
+  // reaction 2: E + N2p + M <=> E + N2 + M
+  qf[0] = sc[1] * sc[2];
+  qr[0] = sc[0] * sc[2];
 
-  // reaction 1: E + N2p + M <=> E + N2 + M
-  qf[1] = sc[1] * sc[2];
-  qr[1] = sc[0] * sc[2];
+  // reaction 0: N2 + E => E + N2p + E
+  qf[1] = sc[0] * sc[2];
+  qr[1] = 0.0;
+
+  // reaction 1: 2 E + N2 => 3 E + N2p
+  qf[2] = sc[0] * (sc[2] * sc[2]);
+  qr[2] = 0.0;
 
   // compute the mixture concentration
   amrex::Real mixture = 0.0;
@@ -1329,18 +1338,28 @@ comp_qfqr(
   amrex::Real k_f, Corr;
 
   // reaction 0:  N2 + E => E + N2p + E
-  k_f = 180700000 * exp((2) * logTe - (76309.5651326745) * invTe);
-  qf[0] *= k_f;
-  qr[0] *= k_f * exp(-(g_RT[0] - g_RT[1] - g_RT[2])) * (refCinv);
-  // reaction 1:  E + N2p + M <=> E + N2 + M
+  k_f = 0.647816915814558 * exp((-2.74) * logTe - (1.27) * invTe);
+  qf[1] *= k_f;
+  qr[1] *= k_f * exp(-(g_RT[0] - g_RT[1] - g_RT[2])) * (refCinv);
+  // reaction 1:  2 E + N2 => 3 E + N2p
+  k_f = 1.47816915814558e-10 * exp((-0.74) * logTe - (0.27) * invTe);
+  qf[2] *= k_f;
+  qr[2] *= k_f *
+           exp(-(g_RT[0] - g_RT[1] + 2.000000 * g_RT[2] - 3.000000 * g_RT[2])) *
+           (refCinv);
+  // reaction 2:  E + N2p + M <=> E + N2 + M
   k_f = 180.7 * exp((2) * logT - (76309.5651326745) * invT);
   Corr = mixture + (-1) * sc[1];
-  qf[1] *= Corr * k_f;
-  qr[1] *= Corr * k_f * exp(-(-g_RT[0] + g_RT[1] + g_RT[2] - g_RT[2]));
+  qf[0] *= Corr * k_f;
+  qr[0] *= Corr * k_f * exp(-(-g_RT[0] + g_RT[1] + g_RT[2] - g_RT[2]));
 }
 
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
-productionRate(amrex::Real* wdot, const amrex::Real* sc, const amrex::Real T, const amrex::Real Te)
+productionRate(
+  amrex::Real* wdot,
+  const amrex::Real* sc,
+  const amrex::Real T,
+  const amrex::Real Te)
 {
   const amrex::Real invT = 1.0 / T;
   const amrex::Real logT = log(T);
@@ -1366,9 +1385,24 @@ productionRate(amrex::Real* wdot, const amrex::Real* sc, const amrex::Real T, co
   gibbs(g_RT, T);
 
   {
+    // reaction 2:  E + N2p + M <=> E + N2 + M
+    const amrex::Real k_f = 180.7 * exp((2) * logT - (76309.5651326745) * invT);
+    const amrex::Real Corr = mixture + (-1) * sc[1];
+    const amrex::Real qf = Corr * k_f * (sc[1] * sc[2]);
+    const amrex::Real qr = Corr * k_f *
+                           exp(-(-g_RT[0] + g_RT[1] + g_RT[2] - g_RT[2])) *
+                           (sc[0] * sc[2]);
+    const amrex::Real qdot = qf - qr;
+    wdot[0] += qdot;
+    wdot[1] -= qdot;
+    wdot[2] -= qdot;
+    wdot[2] += qdot;
+  }
+
+  {
     // reaction 0:  N2 + E => E + N2p + E
-    const amrex::Real k_f = 
-      180700000 * exp((2) * logTe - (76309.5651326745) * invTe);
+    const amrex::Real k_f =
+      0.647816915814558 * exp((-2.74) * logTe - (0.78740157480315) * invTe);
     const amrex::Real qf = k_f * (sc[0] * sc[2]);
     const amrex::Real qr = 0.0;
     const amrex::Real qdot = qf - qr;
@@ -1378,22 +1412,26 @@ productionRate(amrex::Real* wdot, const amrex::Real* sc, const amrex::Real T, co
   }
 
   {
-    // reaction 1:  E + N2p + M <=> E + N2 + M
-    const amrex::Real k_f = 180.7 * exp((2) * logT - (76309.5651326745) * invT);
-    const amrex::Real Corr = mixture + (-1) * sc[1];
-    const amrex::Real qf = Corr * k_f * (sc[1] * sc[2]);
+    // reaction 1:  2 E + N2 => 3 E + N2p
+    const amrex::Real k_f =
+      1.47816915814558e-10 * exp((-0.74) * logTe - (3.7037037037037) * invTe);
+    const amrex::Real qf = k_f * (sc[0] * (sc[2] * sc[2]));
     const amrex::Real qr = 0.0;
     const amrex::Real qdot = qf - qr;
-    wdot[0] += qdot;
-    wdot[1] -= qdot;
-    wdot[2] -= qdot;
-    wdot[2] += qdot;
+    wdot[0] -= qdot;
+    wdot[1] += qdot;
+    wdot[2] -= 2.000000 * qdot;
+    wdot[2] += 3.000000 * qdot;
   }
 }
 
 // compute the production rate for each species
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
-CKWC(const amrex::Real T, const amrex::Real Te, amrex::Real C[], amrex::Real wdot[])
+CKWC(
+  const amrex::Real T,
+  const amrex::Real Te,
+  amrex::Real C[],
+  amrex::Real wdot[])
 {
 
   // convert to SI
@@ -1560,7 +1598,11 @@ CKCHRGMASS(amrex::Real zk[])
 // compute an approx to the reaction Jacobian
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 aJacobian_precond(
-  amrex::Real* J, const amrex::Real* sc, const amrex::Real T, const amrex::Real Te, const int HP)
+  amrex::Real* J,
+  const amrex::Real* sc,
+  const amrex::Real T,
+  const amrex::Real Te,
+  const int HP)
 {
 
 #if defined(PELE_COMPILE_AJACOBIAN) || !defined(AMREX_USE_HIP)
@@ -1600,6 +1642,7 @@ aJacobian_precond(
 
   amrex::Real phi_f, k_f, k_r, phi_r, Kc, q, q_nocor, Corr, alpha;
   amrex::Real dlnkfdT, dlnk0dT, dlnKcdT, dkrdT, dqdT;
+  amrex::Real dlnkfdTe, dlnk0dTe, dlnKcdTe, dkrdTe, dqdTe;
   amrex::Real dqdci, dcdc_fac, dqdc[3];
   amrex::Real Pr, fPr, F, k_0, logPr;
   amrex::Real logFcent, troe_c, troe_n, troePr_den, troePr, troe;
@@ -1608,35 +1651,7 @@ aJacobian_precond(
   amrex::Real dlogPrdT, dlogfPrdT, dlogFdT, dlogFcentdT, dlogFdlogPr, dlnCorrdT;
   const amrex::Real ln10 = log(10.0);
   const amrex::Real log10e = 1.0 / log(10.0);
-  // reaction 0: N2 + E => E + N2p + E
-  // a third-body and non-pressure-fall-off reaction
-  // forward
-  phi_f = sc[0] * sc[2];
-  k_f = 180700000 * exp(2 * logTe - (76309.5651326745) * invTe);
-  dlnkfdT = 2 * invTe + (76309.5651326745) * invTe2;
-  // rate of progress
-  q = k_f * phi_f;
-  dqdT = dlnkfdT * k_f * phi_f;
-  // update wdot
-  wdot[0] -= q; // N2
-  wdot[1] += q; // N2p
-  wdot[2] += q; // E
-  // d()/d[N2]
-  dqdci = +k_f * sc[2];
-  J[0] -= dqdci; // dwdot[N2]/d[N2]
-  J[1] += dqdci; // dwdot[N2p]/d[N2]
-  J[2] += dqdci; // dwdot[E]/d[N2]
-  // d()/d[E]
-  dqdci = +k_f * sc[0];
-  J[8] -= dqdci;  // dwdot[N2]/d[E]
-  J[9] += dqdci;  // dwdot[N2p]/d[E]
-  J[10] += dqdci; // dwdot[E]/d[E]
-  // d()/dT
-  J[12] -= 0.0; //dqdT; // dwdot[N2]/dT
-  J[13] += 0.0; //dqdT; // dwdot[N2p]/dT
-  J[14] += 0.0; //dqdT; // dwdot[E]/dT
-
-  // reaction 1: E + N2p + M <=> E + N2 + M
+  // reaction 2: E + N2p + M <=> E + N2 + M
   // a third-body and non-pressure-fall-off reaction
   // 3-body correction factor
   alpha = mixture + (0 - 1) * sc[1];
@@ -1669,6 +1684,55 @@ aJacobian_precond(
   }
   J[12] += dqdT; // dwdot[N2]/dT
   J[13] -= dqdT; // dwdot[N2p]/dT
+
+  // reaction 0: N2 + E => E + N2p + E
+  // forward
+  phi_f = sc[0] * sc[2];
+  k_f = 0.647816915814558 * exp(-2.74 * logTe - (1.27) * invTe);
+  dlnkfdT = -2.74 * invTe + (1.27) * invTe2;
+  // rate of progress
+  q = k_f * phi_f;
+  dqdT = 0.0;
+  // update wdot
+  wdot[0] -= q; // N2
+  wdot[1] += q; // N2p
+  wdot[2] += q; // E
+  // d()/d[N2]
+  dqdci = +k_f;
+  J[0] -= dqdci; // dwdot[N2]/d[N2]
+  J[1] += dqdci; // dwdot[N2p]/d[N2]
+  J[2] += dqdci; // dwdot[E]/d[N2]
+  // d()/dT
+  J[12] -= dqdT; // dwdot[N2]/dT
+  J[13] += dqdT; // dwdot[N2p]/dT
+  J[14] += dqdT; // dwdot[E]/dT
+
+  // reaction 1: 2 E + N2 => 3 E + N2p
+  // forward
+  phi_f = sc[0] * (sc[2] * sc[2]);
+  k_f = 1.47816915814558e-10 * exp(-0.74 * logTe - (0.27) * invTe);
+  dlnkfdT = -0.74 * invTe + (0.27) * invTe2;
+  // rate of progress
+  q = k_f * phi_f;
+  dqdT = 0.0;
+  // update wdot
+  wdot[0] -= q; // N2
+  wdot[1] += q; // N2p
+  wdot[2] += q; // E
+  // d()/d[N2]
+  dqdci = +k_f * sc[2] * sc[2];
+  J[0] -= dqdci; // dwdot[N2]/d[N2]
+  J[1] += dqdci; // dwdot[N2p]/d[N2]
+  J[2] += dqdci; // dwdot[E]/d[N2]
+  // d()/d[E]
+  dqdci = +k_f * sc[0] * 2.000000 * sc[2];
+  J[8] -= dqdci;  // dwdot[N2]/d[E]
+  J[9] += dqdci;  // dwdot[N2p]/d[E]
+  J[10] += dqdci; // dwdot[E]/d[E]
+  // d()/dT
+  J[12] -= dqdT; // dwdot[N2]/dT
+  J[13] += dqdT; // dwdot[N2p]/dT
+  J[14] += dqdT; // dwdot[E]/dT
 
   amrex::Real c_R[3], dcRdT[3], e_RT[3];
   amrex::Real* eh_RT;
@@ -1714,7 +1778,11 @@ aJacobian_precond(
 // compute an approx to the reaction Jacobian (for preconditioning)
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 DWDOT_SIMPLIFIED(
-  amrex::Real* J, const amrex::Real* sc, const amrex::Real* Tp, const amrex::Real* Tep, const int* HP)
+  amrex::Real* J,
+  const amrex::Real* sc,
+  const amrex::Real* Tp,
+  const amrex::Real* Tep,
+  const int* HP)
 {
   amrex::Real c[3];
 
@@ -1735,7 +1803,11 @@ DWDOT_SIMPLIFIED(
 // compute the reaction Jacobian
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 aJacobian(
-  amrex::Real* J, const amrex::Real* sc, const amrex::Real T, const amrex::Real Te, const int consP)
+  amrex::Real* J,
+  const amrex::Real* sc,
+  const amrex::Real T,
+  const amrex::Real Te,
+  const int consP)
 {
 
 #if defined(PELE_COMPILE_AJACOBIAN) || !defined(AMREX_USE_HIP)
@@ -1775,6 +1847,7 @@ aJacobian(
 
   amrex::Real phi_f, k_f, k_r, phi_r, Kc, q, q_nocor, Corr, alpha;
   amrex::Real dlnkfdT, dlnk0dT, dlnKcdT, dkrdT, dqdT;
+  amrex::Real dlnkfdTe, dlnk0dTe, dlnKcdTe, dkrdTe, dqdTe;
   amrex::Real dqdci, dcdc_fac, dqdc[3];
   amrex::Real Pr, fPr, F, k_0, logPr;
   amrex::Real logFcent, troe_c, troe_n, troePr_den, troePr, troe;
@@ -1783,35 +1856,7 @@ aJacobian(
   amrex::Real dlogPrdT, dlogfPrdT, dlogFdT, dlogFcentdT, dlogFdlogPr, dlnCorrdT;
   const amrex::Real ln10 = log(10.0);
   const amrex::Real log10e = 1.0 / log(10.0);
-  // reaction 0: N2 + E => E + N2p + E
-  // a third-body and non-pressure-fall-off reaction
-  // forward
-  phi_f = sc[0] * sc[2];
-  k_f = 180700000 * exp(2 * logTe - (76309.5651326745) * invTe);
-  dlnkfdT = 2 * invTe + (76309.5651326745) * invTe2;
-  // rate of progress
-  q = k_f * phi_f;
-  dqdT = dlnkfdT * k_f * phi_f;
-  // update wdot
-  wdot[0] -= q; // N2
-  wdot[1] += q; // N2p
-  wdot[2] += q; // E
-  // d()/d[N2]
-  dqdci = +k_f * sc[2];
-  J[0] -= dqdci; // dwdot[N2]/d[N2]
-  J[1] += dqdci; // dwdot[N2p]/d[N2]
-  J[2] += dqdci; // dwdot[E]/d[N2]
-  // d()/d[E]
-  dqdci = +k_f * sc[0];
-  J[8] -= dqdci;  // dwdot[N2]/d[E]
-  J[9] += dqdci;  // dwdot[N2p]/d[E]
-  J[10] += dqdci; // dwdot[E]/d[E]
-  // d()/dT
-  J[12] -= 0.0; //dqdT; // dwdot[N2]/dT
-  J[13] += 0.0; //dqdT; // dwdot[N2p]/dT
-  J[14] += 0.0; //dqdT; // dwdot[E]/dT
-
-  // reaction 1: E + N2p + M <=> E + N2 + M
+  // reaction 2: E + N2p + M <=> E + N2 + M
   // a third-body and non-pressure-fall-off reaction
   // 3-body correction factor
   alpha = mixture + (0 - 1) * sc[1];
@@ -1860,6 +1905,55 @@ aJacobian(
   J[12] += dqdT; // dwdot[N2]/dT
   J[13] -= dqdT; // dwdot[N2p]/dT
 
+  // reaction 0: N2 + E => E + N2p + E
+  // forward
+  phi_f = sc[0] * sc[2];
+  k_f = 0.647816915814558 * exp(-2.74 * logTe - (1.27) * invTe);
+  dlnkfdT = -2.74 * invTe + (1.27) * invTe2;
+  // rate of progress
+  q = k_f * phi_f;
+  dqdT = 0.0;
+  // update wdot
+  wdot[0] -= q; // N2
+  wdot[1] += q; // N2p
+  wdot[2] += q; // E
+  // d()/d[N2]
+  dqdci = +k_f;
+  J[0] -= dqdci; // dwdot[N2]/d[N2]
+  J[1] += dqdci; // dwdot[N2p]/d[N2]
+  J[2] += dqdci; // dwdot[E]/d[N2]
+  // d()/dT
+  J[12] -= dqdT; // dwdot[N2]/dT
+  J[13] += dqdT; // dwdot[N2p]/dT
+  J[14] += dqdT; // dwdot[E]/dT
+
+  // reaction 1: 2 E + N2 => 3 E + N2p
+  // forward
+  phi_f = sc[0] * (sc[2] * sc[2]);
+  k_f = 1.47816915814558e-10 * exp(-0.74 * logTe - (0.27) * invTe);
+  dlnkfdT = -0.74 * invTe + (0.27) * invTe2;
+  // rate of progress
+  q = k_f * phi_f;
+  dqdT = 0.0;
+  // update wdot
+  wdot[0] -= q; // N2
+  wdot[1] += q; // N2p
+  wdot[2] += q; // E
+  // d()/d[N2]
+  dqdci = +k_f * sc[2] * sc[2];
+  J[0] -= dqdci; // dwdot[N2]/d[N2]
+  J[1] += dqdci; // dwdot[N2p]/d[N2]
+  J[2] += dqdci; // dwdot[E]/d[N2]
+  // d()/d[E]
+  dqdci = +k_f * sc[0] * 2.000000 * sc[2];
+  J[8] -= dqdci;  // dwdot[N2]/d[E]
+  J[9] += dqdci;  // dwdot[N2p]/d[E]
+  J[10] += dqdci; // dwdot[E]/d[E]
+  // d()/dT
+  J[12] -= dqdT; // dwdot[N2]/dT
+  J[13] += dqdT; // dwdot[N2p]/dT
+  J[14] += dqdT; // dwdot[E]/dT
+
   amrex::Real c_R[3], dcRdT[3], e_RT[3];
   amrex::Real* eh_RT;
   if (consP == 1) {
@@ -1907,7 +2001,7 @@ DWDOT(
   amrex::Real* J,
   const amrex::Real* sc,
   const amrex::Real* Tp,
-  const amrex::Real* Tep,
+  amrex::Real* Tep,
   const int* consP)
 {
   amrex::Real c[3];

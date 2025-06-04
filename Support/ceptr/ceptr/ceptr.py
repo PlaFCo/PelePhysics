@@ -5,6 +5,7 @@ import pathlib
 import time
 from itertools import repeat
 from multiprocessing import Pool, cpu_count
+import numpy
 
 import cantera as ct
 
@@ -21,23 +22,32 @@ class electronTempRateData(ct.ExtensibleRateData):
 
 @ct.extension(name="electron-temperature", data=electronTempRateData)
 class electronTempRate(ct.ExtensibleRate):
-    __slots__ = ("A", "b", "Ea")
+    __slots__ = ("A", "b", "Ea","Eshift")
+
     def set_parameters(self, params, units):
         self.A = params.convert_rate_coeff("A", units)
         self.b = params["b"]
-        self.Ea = params.convert_activation_energy("Ea", "K")
+        self.Ea = params["Ea"]
+        self.Eshift = params["Eshift"]
+
+    def obtain_parameters(self):
+        return self.A, self.b, self.Ea, self.Eshift
 
     def get_parameters(self, params):
         params.set_quantity("A", self.A, self.conversion_units)
         params["b"] = self.b
-        params.set_activation_energy("Ea", self.Ea, "K")
+        params["Ea"] = self.Ea
+        params["Eshift"] = self.Eshift
 
     def validate(self, equation, soln):
         if self.A < 0:
             raise ValueError(f"Found negative 'A' for reaction {equation}")
 
     def eval(self, data):
-        return self.A * data.T**self.b * exp(-self.Ea/data.T)
+        if(data.Te > self.Eshift):
+            return self.A * data.T**self.b * numpy.exp(-self.Ea/(data.T-self.Eshift))
+        else:
+            return 0.0
 # A custom interface rate & rate data type
 
 def parse_lst_file(lst):

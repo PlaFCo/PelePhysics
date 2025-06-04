@@ -64,8 +64,18 @@ species:
     rotational-relaxation: 4.0
 
 reactions:
-- equation: E + N2 => N2p + E + E  # E-field reaction, Ef units in V/m
-  rate-constant: {A: 1.807e+14, b: 2.0, Ea: 7.631e+04}
+- equation: E + N2 => N2p + E + E  # (from IST-Lisbon database lxcat.net + LoKI-B solver)
+  type: electron-temperature
+  A: 647.8169158145577
+  b: -2.74
+  Ea: 1.27
+  Eshift: 0.66
+- equation: E + E + N2 => N2p + E + E + E  # (fake reaction)
+  type: electron-temperature
+  A: 147.8169158145577
+  b: -0.74
+  Ea: 0.27
+  Eshift: 0.1
 - equation: E + M + N2p <=> N2 + E + M
   type: three-body
   rate-constant: {A: 1.807e+14, b: 2.0, Ea: 7.631e+04}

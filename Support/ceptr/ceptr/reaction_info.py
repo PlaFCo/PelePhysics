@@ -70,7 +70,7 @@ def sort_reactions(mechanism, interface):
     # three-body
     for k, r in enumerate(reaction_info.rs_unsorted):
         if r not in reaction_info.rs:
-            if r.third_body is not None:
+            if r.third_body is not None and (not 'electron-temperature' in r.reaction_type):
                 reaction_info.idxmap[k] = i
                 reaction_info.rs.append(r)
                 i += 1
@@ -84,9 +84,9 @@ def sort_reactions(mechanism, interface):
             if (
                 r.reaction_type == "interface-Arrhenius"
                 or r.reaction_type == "sticking-Arrhenius"
+                or ( 'electron-temperature' in r.reaction_type)
             ):
                 continue
-
             if r.third_body is None:
                 # Check for PLOG reactions on the fly
                 if r.reaction_type == "pressure-dependent-Arrhenius":
@@ -104,12 +104,20 @@ def sort_reactions(mechanism, interface):
             if (
                 r.reaction_type == "interface-Arrhenius"
                 or r.reaction_type == "sticking-Arrhenius"
+                or ( 'electron-temperature' in r.reaction_type)
             ):
                 continue
-
             reaction_info.idxmap[k] = i
             reaction_info.rs.append(r)
             i += 1
+    reaction_info.index.append(i)
+
+    for k, r in enumerate(reaction_info.rs_unsorted):
+        if r not in reaction_info.rs:
+            if ( 'electron-temperature' in r.reaction_type):
+                reaction_info.idxmap[k] = i
+                reaction_info.rs.append(r)
+                i += 1
     reaction_info.index.append(i)
 
     # surface reactions

@@ -1,5 +1,5 @@
 #include "mechanism.H"
-const int rmap[NUM_REACTIONS] = {0, 1};
+const int rmap[NUM_REACTIONS] = {2, 0, 1};
 
 // Returns 0-based map of reaction order
 void
@@ -15,9 +15,10 @@ GET_RMAP(int* _rmap)
 void
 CKINU(const int i, int& nspec, int ki[], int nu[])
 {
-  const int ns[NUM_GAS_REACTIONS] = {3, 4};
-  const int kiv[NUM_GAS_REACTIONS * 4] = {0, 2, 1, 0, 2, 1, 2, 0};
-  const int nuv[NUM_GAS_REACTIONS * 4] = {-1, 1, 1, 0, -1, -1, 1, 1};
+  const int ns[NUM_GAS_REACTIONS] = {3, 4, 4};
+  const int kiv[NUM_GAS_REACTIONS * 4] = {0, 2, 1, 0, 2, 0, 2, 1, 2, 1, 2, 0};
+  const int nuv[NUM_GAS_REACTIONS * 4] = {-1, 1, 1,  0,  -2, -1,
+                                          3,  1, -1, -1, 1,  1};
   if (i < 1) {
     // Return max num species per reaction
     nspec = 4;
@@ -40,7 +41,6 @@ void
 CKKFKR(
   const amrex::Real P,
   const amrex::Real T,
-  const amrex::Real Te,
   const amrex::Real x[],
   amrex::Real q_f[],
   amrex::Real q_r[])
@@ -55,10 +55,10 @@ CKKFKR(
   }
 
   // convert to chemkin units
-  progressRateFR(q_f, q_r, c, T, Te);
+  progressRateFR(q_f, q_r, c, T);
 
   // convert to chemkin units
-  for (int id = 0; id < 2; ++id) {
+  for (int id = 0; id < 3; ++id) {
     q_f[id] *= 1.0e-6;
     q_r[id] *= 1.0e-6;
   }
@@ -68,7 +68,11 @@ CKKFKR(
 // USES progressRate : todo switch to GPU
 void
 progressRateFR(
-  amrex::Real* q_f, amrex::Real* q_r, amrex::Real* sc, amrex::Real T, amrex::Real Te)
+  amrex::Real* q_f,
+  amrex::Real* q_r,
+  amrex::Real* sc,
+  amrex::Real T,
+  amrex::Real Te)
 {
   const amrex::Real invT = 1.0 / T;
   const amrex::Real logT = log(T);
@@ -147,7 +151,7 @@ SPARSITY_INFO(int* nJdata, const int* consP, int NCELLS)
   for (int n = 0; n < 3; n++) {
     conc[n] = 1.0 / 3.000000;
   }
-  aJacobian(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);
+  aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
 
   int nJdata_tmp = 0;
   for (int k = 0; k < 4; k++) {
@@ -170,7 +174,7 @@ SPARSITY_INFO_SYST(int* nJdata, const int* consP, int NCELLS)
   for (int n = 0; n < 3; n++) {
     conc[n] = 1.0 / 3.000000;
   }
-  aJacobian(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);
+  aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
 
   int nJdata_tmp = 0;
   for (int k = 0; k < 4; k++) {
@@ -198,7 +202,7 @@ SPARSITY_INFO_SYST_SIMPLIFIED(int* nJdata, const int* consP)
   for (int n = 0; n < 3; n++) {
     conc[n] = 1.0 / 3.000000;
   }
-  aJacobian_precond(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);
+  aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);
 
   int nJdata_tmp = 0;
   for (int k = 0; k < 4; k++) {
@@ -226,7 +230,7 @@ SPARSITY_PREPROC_CSC(int* rowVals, int* colPtrs, const int* consP, int NCELLS)
   for (int n = 0; n < 3; n++) {
     conc[n] = 1.0 / 3.000000;
   }
-  aJacobian(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);
+  aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
 
   colPtrs[0] = 0;
   int nJdata_tmp = 0;
@@ -256,7 +260,7 @@ SPARSITY_PREPROC_CSR(
   for (int n = 0; n < 3; n++) {
     conc[n] = 1.0 / 3.000000;
   }
-  aJacobian(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);
+  aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
 
   if (base == 1) {
     rowPtrs[0] = 1;
@@ -302,7 +306,7 @@ SPARSITY_PREPROC_SYST_CSR(
   for (int n = 0; n < 3; n++) {
     conc[n] = 1.0 / 3.000000;
   }
-  aJacobian(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);
+  aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
 
   if (base == 1) {
     rowPtr[0] = 1;
@@ -358,7 +362,7 @@ SPARSITY_PREPROC_SYST_SIMPLIFIED_CSC(
   for (int n = 0; n < 3; n++) {
     conc[n] = 1.0 / 3.000000;
   }
-  aJacobian_precond(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);
+  aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);
 
   colPtrs[0] = 0;
   int nJdata_tmp = 0;
@@ -391,7 +395,7 @@ SPARSITY_PREPROC_SYST_SIMPLIFIED_CSR(
   for (int n = 0; n < 3; n++) {
     conc[n] = 1.0 / 3.000000;
   }
-  aJacobian_precond(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);
+  aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);
 
   if (base == 1) {
     rowPtr[0] = 1;

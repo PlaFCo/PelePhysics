@@ -33,7 +33,7 @@ amrex::Real redEfield_to_tempe(const amrex::Real redEfield)
   6.73930552e-03, -5.73558598e-02,  2.73334591e-01,  1.44603888e-02};
   amrex::Real tempe = coeff[0] + coeff[1]*redEfield + coeff[2]*redEfield2 + coeff[3]*redEfield3
     + coeff[4]*redEfield4 + coeff[5]*redEfield5 + coeff[6]*redEfield6 + coeff[7]*redEfield7;
-  return tempe // Example conversion factor
+  return tempe; // Example conversion factor
 }
 
 amrex::Real tempe_to_redEfield(const amrex::Real tempe)

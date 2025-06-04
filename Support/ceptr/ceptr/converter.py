@@ -69,8 +69,10 @@ class Converter:
         # Elementary, Surface-Coverage Modified and FORD
         # 6/interface/sticking
         # 6/7        /8
-        self.reaction_info = cri.sort_reactions(self.mechanism, self.interface)
 
+        # indexing of electron temperature reactions
+        # 9/electron-temperature
+        self.reaction_info = cri.sort_reactions(self.mechanism, self.interface)
         # Set up folder structure for PLOG reactions
         if self.reaction_info.has_plog_reactions:
             print(
@@ -443,11 +445,11 @@ class Converter:
                 # # Evaluate the dwdot_dsc values for later
                 self.syms.compute_dwdot_dsc(species_info=self.species_info)
 
-                cck.ckwc(hdr, self.mechanism, self.species_info)
-                cck.ckwyp(hdr, self.mechanism, self.species_info)
-                cck.ckwxp(hdr, self.mechanism, self.species_info)
-                cck.ckwyr(hdr, self.mechanism, self.species_info)
-                cck.ckwxr(hdr, self.mechanism, self.species_info)
+                cck.ckwc(hdr, self.mechanism, self.species_info, self.reaction_info)
+                cck.ckwyp(hdr, self.mechanism, self.species_info, self.reaction_info)
+                cck.ckwxp(hdr, self.mechanism, self.species_info, self.reaction_info)
+                cck.ckwyr(hdr, self.mechanism, self.species_info, self.reaction_info)
+                cck.ckwxr(hdr, self.mechanism, self.species_info, self.reaction_info)
                 cck.ckchrg(hdr, self)
                 cck.ckchrgmass(hdr, self.species_info)
 
@@ -498,11 +500,11 @@ class Converter:
                     self.reaction_info,
                     self.syms,
                 )
-                cck.ckwc(hdr, self.mechanism, self.species_info)
-                cck.ckwyp(hdr, self.mechanism, self.species_info)
-                cck.ckwxp(hdr, self.mechanism, self.species_info)
-                cck.ckwyr(hdr, self.mechanism, self.species_info)
-                cck.ckwxr(hdr, self.mechanism, self.species_info)
+                cck.ckwc(hdr, self.mechanism, self.species_info, self.reaction_info)
+                cck.ckwyp(hdr, self.mechanism, self.species_info, self.reaction_info)
+                cck.ckwxp(hdr, self.mechanism, self.species_info, self.reaction_info)
+                cck.ckwyr(hdr, self.mechanism, self.species_info, self.reaction_info)
+                cck.ckwxr(hdr, self.mechanism, self.species_info, self.reaction_info)
                 cck.ckchrg(hdr, self)
                 cck.ckchrgmass(hdr, self.species_info)
                 # Approx analytical jacobian
@@ -676,13 +678,13 @@ class Converter:
         cw.writer(fstream, "void CKINU(const int i, int &nspec, int * ki, int * nu);")
         cw.writer(
             fstream,
-            "void CKKFKR(const amrex::Real P, const amrex::Real T,"
+            "void CKKFKR(const amrex::Real P, const amrex::Real T, const amrex::Real Te,"
             + "const amrex::Real * x, amrex::Real *  q_f, amrex::Real *  q_r);",
         )
         cw.writer(
             fstream,
             "void progressRateFR(amrex::Real *  q_f, amrex::Real *  q_r,"
-            + "amrex::Real *  sc, amrex::Real T);",
+            + "amrex::Real *  sc, amrex::Real T, amrex::Real Te);",
         )
         cw.writer(fstream, cw.comment(" SPARSE INFORMATION "))
         cw.writer(

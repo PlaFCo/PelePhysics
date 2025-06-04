@@ -21,8 +21,7 @@ USE_SYCL   = FALSE
 PELE_USE_KLU = FALSE
 PELE_USE_MAGMA = FALSE
 
-
-# this flag actiavtes the use of NLTE
+# this flag actiavtes the use of PELE_USE_NLTE
 DEFINES += -DPELE_USE_NLTE
 
 # this flag activates the subcycling mode in the D/Cvode routines
