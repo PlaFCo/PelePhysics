@@ -2382,7 +2382,7 @@ def temp_given_ey(fstream, mechanism, species_list):
     tmax = 4000  # default value, will be updated below
     tmin = 90
     tmax_ar = [0.0 for _ in range(len(species_list))]
-    tmin_ar = [0.0 for _ in range(len(species_list))]
+    tmin_ar = [1000.0 for _ in range(len(species_list))]
     for idx, symbol in enumerate(species_list):
         species = mechanism.species(symbol)
         model = species.thermo
