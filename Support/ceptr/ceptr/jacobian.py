@@ -1622,14 +1622,14 @@ def dproduction_rate(fstream, mechanism, species_info, reaction_info, precond=Fa
                 fstream,
                 "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
                 " DWDOT(amrex::Real *  J, const amrex::Real *  sc, const"
-                " amrex::Real *  Tp, amrex::Real *  Tep, const int * consP)",
+                " amrex::Real *  Tp, const amrex::Real *  Tep, const int * consP)",
             )
         else:
             cw.writer(
                 fstream,
                 "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
                 " DWDOT(amrex::Real *  J, const amrex::Real *  sc, const"
-                " amrex::Real *  Tp, amrex::Real *  /*Tep*/, const int * consP)",
+                " amrex::Real *  Tp, const amrex::Real *  /*Tep*/, const int * consP)",
             )
     cw.writer(fstream, "{")
     cw.writer(fstream, f"amrex::Real c[{n_species}];")

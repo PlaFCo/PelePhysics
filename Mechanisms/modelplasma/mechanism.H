@@ -1420,8 +1420,8 @@ productionRate(
     const amrex::Real qdot = qf - qr;
     wdot[0] -= qdot;
     wdot[1] += qdot;
-    wdot[2] += 3.000000 * qdot;
     wdot[2] -= 2.000000 * qdot;
+    wdot[2] += 3.000000 * qdot;
   }
 }
 
@@ -2001,7 +2001,7 @@ DWDOT(
   amrex::Real* J,
   const amrex::Real* sc,
   const amrex::Real* Tp,
-  amrex::Real* Tep,
+  const amrex::Real* Tep,
   const int* consP)
 {
   amrex::Real c[3];

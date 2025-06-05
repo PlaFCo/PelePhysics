@@ -396,7 +396,7 @@ SPARSITY_PREPROC_SYST_SIMPLIFIED_CSR(
   for (int n = 0; n < 3; n++) {
     conc[n] = 1.0 / 3.000000;
   }
-  aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);
+  aJacobian_precond(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);
 
   if (base == 1) {
     rowPtr[0] = 1;
