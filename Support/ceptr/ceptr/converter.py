@@ -278,7 +278,7 @@ class Converter:
             cri.rmap(cpp, self.reaction_info)
             cri.get_rmap(cpp, self.reaction_info)
             cck.ckinu(cpp, self.mechanism, self.species_info, self.reaction_info)
-            cck.ckkfkr(cpp, self.mechanism, self.species_info)
+            cck.ckkfkr(cpp, self.mechanism, self.species_info, self.reaction_info)
             cp.progress_rate_fr(
                 cpp, self.mechanism, self.species_info, self.reaction_info
             )
@@ -287,7 +287,7 @@ class Converter:
             cck.ckncf(cpp, self.mechanism, self.species_info)
             cck.cksyme_str(cpp, self.mechanism, self.species_info)
             cck.cksyms_str(cpp, self.mechanism, self.species_info)
-            csp.sparsity(cpp, self.species_info)
+            csp.sparsity(cpp, self.species_info, self.reaction_info)
             if self.interface is not None:
                 cck.ckinu(
                     cpp,

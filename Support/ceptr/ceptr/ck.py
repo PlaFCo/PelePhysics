@@ -2647,21 +2647,33 @@ def ckinu(fstream, mechanism, species_info, reaction_info, write_sk=False):
     cw.writer(fstream, "}")
 
 
-def ckkfkr(fstream, mechanism, species_info):
+def ckkfkr(fstream, mechanism, species_info, reaction_info):
     """Write ckkfkr."""
     n_species = species_info.n_species
     n_reactions = mechanism.n_reactions
-
+    assert len(reaction_info.index) == 8
+    ielectron = reaction_info.index[6:8]
+    nelectron = ielectron[1] - ielectron[0]
+    
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns the progress rates of each reactions"))
     cw.writer(fstream, cw.comment("Given P, T, and mole fractions"))
-    cw.writer(
-        fstream,
-        "void CKKFKR"
-        + cc.sym
-        + "(const amrex::Real P, const amrex::Real T, const amrex::Real x[]"
-        + ", amrex::Real q_f[], amrex::Real q_r[])",
-    )
+    if nelectron > 0:
+        cw.writer(
+            fstream,
+            "void CKKFKR"
+            + cc.sym
+            + "(const amrex::Real P, const amrex::Real T, const amrex::Real Te, const amrex::Real x[]"
+            + ", amrex::Real q_f[], amrex::Real q_r[])",
+        )
+    else:
+        cw.writer(
+            fstream,
+            "void CKKFKR"
+            + cc.sym
+            + "(const amrex::Real P, const amrex::Real T, const amrex::Real /*Te*/, const amrex::Real x[]"
+            + ", amrex::Real q_f[], amrex::Real q_r[])",
+        )
     cw.writer(fstream, "{")
 
     cw.writer(
@@ -2685,8 +2697,11 @@ def ckkfkr(fstream, mechanism, species_info):
     # call progressRateFR
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
-    cw.writer(fstream, "progressRateFR(q_f, q_r, c, T);")
-
+    if nelectron > 0:
+        cw.writer(fstream, "progressRateFR(q_f, q_r, c, T, Te);")
+    else:
+        cw.writer(fstream, "progressRateFR(q_f, q_r, c, T, 0.0);")
+    
     # convert qdot to chemkin units
     cw.writer(fstream)
     if n_reactions > 0:
