@@ -746,7 +746,7 @@ GET_T_GIVEN_EY(
   const int maxiter = 200;
   const amrex::Real tol = 1.e-6;
 #endif
-  amrex::Real tmin = 0.0;    // max lower bound for thermo def
+  amrex::Real tmin = 300.0;  // max lower bound for thermo def
   amrex::Real tmax = 5000.0; // min upper bound for thermo def
   amrex::Real e1, emin, emax, cv, t1, dt;
   CKUBMS(tmin, y, emin);
