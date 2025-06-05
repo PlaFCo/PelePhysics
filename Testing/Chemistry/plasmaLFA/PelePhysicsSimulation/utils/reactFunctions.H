@@ -156,7 +156,7 @@ integrate_Array4Te(
   // Verify electric field, electron temperature, and source term
 
 
-  // End verification of efield, temperature and source terms
+  // End verification of redEfield, temperature and source terms
   // Get transport coeffs
   auto const* ltransparm = trans_parms.device_parm();
   amrex::FArrayBox rho_fab(box, 1, amrex::The_Async_Arena());
@@ -198,9 +198,9 @@ integrate_Array4Te(
   double timeElapsed = 0;
   for (int ii = 0; ii < ndt; ++ii) {
     // Set electric field, electron temperature, and Joule source term
-    amrex::Real efield_value = efield_func(0.0, 0.0, 0.0); // Example value, replace with actual
-    Te(0, 0, 0) = efield_to_tempe(efield_value);
-    amrex::Real joule_source = efield_to_hsrc(efield_value, rhoY(0, 0, 0, E_ID));
+    amrex::Real redEfield_value = redEfield_func(0.0, 0.0, 0.0); // Example value, replace with actual
+    Te(0, 0, 0) = redEfield_to_tempe(redEfield_value);
+    amrex::Real joule_source = redEfield_to_hsrc(redEfield_value, rhoY(0, 0, 0, E_ID));
     frcEExt_E(0, 0, 0) = joule_source;
     frcEExt_Ee(0, 0, 0) = 0.0; // Assuming no source term for electron energy since we are using LFA
     std::cout << Te(0, 0, 0) << " " << frcEExt_E(0, 0, 0) << " "
