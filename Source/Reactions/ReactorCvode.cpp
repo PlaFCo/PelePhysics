@@ -107,7 +107,7 @@ ReactorCvode::initCvode(
     amrex::Abort(
       "solve_type=sparse_direct only available with CUDA with YCOrder");
 #endif
-#ifdef PELE_USE_NLTE // FIXME 
+#ifdef PELE_USE_NLTE 
   } else if (a_udata->solve_type == cvode::customDirect && m_reactor_type > 2) {
 #if defined(AMREX_USE_CUDA) && defined(PELE_CVODE_FORCE_YCORDER)
     a_LS = cvode::SUNLinSol_dense_custom(
@@ -230,7 +230,8 @@ ReactorCvode::initCvode(
     }
 #else
     amrex::Abort("analytical_jacobian only available with YCOrder");
-#endif // PELE_USE_NLTE
+#endif 
+#endif// PELE_USE_NLTE
   }
 
   // Analytical Jac. data for iterative solver preconditioner
