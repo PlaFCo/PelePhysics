@@ -176,23 +176,23 @@ struct Manifold
     const amrex::Real /*R*/,
     const amrex::Real /*E*/,
     const amrex::Real Y[],
-    amrex::Real& T)
+    amrex::Real T[NUM_TEMP])
   {
     if (eosparm->compute_temperature) {
-      manfunc.get_func()->get_value(eosparm->idx_T, Y, T);
+      manfunc.get_func()->get_value(eosparm->idx_T, Y, T[0]);
     } else {
-      T = 1.0;
+      T[0] = 1.0;
     }
   }
 
   AMREX_GPU_HOST_DEVICE
   AMREX_FORCE_INLINE
-  void HY2T(const amrex::Real /*H*/, const amrex::Real Y[], amrex::Real& T)
+  void HY2T(const amrex::Real /*H*/, const amrex::Real Y[], amrex::Real T[NUM_TEMP])
   {
     if (eosparm->compute_temperature) {
-      manfunc.get_func()->get_value(eosparm->idx_T, Y, T);
+      manfunc.get_func()->get_value(eosparm->idx_T, Y, T[0]);
     } else {
-      T = 1.0;
+      T[0] = 1.0;
     }
   }
 
@@ -202,12 +202,12 @@ struct Manifold
     const amrex::Real /*R*/,
     const amrex::Real /*H*/,
     const amrex::Real Y[],
-    amrex::Real& T)
+    amrex::Real T[NUM_TEMP])
   {
     if (eosparm->compute_temperature) {
-      manfunc.get_func()->get_value(eosparm->idx_T, Y, T);
+      manfunc.get_func()->get_value(eosparm->idx_T, Y, T[0]);
     } else {
-      T = 1.0;
+      T[0] = 1.0;
     }
   }
 

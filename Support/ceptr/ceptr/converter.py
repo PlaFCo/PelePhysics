@@ -278,7 +278,7 @@ class Converter:
             cri.rmap(cpp, self.reaction_info)
             cri.get_rmap(cpp, self.reaction_info)
             cck.ckinu(cpp, self.mechanism, self.species_info, self.reaction_info)
-            cck.ckkfkr(cpp, self.mechanism, self.species_info, self.reaction_info)
+            cck.ckkfkr(cpp, self.mechanism, self.species_info)
             cp.progress_rate_fr(
                 cpp, self.mechanism, self.species_info, self.reaction_info
             )
@@ -287,7 +287,7 @@ class Converter:
             cck.ckncf(cpp, self.mechanism, self.species_info)
             cck.cksyme_str(cpp, self.mechanism, self.species_info)
             cck.cksyms_str(cpp, self.mechanism, self.species_info)
-            csp.sparsity(cpp, self.species_info, self.reaction_info)
+            csp.sparsity(cpp, self.species_info)
             if self.interface is not None:
                 cck.ckinu(
                     cpp,
@@ -500,11 +500,11 @@ class Converter:
                     self.reaction_info,
                     self.syms,
                 )
-                cck.ckwc(hdr, self.mechanism, self.species_info, self.reaction_info)
-                cck.ckwyp(hdr, self.mechanism, self.species_info, self.reaction_info)
-                cck.ckwxp(hdr, self.mechanism, self.species_info, self.reaction_info)
-                cck.ckwyr(hdr, self.mechanism, self.species_info, self.reaction_info)
-                cck.ckwxr(hdr, self.mechanism, self.species_info, self.reaction_info)
+                cck.ckwc(hdr, self.species_info)
+                cck.ckwyp(hdr, self.species_info)
+                cck.ckwxp(hdr, self.species_info)
+                cck.ckwyr(hdr, self.species_info)
+                cck.ckwxr(hdr, self.species_info)
                 cck.ckchrg(hdr, self)
                 cck.ckchrgmass(hdr, self.species_info)
                 # Approx analytical jacobian
@@ -518,9 +518,7 @@ class Converter:
                 )
                 cj.dproduction_rate(
                     hdr,
-                    self.mechanism,
                     self.species_info,
-                    self.reaction_info,
                     precond=True,
                 )
                 # Analytical jacobian on GPU -- not used on CPU, define in mechanism.cpp
@@ -532,7 +530,7 @@ class Converter:
                     jacobian=self.jacobian,
                 )
                 cj.dproduction_rate(
-                    hdr, self.mechanism, self.species_info, self.reaction_info
+                    hdr, self.species_info
                 )
 
             # Transport
@@ -678,13 +676,13 @@ class Converter:
         cw.writer(fstream, "void CKINU(const int i, int &nspec, int * ki, int * nu);")
         cw.writer(
             fstream,
-            "void CKKFKR(const amrex::Real P, const amrex::Real T, const amrex::Real Te,"
+            "void CKKFKR(const amrex::Real P, const amrex::Real * T,"
             + "const amrex::Real * x, amrex::Real *  q_f, amrex::Real *  q_r);",
         )
         cw.writer(
             fstream,
             "void progressRateFR(amrex::Real *  q_f, amrex::Real *  q_r,"
-            + "amrex::Real *  sc, amrex::Real T, amrex::Real Te);",
+            + "amrex::Real *  sc, amrex::Real * T);",
         )
         cw.writer(fstream, cw.comment(" SPARSE INFORMATION "))
         cw.writer(
@@ -732,7 +730,6 @@ class Converter:
         n_hom_reactions = self.mechanism.n_reactions
         site_density = n_het_b_elem = n_het_species = n_het_reactions = 0
         all_species_list = self.species_info.nonqssa_species_list
-
 
         assert len(self.reaction_info.index) == 8
         ielectron = self.reaction_info.index[6:8]
@@ -820,16 +817,6 @@ class Converter:
             fstream,
             f"#define NUM_SPECIES (NUM_{qssa_str}GAS_SPECIES + NUM_SURFACE_SPECIES)",
         )
-        if nelectron > 0:
-            cw.writer(
-                fstream,
-                f"#define NUM_TEMP 2",
-            )
-        else:
-            cw.writer(
-                fstream,
-                f"#define NUM_TEMP 1",
-            )
         cw.writer(
             fstream, "#define NUM_REACTIONS (NUM_GAS_REACTIONS + NUM_SURFACE_REACTIONS)"
         )
@@ -837,3 +824,14 @@ class Converter:
         cw.writer(fstream, f"#define NUM_IONS {nb_ions}")
         cw.writer(fstream)
         cw.writer(fstream, "#define NUM_FIT 4")
+        cw.writer(fstream)
+        if nelectron > 0:
+            cw.writer(
+                fstream,
+                "#define NUM_TEMP 2",
+            )
+        else:
+            cw.writer(
+                fstream,
+                "#define NUM_TEMP 1",
+            )

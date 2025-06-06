@@ -136,7 +136,7 @@ def ckcpbl(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKCPBL"
         + cc.sym
-        + "(const amrex::Real T, const amrex::Real x[], amrex::Real& cpbl)",
+        + "(const amrex::Real T[NUM_TEMP], const amrex::Real x[], amrex::Real& cpbl)",
     )
     cw.writer(fstream, "{")
 
@@ -176,7 +176,7 @@ def ckcpbs(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKCPBS"
         + cc.sym
-        + "(const amrex::Real T, const amrex::Real y[], amrex::Real& cpbs)",
+        + "(const amrex::Real T[NUM_TEMP], const amrex::Real y[], amrex::Real& cpbs)",
     )
     cw.writer(fstream, "{")
 
@@ -213,7 +213,7 @@ def ckcvbl(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKCVBL"
         + cc.sym
-        + "(const amrex::Real T, const amrex::Real x[], amrex::Real& cvbl)",
+        + "(const amrex::Real T[NUM_TEMP], const amrex::Real x[], amrex::Real& cvbl)",
     )
     cw.writer(fstream, "{")
 
@@ -253,7 +253,7 @@ def ckcvbs(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKCVBS"
         + cc.sym
-        + "(const amrex::Real T, const amrex::Real y[],  amrex::Real& cvbs)",
+        + "(const amrex::Real T[NUM_TEMP], const amrex::Real y[],  amrex::Real& cvbs)",
     )
     cw.writer(fstream, "{")
 
@@ -292,7 +292,7 @@ def ckhbml(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKHBML"
         + cc.sym
-        + "(const amrex::Real T, const amrex::Real x[], amrex::Real& hbml)",
+        + "(const amrex::Real T[NUM_TEMP], const amrex::Real x[], amrex::Real& hbml)",
     )
     cw.writer(fstream, "{")
 
@@ -305,7 +305,7 @@ def ckhbml(fstream, mechanism, species_info):
     cw.writer(
         fstream,
         "amrex::Real RT ="
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T; "
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T[0]; "
         + cw.comment("R*T"),
     )
 
@@ -334,7 +334,7 @@ def ckhbms(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKHBMS"
         + cc.sym
-        + "(const amrex::Real T, const amrex::Real y[],  amrex::Real& hbms)",
+        + "(const amrex::Real T[NUM_TEMP], const amrex::Real y[],  amrex::Real& hbms)",
     )
     cw.writer(fstream, "{")
 
@@ -355,7 +355,7 @@ def ckhbms(fstream, mechanism, species_info):
     cw.writer(
         fstream,
         "const amrex::Real RT ="
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T; "
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T[0]; "
         + cw.comment("R*T"),
     )
 
@@ -373,7 +373,7 @@ def ckubml(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKUBML"
         + cc.sym
-        + "(const amrex::Real T, const amrex::Real x[], amrex::Real& ubml)",
+        + "(const amrex::Real T[NUM_TEMP], const amrex::Real x[], amrex::Real& ubml)",
     )
     cw.writer(fstream, "{")
 
@@ -386,7 +386,7 @@ def ckubml(fstream, mechanism, species_info):
     cw.writer(
         fstream,
         "amrex::Real RT ="
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T; "
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T[0]; "
         + cw.comment("R*T"),
     )
 
@@ -412,7 +412,7 @@ def ckubms(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKUBMS"
         + cc.sym
-        + "(const amrex::Real T, const amrex::Real y[], amrex::Real& ubms)",
+        + "(const amrex::Real T[NUM_TEMP], const amrex::Real y[], amrex::Real& ubms)",
     )
     cw.writer(fstream, "{")
 
@@ -433,7 +433,7 @@ def ckubms(fstream, mechanism, species_info):
     cw.writer(
         fstream,
         "const amrex::Real RT ="
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T; "
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T[0]; "
         + cw.comment("R*T"),
     )
 
@@ -451,7 +451,7 @@ def cksbml(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKSBML"
         + cc.sym
-        + "(const amrex::Real P, const amrex::Real T,"
+        + "(const amrex::Real P, const amrex::Real T[NUM_TEMP],"
         + "const amrex::Real x[], amrex::Real& sbml)",
     )
     cw.writer(fstream, "{")
@@ -502,7 +502,7 @@ def cksbms(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKSBMS"
         + cc.sym
-        + "(const amrex::Real P, const amrex::Real T,"
+        + "(const amrex::Real P, const amrex::Real T[NUM_TEMP],"
         + "const amrex::Real y[], amrex::Real& sbms)",
     )
     cw.writer(fstream, "{")
@@ -852,7 +852,7 @@ def ckpx(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKPX"
         + cc.sym
-        + "(const amrex::Real rho, const amrex::Real T, const amrex::Real x[],"
+        + "(const amrex::Real rho, const amrex::Real T[NUM_TEMP], const amrex::Real x[],"
         " amrex::Real& P)",
     )
     cw.writer(fstream, "{")
@@ -875,7 +875,7 @@ def ckpx(fstream, mechanism, species_info):
     cw.writer(
         fstream,
         "P = rho *"
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e} * T"
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e} * T[0]"
         " / XW; " + cw.comment("P = rho*R*T/W"),
     )
 
@@ -892,7 +892,7 @@ def ckpy(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKPY"
         + cc.sym
-        + "(const amrex::Real rho, const amrex::Real T, const amrex::Real"
+        + "(const amrex::Real rho, const amrex::Real T[NUM_TEMP], const amrex::Real"
         " y[], "
         " amrex::Real& P)",
     )
@@ -914,7 +914,7 @@ def ckpy(fstream, mechanism, species_info):
     cw.writer(
         fstream,
         "P = rho *"
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e} * T"
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e} * T[0]"
         " * YOW; " + cw.comment("P = rho*R*T/W"),
     )
 
@@ -932,7 +932,7 @@ def ckpc(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKPC"
         + cc.sym
-        + "(const amrex::Real rho, const amrex::Real T, const amrex::Real"
+        + "(const amrex::Real rho, const amrex::Real T[NUM_TEMP], const amrex::Real"
         " c[], "
         " amrex::Real& P)",
     )
@@ -962,7 +962,7 @@ def ckpc(fstream, mechanism, species_info):
     cw.writer(
         fstream,
         "P = rho *"
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e} * T"
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e} * T[0]"
         " * sumC / W; " + cw.comment("P = rho*R*T/W"),
     )
 
@@ -979,7 +979,7 @@ def ckrhox(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKRHOX"
         + cc.sym
-        + "(const amrex::Real P, const amrex::Real T,"
+        + "(const amrex::Real P, const amrex::Real T[NUM_TEMP],"
         + "const amrex::Real x[], amrex::Real& rho)",
     )
     cw.writer(fstream, "{")
@@ -1003,7 +1003,7 @@ def ckrhox(fstream, mechanism, species_info):
         fstream,
         "rho = P * XW /"
         f" ({(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e} *"
-        " T); " + cw.comment("rho = P*W/(R*T)"),
+        " T[0]); " + cw.comment("rho = P*W/(R*T)"),
     )
 
     cw.writer(fstream)
@@ -1020,7 +1020,7 @@ def ckrhoy(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKRHOY"
         + cc.sym
-        + "(const amrex::Real P, const amrex::Real T,"
+        + "(const amrex::Real P, const amrex::Real T[NUM_TEMP],"
         + "const amrex::Real y[], amrex::Real& rho)",
     )
     cw.writer(fstream, "{")
@@ -1034,7 +1034,7 @@ def ckrhoy(fstream, mechanism, species_info):
     cw.writer(
         fstream,
         "rho = P /"
-        f" ({(cc.R * cc.ureg.mole * cc.ureg.kelvin / cc.ureg.erg).m:1.14e} * T"
+        f" ({(cc.R * cc.ureg.mole * cc.ureg.kelvin / cc.ureg.erg).m:1.14e} * T[0]"
         " * YOW);" + cw.comment("rho = P*W/(R*T)"),
     )
 
@@ -1050,7 +1050,7 @@ def ckrhoc(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKRHOC"
         + cc.sym
-        + "(const amrex::Real P, const amrex::Real T,"
+        + "(const amrex::Real P, const amrex::Real T[NUM_TEMP],"
         + "const amrex::Real c[], amrex::Real& rho)",
     )
 
@@ -1078,7 +1078,7 @@ def ckrhoc(fstream, mechanism, species_info):
     cw.comment("W/sumC holds the mean molecular wt")
     cw.writer(
         fstream,
-        "rho = P * W / (sumC * T *"
+        "rho = P * W / (sumC * T[0] *"
         f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}); "
         + cw.comment("rho = PW/(R*T)"),
     )
@@ -1202,7 +1202,7 @@ def ckcpor(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKCPOR"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real cpor[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real cpor[])",
     )
     cw.writer(fstream, "{")
 
@@ -1220,7 +1220,7 @@ def ckhort(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKHORT"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real hort[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real hort[])",
     )
     cw.writer(fstream, "{")
 
@@ -1238,7 +1238,7 @@ def cksor(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKSOR"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real sor[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real sor[])",
     )
     cw.writer(fstream, "{")
 
@@ -1574,7 +1574,7 @@ def ckcvml(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKCVML"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real cvml[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real cvml[])",
     )
     cw.writer(fstream, "{")
 
@@ -1604,7 +1604,7 @@ def ckcpml(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKCPML"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real cpml[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real cpml[])",
     )
     cw.writer(fstream, "{")
 
@@ -1634,14 +1634,14 @@ def ckuml(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKUML"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real uml[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real uml[])",
     )
     cw.writer(fstream, "{")
 
     cw.writer(
         fstream,
         "amrex::Real RT ="
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T; "
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T[0]; "
         + cw.comment("R*T"),
     )
 
@@ -1667,14 +1667,14 @@ def ckhml(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKHML"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real hml[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real hml[])",
     )
     cw.writer(fstream, "{")
 
     cw.writer(
         fstream,
         "amrex::Real RT ="
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T; "
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T[0]; "
         + cw.comment("R*T"),
     )
 
@@ -1768,7 +1768,7 @@ def cksml(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKSML"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real sml[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real sml[])",
     )
     cw.writer(fstream, "{")
 
@@ -1796,7 +1796,7 @@ def ckcvms(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKCVMS"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real cvms[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real cvms[])",
     )
     cw.writer(fstream, "{")
 
@@ -1826,7 +1826,7 @@ def ckcpms(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKCPMS"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real cpms[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real cpms[])",
     )
     cw.writer(fstream, "{")
 
@@ -1856,14 +1856,14 @@ def ckums(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKUMS"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real ums[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real ums[])",
     )
     cw.writer(fstream, "{")
 
     cw.writer(
         fstream,
         "amrex::Real RT ="
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T; "
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T[0]; "
         + cw.comment("R*T"),
     )
 
@@ -1888,14 +1888,14 @@ def ckhms(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKHMS"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real hms[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real hms[])",
     )
     cw.writer(fstream, "{")
 
     cw.writer(
         fstream,
         "amrex::Real RT ="
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T; "
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T[0]; "
         + cw.comment("R*T"),
     )
 
@@ -1920,14 +1920,14 @@ def ckgms(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKGMS"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real gms[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real gms[])",
     )
     cw.writer(fstream, "{")
 
     cw.writer(
         fstream,
         "amrex::Real RT ="
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T; "
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T[0]; "
         + cw.comment("R*T"),
     )
 
@@ -1952,14 +1952,14 @@ def ckams(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKAMS"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real ams[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real ams[])",
     )
     cw.writer(fstream, "{")
 
     cw.writer(
         fstream,
         "amrex::Real RT ="
-        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T; "
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e}*T[0]; "
         + cw.comment("R*T"),
     )
 
@@ -1982,7 +1982,7 @@ def cksms(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKSMS"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real sms[])",
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real sms[])",
     )
     cw.writer(fstream, "{")
 
@@ -2003,29 +2003,18 @@ def cksms(fstream, mechanism, species_info):
     cw.writer(fstream, "}")
 
 
-def ckwc(fstream, mechanism, species_info, reaction_info):
+def ckwc(fstream, species_info):
     """Write ckwc."""
     n_species = species_info.n_species
-    assert len(reaction_info.index) == 8
-    ielectron = reaction_info.index[6:8]
-    nelectron = ielectron[1] - ielectron[0]
     
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("compute the production rate for each species"))
-    if nelectron >0:
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWC"
-            + cc.sym
-            + "(const amrex::Real T, const amrex::Real Te, amrex::Real C[], amrex::Real wdot[])",
-        )
-    else:
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWC"
-            + cc.sym
-            + "(const amrex::Real T, const amrex::Real /*Te*/, amrex::Real C[], amrex::Real wdot[])",
-        )
+    cw.writer(
+        fstream,
+        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWC"
+        + cc.sym
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real C[], amrex::Real wdot[])",
+    )
     cw.writer(fstream, "{")
 
     # convert C to SI units
@@ -2038,10 +2027,7 @@ def ckwc(fstream, mechanism, species_info, reaction_info):
     # call productionRate
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
-    if nelectron > 0:
-        cw.writer(fstream, "productionRate(wdot, C, T, Te);")
-    else:
-        cw.writer(fstream, "productionRate(wdot, C, T, 0.0);")
+    cw.writer(fstream, "productionRate(wdot, C, T);")
 
     # convert C and wdot to chemkin units
     cw.writer(fstream)
@@ -2054,32 +2040,20 @@ def ckwc(fstream, mechanism, species_info, reaction_info):
     cw.writer(fstream, "}")
 
 
-def ckwyp(fstream, mechanism, species_info, reaction_info):
+def ckwyp(fstream, species_info):
     """Write ckwyp."""
     n_species = species_info.n_species
-    assert len(reaction_info.index) == 8
-    ielectron = reaction_info.index[6:8]
-    nelectron = ielectron[1] - ielectron[0]
 
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns the molar production rate of species"))
     cw.writer(fstream, cw.comment("Given P, T, and mass fractions"))
-    if nelectron >0:
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYP"
-            + cc.sym
-            + "(const amrex::Real P, const amrex::Real T, const amrex::Real Te,"
-            + "const amrex::Real y[], amrex::Real wdot[])",
-        )
-    else:
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYP"
-            + cc.sym
-            + "(const amrex::Real P, const amrex::Real T, const amrex::Real /*Te*/,"
-            + "const amrex::Real y[], amrex::Real wdot[])",
-        )
+    cw.writer(
+        fstream,
+        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYP"
+        + cc.sym
+        + "(const amrex::Real P, const amrex::Real T[NUM_TEMP],"
+        + "const amrex::Real y[], amrex::Real wdot[])",
+    )
     cw.writer(fstream, "{")
 
     cw.writer(
@@ -2105,7 +2079,7 @@ def ckwyp(fstream, mechanism, species_info, reaction_info):
         fstream,
         "PWORT = P/(YOW *"
         f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e} *"
-        " T); ",
+        " T[0]); ",
     )
 
     cw.writer(fstream, cw.comment("multiply by 1e6 so c goes to SI"))
@@ -2124,10 +2098,7 @@ def ckwyp(fstream, mechanism, species_info, reaction_info):
     # call productionRate
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
-    if nelectron > 0:
-        cw.writer(fstream, "productionRate(wdot, c, T, Te);")
-    else:
-        cw.writer(fstream, "productionRate(wdot, c, T, 0.0);")
+    cw.writer(fstream, "productionRate(wdot, c, T);")
 
     # convert wdot to chemkin units
     cw.writer(fstream)
@@ -2138,32 +2109,20 @@ def ckwyp(fstream, mechanism, species_info, reaction_info):
     cw.writer(fstream, "}")
 
 
-def ckwxp(fstream, mechanism, species_info, reaction_info):
+def ckwxp(fstream, species_info):
     """Write ckwxp."""
     n_species = species_info.n_species
-    assert len(reaction_info.index) == 8
-    ielectron = reaction_info.index[6:8]
-    nelectron = ielectron[1] - ielectron[0]
     
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns the molar production rate of species"))
     cw.writer(fstream, cw.comment("Given P, T, and mole fractions"))
-    if nelectron >0:
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXP"
-            + cc.sym
-            + "(const amrex::Real P, const amrex::Real T, const amrex::Real Te,"
-            + "const amrex::Real x[], amrex::Real wdot[])",
-        )
-    else:
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXP"
-            + cc.sym
-            + "(const amrex::Real P, const amrex::Real T, const amrex::Real /*Te*/,"
-            + "const amrex::Real x[], amrex::Real wdot[])",
-        )
+    cw.writer(
+        fstream,
+        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXP"
+        + cc.sym
+        + "(const amrex::Real P, const amrex::Real T[NUM_TEMP],"
+        + "const amrex::Real x[], amrex::Real wdot[])",
+    )
     cw.writer(fstream, "{")
 
     cw.writer(
@@ -2175,7 +2134,7 @@ def ckwxp(fstream, mechanism, species_info, reaction_info):
         fstream,
         "amrex::Real PORT = 1e6 *"
         f" P/({(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e} *"
-        " T); " + cw.comment("1e6 * P/RT so c goes to SI units"),
+        " T[0]); " + cw.comment("1e6 * P/RT so c goes to SI units"),
     )
 
     # now compute conversion
@@ -2188,10 +2147,7 @@ def ckwxp(fstream, mechanism, species_info, reaction_info):
     # call productionRate
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
-    if nelectron > 0:
-        cw.writer(fstream, "productionRate(wdot, c, T, Te);")
-    else:
-        cw.writer(fstream, "productionRate(wdot, c, T, 0.0);")
+    cw.writer(fstream, "productionRate(wdot, c, T);")
 
     # convert wdot to chemkin units
     cw.writer(fstream)
@@ -2202,34 +2158,21 @@ def ckwxp(fstream, mechanism, species_info, reaction_info):
     cw.writer(fstream, "}")
 
 
-def ckwyr(fstream, mechanism, species_info, reaction_info):
+def ckwyr(fstream, species_info):
     """Write ckwyr."""
     n_species = species_info.n_species
-    assert len(reaction_info.index) == 8
-    ielectron = reaction_info.index[6:8]
-    nelectron = ielectron[1] - ielectron[0]
     
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns the molar production rate of species"))
     cw.writer(fstream, cw.comment("Given rho, T, and mass fractions"))
-    if nelectron >0:
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYR"
-            + cc.sym
-            + "(const amrex::Real rho, const amrex::Real T, const amrex::Real Te, const amrex::Real"
-            " y[], "
-            " amrex::Real wdot[])",
-        )
-    else:
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYR"
-            + cc.sym
-            + "(const amrex::Real rho, const amrex::Real T, const amrex::Real /*Te*/, const amrex::Real"
-            " y[], "
-            " amrex::Real wdot[])",
-        )
+    cw.writer(
+        fstream,
+        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWYR"
+        + cc.sym
+        + "(const amrex::Real rho, const amrex::Real T[NUM_TEMP], const amrex::Real"
+        " y[], "
+        " amrex::Real wdot[])",
+    )
     cw.writer(fstream, "{")
 
     cw.writer(
@@ -2251,10 +2194,7 @@ def ckwyr(fstream, mechanism, species_info, reaction_info):
     # call productionRate
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("call productionRate"))
-    if nelectron > 0:
-        cw.writer(fstream, "productionRate(wdot, c, T, Te);")
-    else:
-        cw.writer(fstream, "productionRate(wdot, c, T, 0.0);")
+    cw.writer(fstream, "productionRate(wdot, c, T);")
 
     # convert wdot to chemkin units
     cw.writer(fstream)
@@ -2265,34 +2205,22 @@ def ckwyr(fstream, mechanism, species_info, reaction_info):
     cw.writer(fstream, "}")
 
 
-def ckwxr(fstream, mechanism, species_info, reaction_info):
+def ckwxr(fstream, species_info):
     """Write ckwxr."""
     n_species = species_info.n_species
-    assert len(reaction_info.index) == 8
-    ielectron = reaction_info.index[6:8]
-    nelectron = ielectron[1] - ielectron[0]
     
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns the molar production rate of species"))
     cw.writer(fstream, cw.comment("Given rho, T, and mole fractions"))
-    if nelectron >0:
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXR"
-            + cc.sym
-            + "(const amrex::Real rho, const amrex::Real T, const amrex::Real Te, const amrex::Real"
-            " x[], "
-            " amrex::Real wdot[])",
-        )
-    else:
-        cw.writer(
-            fstream,
-            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXR"
-            + cc.sym
-            + "(const amrex::Real rho, const amrex::Real T, const amrex::Real /*Te*/, const amrex::Real"
-            " x[], "
-            " amrex::Real wdot[])",
-        )
+
+    cw.writer(
+        fstream,
+        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWXR"
+        + cc.sym
+        + "(const amrex::Real rho, const amrex::Real T[NUM_TEMP], const amrex::Real"
+        " x[], "
+        " amrex::Real wdot[])",
+    )
     cw.writer(fstream, "{")
 
     cw.writer(
@@ -2328,10 +2256,7 @@ def ckwxr(fstream, mechanism, species_info, reaction_info):
     # call productionRate
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
-    if nelectron > 0:
-        cw.writer(fstream, "productionRate(wdot, c, T, Te);")
-    else:
-        cw.writer(fstream, "productionRate(wdot, c, T, 0.0);")
+    cw.writer(fstream, "productionRate(wdot, c, T);")
 
     # convert wdot to chemkin units
     cw.writer(fstream)
@@ -2401,7 +2326,7 @@ def temp_given_ey(fstream, mechanism, species_list):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
         " GET_T_GIVEN_EY(const amrex::Real e, const amrex::Real y[],"
-        " amrex::Real& t, int& ierr)",
+        " amrex::Real t[NUM_TEMP], int& ierr)",
     )
     cw.writer(fstream, "{")
     cw.writer(fstream, "#ifdef CONVERGENCE")
@@ -2413,33 +2338,34 @@ def temp_given_ey(fstream, mechanism, species_list):
     cw.writer(fstream, "#endif")
     cw.writer(
         fstream,
-        f"amrex::Real tmin = {tmin};" + cw.comment("max lower bound for thermo def"),
+        "amrex::Real tmin[NUM_TEMP] = {"+f"{tmin}"+"};" + cw.comment("max lower bound for thermo def"),
     )
     
     cw.writer(
         fstream,
-        f"amrex::Real tmax = {tmax};" + cw.comment("min upper bound for thermo def"),
+        "amrex::Real tmax[NUM_TEMP] ={"+f"{tmax}"+"};" + cw.comment("min upper bound for thermo def"),
     )
-    cw.writer(fstream, "amrex::Real e1,emin,emax,cv,t1,dt;")
+    cw.writer(fstream, "amrex::Real t1[NUM_TEMP];")
+    cw.writer(fstream, "amrex::Real e1,emin,emax,cv,dt;")
     cw.writer(fstream, "CKUBMS(tmin, y, emin);")
     cw.writer(fstream, "CKUBMS(tmax, y, emax);")
     cw.writer(fstream, "if (e < emin) {")
     cw.writer(fstream, cw.comment("Linear Extrapolation below tmin"))
     cw.writer(fstream, "CKCVBS(tmin, y, cv);")
-    cw.writer(fstream, "t = tmin - (emin-e)/cv;")
+    cw.writer(fstream, "t[0] = tmin[0] - (emin-e)/cv;")
     cw.writer(fstream, "ierr = 1;")
     cw.writer(fstream, "return;")
     cw.writer(fstream, "}")
     cw.writer(fstream, "if (e > emax) {")
     cw.writer(fstream, cw.comment("Linear Extrapolation above tmax"))
     cw.writer(fstream, "CKCVBS(tmax, y, cv);")
-    cw.writer(fstream, "t = tmax - (emax-e)/cv;")
+    cw.writer(fstream, "t[0] = tmax[0] - (emax-e)/cv;")
     cw.writer(fstream, "ierr = 1;")
     cw.writer(fstream, "return;")
     cw.writer(fstream, "}")
-    cw.writer(fstream, "t1 = t;")
-    cw.writer(fstream, "if (t1 < tmin || t1 > tmax) {")
-    cw.writer(fstream, "t1 = tmin + (tmax-tmin)/(emax-emin)*(e-emin);")
+    cw.writer(fstream, "t1[0] = t[0];")
+    cw.writer(fstream, "if (t1[0] < tmin[0] || t1[0] > tmax[0]) {")
+    cw.writer(fstream, "t1[0] = tmin[0] + (tmax[0]-tmin[0])/(emax-emin)*(e-emin);")
     cw.writer(fstream, "}")
     cw.writer(fstream, "for (int i = 0; i < maxiter; ++i) {")
     cw.writer(fstream, "CKUBMS(t1,y,e1);")
@@ -2448,9 +2374,9 @@ def temp_given_ey(fstream, mechanism, species_list):
     cw.writer(fstream, "if (dt > 100.) { dt = 100.; }")
     cw.writer(fstream, "else if (dt < -100.) { dt = -100.; }")
     cw.writer(fstream, "else if (fabs(dt) < tol) {break;}")
-    cw.writer(fstream, "t1 += dt;")
+    cw.writer(fstream, "t1[0] += dt;")
     cw.writer(fstream, "}")
-    cw.writer(fstream, "t = t1;")
+    cw.writer(fstream, "t[0] = t1[0];")
     cw.writer(fstream, "ierr = 0;")
     cw.writer(fstream, "}")
     cw.writer(fstream)
@@ -2477,7 +2403,7 @@ def temp_given_hy(fstream, mechanism, species_list):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
         " GET_T_GIVEN_HY(const amrex::Real h, const amrex::Real y[],"
-        " amrex::Real& t, int& ierr)",
+        " amrex::Real t[NUM_TEMP], int& ierr)",
     )
     cw.writer(fstream, "{")
     cw.writer(fstream, "#ifdef CONVERGENCE")
@@ -2489,32 +2415,34 @@ def temp_given_hy(fstream, mechanism, species_list):
     cw.writer(fstream, "#endif")
     cw.writer(
         fstream,
-        f"amrex::Real tmin = {tmin};" + cw.comment("max lower bound for thermo def"),
+        "amrex::Real tmin[NUM_TEMP] = {"+f"{tmin}"+"};" + cw.comment("max lower bound for thermo def"),
     )
+    
     cw.writer(
         fstream,
-        f"amrex::Real tmax = {tmax};" + cw.comment("min upper bound for thermo def"),
+        "amrex::Real tmax[NUM_TEMP] ={"+f"{tmax}"+"};" + cw.comment("min upper bound for thermo def"),
     )
-    cw.writer(fstream, "amrex::Real h1,hmin,hmax,cp,t1,dt;")
+    cw.writer(fstream, "amrex::Real t1[NUM_TEMP];")
+    cw.writer(fstream, "amrex::Real h1,hmin,hmax,cp,dt;")
     cw.writer(fstream, "CKHBMS(tmin, y, hmin);")
     cw.writer(fstream, "CKHBMS(tmax, y, hmax);")
     cw.writer(fstream, "if (h < hmin) {")
     cw.writer(fstream, cw.comment("Linear Extrapolation below tmin"))
     cw.writer(fstream, "CKCPBS(tmin, y, cp);")
-    cw.writer(fstream, "t = tmin - (hmin-h)/cp;")
+    cw.writer(fstream, "t[0] = tmin[0] - (hmin-h)/cp;")
     cw.writer(fstream, "ierr = 1;")
     cw.writer(fstream, "return;")
     cw.writer(fstream, "}")
     cw.writer(fstream, "if (h > hmax) {")
     cw.writer(fstream, cw.comment("Linear Extrapolation above tmax"))
     cw.writer(fstream, "CKCPBS(tmax, y, cp);")
-    cw.writer(fstream, "t = tmax - (hmax-h)/cp;")
+    cw.writer(fstream, "t[0] = tmax[0] - (hmax-h)/cp;")
     cw.writer(fstream, "ierr = 1;")
     cw.writer(fstream, "return;")
     cw.writer(fstream, "}")
-    cw.writer(fstream, "t1 = t;")
-    cw.writer(fstream, "if (t1 < tmin || t1 > tmax) {")
-    cw.writer(fstream, "t1 = tmin + (tmax-tmin)/(hmax-hmin)*(h-hmin);")
+    cw.writer(fstream, "t1[0] = t[0];")
+    cw.writer(fstream, "if (t1[0] < tmin[0] || t1[0] > tmax[0]) {")
+    cw.writer(fstream, "t1[0] = tmin[0] + (tmax[0]-tmin[0])/(hmax-hmin)*(h-hmin);")
     cw.writer(fstream, "}")
     cw.writer(fstream, "for (int i = 0; i < maxiter; ++i) {")
     cw.writer(fstream, "CKHBMS(t1,y,h1);")
@@ -2523,9 +2451,9 @@ def temp_given_hy(fstream, mechanism, species_list):
     cw.writer(fstream, "if (dt > 100.) { dt = 100.; }")
     cw.writer(fstream, "else if (dt < -100.) { dt = -100.; }")
     cw.writer(fstream, "else if (fabs(dt) < tol) {break;}")
-    cw.writer(fstream, "t1 += dt;")
+    cw.writer(fstream, "t1[0] += dt;")
     cw.writer(fstream, "}")
-    cw.writer(fstream, "t = t1;")
+    cw.writer(fstream, "t[0] = t1[0];")
     cw.writer(fstream, "ierr = 0;")
     cw.writer(fstream, "}")
 
@@ -2647,33 +2575,22 @@ def ckinu(fstream, mechanism, species_info, reaction_info, write_sk=False):
     cw.writer(fstream, "}")
 
 
-def ckkfkr(fstream, mechanism, species_info, reaction_info):
+def ckkfkr(fstream, mechanism, species_info):
     """Write ckkfkr."""
     n_species = species_info.n_species
     n_reactions = mechanism.n_reactions
-    assert len(reaction_info.index) == 8
-    ielectron = reaction_info.index[6:8]
-    nelectron = ielectron[1] - ielectron[0]
     
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns the progress rates of each reactions"))
     cw.writer(fstream, cw.comment("Given P, T, and mole fractions"))
-    if nelectron > 0:
-        cw.writer(
-            fstream,
-            "void CKKFKR"
-            + cc.sym
-            + "(const amrex::Real P, const amrex::Real T, const amrex::Real Te, const amrex::Real x[]"
-            + ", amrex::Real q_f[], amrex::Real q_r[])",
-        )
-    else:
-        cw.writer(
-            fstream,
-            "void CKKFKR"
-            + cc.sym
-            + "(const amrex::Real P, const amrex::Real T, const amrex::Real /*Te*/, const amrex::Real x[]"
-            + ", amrex::Real q_f[], amrex::Real q_r[])",
-        )
+
+    cw.writer(
+        fstream,
+        "void CKKFKR"
+        + cc.sym
+        + "(const amrex::Real P, const amrex::Real T[NUM_TEMP], const amrex::Real x[]"
+        + ", amrex::Real q_f[], amrex::Real q_r[])",
+    )
     cw.writer(fstream, "{")
 
     cw.writer(
@@ -2684,7 +2601,7 @@ def ckkfkr(fstream, mechanism, species_info, reaction_info):
         fstream,
         "amrex::Real PORT = 1e6 *"
         f" P/({(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e} *"
-        " T); " + cw.comment("1e6 * P/RT so c goes to SI units"),
+        " T[0]); " + cw.comment("1e6 * P/RT so c goes to SI units"),
     )
 
     # now compute conversion
@@ -2697,10 +2614,7 @@ def ckkfkr(fstream, mechanism, species_info, reaction_info):
     # call progressRateFR
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
-    if nelectron > 0:
-        cw.writer(fstream, "progressRateFR(q_f, q_r, c, T, Te);")
-    else:
-        cw.writer(fstream, "progressRateFR(q_f, q_r, c, T, 0.0);")
+    cw.writer(fstream, "progressRateFR(q_f, q_r, c, T);")
     
     # convert qdot to chemkin units
     cw.writer(fstream)

@@ -3,12 +3,9 @@
 import ceptr.writer as cw
 
 
-def sparsity(fstream, species_info, reaction_info):
+def sparsity(fstream, species_info):
     """Write sparsity pattern of Jacobian."""
     n_species = species_info.n_species
-    assert len(reaction_info.index) == 8
-    ielectron = reaction_info.index[6:8]
-    nelectron = ielectron[1] - ielectron[0]
     
     cw.writer(fstream)
     cw.writer(
@@ -29,10 +26,8 @@ def sparsity(fstream, species_info, reaction_info):
     cw.writer(fstream, f"for (int n=0; n<{n_species}; n++) {{")
     cw.writer(fstream, f"    conc[n] = 1.0/ {n_species:f} ;")
     cw.writer(fstream, "}")
-    if nelectron > 0:
-        cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);")
-    else:
-        cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), 1500.0, *consP);")
+    cw.writer(fstream, "amrex::Real tmpT[NUM_TEMP] = {1500.0};")
+    cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), tmpT, *consP);")
     cw.writer(fstream)
 
     cw.writer(fstream, "int nJdata_tmp = 0;")
@@ -76,10 +71,8 @@ def sparsity(fstream, species_info, reaction_info):
     cw.writer(fstream, f"for (int n=0; n<{n_species}; n++) {{")
     cw.writer(fstream, f"    conc[n] = 1.0/ {n_species:f} ;")
     cw.writer(fstream, "}")
-    if nelectron > 0:
-        cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);")
-    else:
-        cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), 1500.0, *consP);")
+    cw.writer(fstream, "amrex::Real tmpT[NUM_TEMP] = {1500.0};")
+    cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), tmpT, *consP);")
     cw.writer(fstream)
 
     cw.writer(fstream, "int nJdata_tmp = 0;")
@@ -134,10 +127,8 @@ def sparsity(fstream, species_info, reaction_info):
     cw.writer(fstream, f"for (int n=0; n<{n_species}; n++) {{")
     cw.writer(fstream, f"    conc[n] = 1.0/ {n_species:f} ;")
     cw.writer(fstream, "}")
-    if nelectron > 0:
-        cw.writer(fstream, "aJacobian_precond(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);")
-    else:
-        cw.writer(fstream, "aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);")
+    cw.writer(fstream, "amrex::Real tmpT[NUM_TEMP] = {1500.0};")
+    cw.writer(fstream, "aJacobian_precond(Jac.data(), conc.data(), tmpT, *consP);")
     cw.writer(fstream)
 
     cw.writer(fstream, "int nJdata_tmp = 0;")
@@ -192,11 +183,8 @@ def sparsity(fstream, species_info, reaction_info):
     cw.writer(fstream, f"for (int n=0; n<{n_species}; n++) {{")
     cw.writer(fstream, f"    conc[n] = 1.0/ {n_species:f} ;")
     cw.writer(fstream, "}")
-    if nelectron > 0:
-        cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);")
-    else:
-        cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), 1500.0, *consP);")
-    cw.writer(fstream)
+    cw.writer(fstream, "amrex::Real tmpT[NUM_TEMP] = {1500.0};")
+    cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), tmpT, *consP);")
 
     cw.writer(fstream, "colPtrs[0] = 0;")
     cw.writer(fstream, "int nJdata_tmp = 0;")
@@ -247,10 +235,8 @@ def sparsity(fstream, species_info, reaction_info):
     cw.writer(fstream, f"for (int n=0; n<{n_species}; n++) {{")
     cw.writer(fstream, f"    conc[n] = 1.0/ {n_species:f} ;")
     cw.writer(fstream, "}")
-    if nelectron > 0:
-        cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);")
-    else:
-        cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), 1500.0, *consP);")
+    cw.writer(fstream, "amrex::Real tmpT[NUM_TEMP] = {1500.0};")
+    cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), tmpT, *consP);")
 
     cw.writer(fstream)
 
@@ -329,10 +315,8 @@ def sparsity(fstream, species_info, reaction_info):
     cw.writer(fstream, f"for (int n=0; n<{n_species}; n++) {{")
     cw.writer(fstream, f"    conc[n] = 1.0/ {n_species:f} ;")
     cw.writer(fstream, "}")
-    if nelectron > 0:
-        cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);")
-    else:
-        cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), 1500.0, *consP);")
+    cw.writer(fstream, "amrex::Real tmpT[NUM_TEMP] = {1500.0};")
+    cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), tmpT, *consP);")
     cw.writer(fstream)
 
     cw.writer(fstream, "if (base == 1) {")
@@ -431,10 +415,8 @@ def sparsity(fstream, species_info, reaction_info):
     cw.writer(fstream, f"for (int n=0; n<{n_species}; n++) {{")
     cw.writer(fstream, f"    conc[n] = 1.0/ {n_species:f} ;")
     cw.writer(fstream, "}")
-    if nelectron > 0:
-        cw.writer(fstream, "aJacobian_precond(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);")
-    else:
-        cw.writer(fstream, "aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);")
+    cw.writer(fstream, "amrex::Real tmpT[NUM_TEMP] = {1500.0};")
+    cw.writer(fstream, "aJacobian_precond(Jac.data(), conc.data(), tmpT, *consP);")
     cw.writer(fstream)
 
     cw.writer(fstream, "colPtrs[0] = 0;")
@@ -492,10 +474,8 @@ def sparsity(fstream, species_info, reaction_info):
     cw.writer(fstream, f"for (int n=0; n<{n_species}; n++) {{")
     cw.writer(fstream, f"    conc[n] = 1.0/ {n_species:f} ;")
     cw.writer(fstream, "}")
-    if nelectron > 0:
-        cw.writer(fstream, "aJacobian_precond(Jac.data(), conc.data(), 1500.0, 1500.0, *consP);")
-    else:
-        cw.writer(fstream, "aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);")
+    cw.writer(fstream, "amrex::Real tmpT[NUM_TEMP] = {1500.0};")
+    cw.writer(fstream, "aJacobian(Jac.data(), conc.data(), tmpT, *consP);")
     cw.writer(fstream)
 
     cw.writer(fstream, "if (base == 1) {")

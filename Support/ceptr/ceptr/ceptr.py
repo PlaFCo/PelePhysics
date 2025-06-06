@@ -44,7 +44,7 @@ class electronTempRate(ct.ExtensibleRate):
             raise ValueError(f"Found negative 'A' for reaction {equation}")
 
     def eval(self, data):
-        if(data.Te > self.Eshift):
+        if data.Te > self.Eshift:
             return self.A * data.T**self.b * numpy.exp(-self.Ea/(data.T-self.Eshift))
         else:
             return 0.0

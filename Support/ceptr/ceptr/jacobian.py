@@ -31,45 +31,32 @@ def ajac(
     else:
         cw.writer(fstream, cw.comment("compute the reaction Jacobian"))
     cw.writer(fstream, "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE")
-    if nelectron > 0:
+    if n_reactions > 0:
         if precond:
             cw.writer(
                 fstream,
                 "void aJacobian_precond(amrex::Real *  J, const"
-                " amrex::Real *  sc, const amrex::Real T, const amrex::Real Te, const int HP)",
+                " amrex::Real *  sc, const amrex::Real * T, const int HP)",
             )
         else:
             cw.writer(
                 fstream,
                 "void aJacobian(amrex::Real * J, const amrex::Real * sc,"
-                " const amrex::Real T, const amrex::Real Te, const int consP)",
-            )     
-    elif n_reactions > 0:
-        if precond:
-            cw.writer(
-                fstream,
-                "void aJacobian_precond(amrex::Real *  J, const"
-                " amrex::Real *  sc, const amrex::Real T, const amrex::Real /*Te*/, const int HP)",
-            )
-        else:
-            cw.writer(
-                fstream,
-                "void aJacobian(amrex::Real * J, const amrex::Real * sc,"
-                " const amrex::Real T, const amrex::Real /*Te*/, const int consP)",
+                " const amrex::Real *  T, const int consP)",
             )
     else:
         if precond:
             cw.writer(
                 fstream,
                 "void aJacobian_precond(amrex::Real *  J, const"
-                " amrex::Real *  /*sc*/, const amrex::Real /*T*/, const amrex::Real /*Te*/, const"
+                " amrex::Real *  /*sc*/, const amrex::Real* /*T*/, const"
                 " int /*HP*/)",
             )
         else:
             cw.writer(
                 fstream,
                 "void aJacobian(amrex::Real * J, const amrex::Real *"
-                " /*sc*/, const amrex::Real /*T*/, const amrex::Real /*Te*/, const int /*consP*/)",
+                " /*sc*/, const amrex::Real* /*T*/, const int /*consP*/)",
             )
     cw.writer(fstream, "{")
 
@@ -112,13 +99,13 @@ def ajac(
 
             cw.writer(fstream)
 
-            cw.writer(fstream, "const amrex::Real invT = 1.0 / T;")
+            cw.writer(fstream, "const amrex::Real invT = 1.0 / T[0];")
             cw.writer(fstream, "const amrex::Real invT2 = invT * invT;")
-            cw.writer(fstream, "const amrex::Real logT = log(T);")
+            cw.writer(fstream, "const amrex::Real logT = log(T[0]);")
             if nelectron > 0:
-                cw.writer(fstream, "const amrex::Real invTe = 1.0 / Te;")
+                cw.writer(fstream, "const amrex::Real invTe = 1.0 / T[1];")
                 cw.writer(fstream, "const amrex::Real invTe2 = invTe * invTe;")
-                cw.writer(fstream, "const amrex::Real logTe = log(Te);")
+                cw.writer(fstream, "const amrex::Real logTe = log(T[1]);")
 
             cw.writer(fstream)
 
@@ -129,7 +116,7 @@ def ajac(
             cw.writer(
                 fstream,
                 f"amrex::Real refC = {cc.Patm_pa:g} /"
-                f" {cc.R.to(cc.ureg.joule / (cc.ureg.mole / cc.ureg.kelvin)).m:g} / T;",
+                f" {cc.R.to(cc.ureg.joule / (cc.ureg.mole / cc.ureg.kelvin)).m:g} / T[0];",
             )
             cw.writer(fstream, "amrex::Real refCinv = 1.0 / refC;")
 
@@ -194,8 +181,6 @@ def ajac(
                 "amrex::Real phi_f, k_f, k_r, phi_r, Kc, q, q_nocor, Corr, alpha;",
             )
             cw.writer(fstream, "amrex::Real dlnkfdT, dlnk0dT, dlnKcdT, dkrdT, dqdT;")
-            if nelectron > 0:
-                cw.writer(fstream, "amrex::Real dlnkfdTe, dlnk0dTe, dlnKcdTe, dkrdTe, dqdTe;")
             cw.writer(fstream, f"amrex::Real dqdci, dcdc_fac, dqdc[{n_species}];")
             cw.writer(fstream, "amrex::Real Pr, fPr, F, k_0, logPr;")
             cw.writer(
@@ -275,7 +260,7 @@ def ajac(
             cw.writer(fstream)
             cw.writer(fstream, "amrex::Real cmixinv = 1.0/cmix;")
             cw.writer(fstream, "amrex::Real tmp1 = ehmix*cmixinv;")
-            cw.writer(fstream, "amrex::Real tmp3 = cmixinv*T;")
+            cw.writer(fstream, "amrex::Real tmp3 = cmixinv*T[0];")
             cw.writer(fstream, "amrex::Real tmp2 = tmp1*tmp3;")
             cw.writer(fstream, "amrex::Real dehmixdc;")
 
@@ -1585,12 +1570,9 @@ def dphase_space(mechanism, species_info, reagents, r, reaction_orders, syms):
         return "1.0"
 
 
-def dproduction_rate(fstream, mechanism, species_info, reaction_info, precond=False):
+def dproduction_rate(fstream, species_info, precond=False):
     """Write the reaction jacobian."""
     n_species = species_info.n_species
-    assert len(reaction_info.index) == 8
-    ielectron = reaction_info.index[6:8]
-    nelectron = ielectron[1] - ielectron[0]
 
     cw.writer(fstream)
     if precond:
@@ -1600,37 +1582,23 @@ def dproduction_rate(fstream, mechanism, species_info, reaction_info, precond=Fa
                 "compute an approx to the reaction Jacobian (for preconditioning)"
             ),
         )
-        if nelectron > 0:
-            cw.writer(
-                fstream,
-                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
-                " DWDOT_SIMPLIFIED(amrex::Real *  J, const amrex::Real *  sc,"
-                " const amrex::Real *  Tp, const amrex::Real *  Tep, const int * HP)",
-            )
-        else:
-            cw.writer(
-                fstream,
-                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
-                " DWDOT_SIMPLIFIED(amrex::Real *  J, const amrex::Real *  sc,"
-                " const amrex::Real *  Tp, const amrex::Real *  /*Tep*/, const int * HP)",
-            )
+
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
+            " DWDOT_SIMPLIFIED(amrex::Real *  J, const amrex::Real *  sc,"
+            " const amrex::Real *  Tp, const int * HP)",
+        )
             
     else:
         cw.writer(fstream, cw.comment("compute the reaction Jacobian"))
-        if nelectron > 0:
-            cw.writer(
-                fstream,
-                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
-                " DWDOT(amrex::Real *  J, const amrex::Real *  sc, const"
-                " amrex::Real *  Tp, const amrex::Real *  Tep, const int * consP)",
-            )
-        else:
-            cw.writer(
-                fstream,
-                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
-                " DWDOT(amrex::Real *  J, const amrex::Real *  sc, const"
-                " amrex::Real *  Tp, const amrex::Real *  /*Tep*/, const int * consP)",
-            )
+
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
+            " DWDOT(amrex::Real *  J, const amrex::Real *  sc, const"
+            " amrex::Real *  Tp, const int * consP)",
+        )
     cw.writer(fstream, "{")
     cw.writer(fstream, f"amrex::Real c[{n_species}];")
     cw.writer(fstream)
@@ -1640,15 +1608,9 @@ def dproduction_rate(fstream, mechanism, species_info, reaction_info, precond=Fa
 
     cw.writer(fstream)
     if precond:
-        if nelectron > 0:
-            cw.writer(fstream, "aJacobian_precond(J, c, *Tp, *Tep, *HP);")
-        else:
-            cw.writer(fstream, "aJacobian_precond(J, c, *Tp, *Tp, *HP);")
+        cw.writer(fstream, "aJacobian_precond(J, c, Tp, *HP);")
     else:
-        if nelectron > 0:
-            cw.writer(fstream, "aJacobian(J, c, *Tp, *Tep, *consP);")
-        else:
-            cw.writer(fstream, "aJacobian(J, c, *Tp, *Tp, *consP);")
+        cw.writer(fstream, "aJacobian(J, c, Tp, *consP);")
 
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("dwdot[k]/dT"))

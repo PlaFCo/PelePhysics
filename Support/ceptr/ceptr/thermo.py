@@ -275,7 +275,7 @@ def generate_thermo_routine(
         cw.writer(
             fstream,
             f"AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void {name}(amrex::Real"
-            " * species, const amrex::Real T)",
+            " * species, const amrex::Real* T)",
         )
 
     if not inline:
@@ -297,18 +297,18 @@ def generate_thermo_routine(
         for k, v in mvars.items():
             variables[k] = v if v else variables[k]
 
-    cw.writer(fstream, "const amrex::Real T2 = T*T;")
-    cw.writer(fstream, "const amrex::Real T3 = T*T*T;")
+    cw.writer(fstream, "const amrex::Real T2 = T[0]*T[0];")
+    cw.writer(fstream, "const amrex::Real T3 = T[0]*T[0]*T[0];")
     if variables["T4"]:
-        cw.writer(fstream, "const amrex::Real T4 = T*T*T*T;")
+        cw.writer(fstream, "const amrex::Real T4 = T[0]*T[0]*T[0]*T[0];")
     if variables["inv_temp"]:
-        cw.writer(fstream, "const amrex::Real invT = 1.0 / T;")
+        cw.writer(fstream, "const amrex::Real invT = 1.0 / T[0];")
     if variables["inv_temp2"]:
         cw.writer(fstream, "const amrex::Real invT2 = invT*invT;")
     if variables["inv_temp3"]:
         cw.writer(fstream, "const amrex::Real invT3 = invT*invT*invT;")
     if variables["log_temp"]:
-        cw.writer(fstream, "const amrex::Real logT = log(T);")
+        cw.writer(fstream, "const amrex::Real logT = log(T[0]);")
     cw.writer(fstream)
 
     intervals = sorted([x["interval"] for x in models])
@@ -338,7 +338,7 @@ def generate_thermo_routine(
                 if k == 0:
                     cw.writer(
                         fstream,
-                        f"""if (T < {interval[0]:g}) {{""",
+                        f"""if (T[0] < {interval[0]:g}) {{""",
                     )
                 else:
                     cw.writer(
@@ -349,12 +349,12 @@ def generate_thermo_routine(
                 if k == 0:
                     cw.writer(
                         fstream,
-                        f"""if (T < {interval[0]:g}) {{""",
+                        f"""if (T[0] < {interval[0]:g}) {{""",
                     )
                 elif 0 < k and k < len(interval):
                     cw.writer(
                         fstream,
-                        f"""else if ( ({interval[k-1]:g} <= T) && (T < {interval[k]:g})) {{""",
+                        f"""else if ( ({interval[k-1]:g} <= T[0]) && (T[0] < {interval[k]:g})) {{""",
                     )
                 else:
                     cw.writer(
@@ -517,7 +517,7 @@ def cv_nasa7(fstream, parameters):
     """Write NASA7 polynomial for cv."""
     expression = (
         param2str(parameters[0] - 1.0)
-        + param2str(parameters[1], "* T")
+        + param2str(parameters[1], "* T[0]")
         + param2str(parameters[2], " * T2")
         + param2str(parameters[3], "* T3")
         + param2str(parameters[4], "* T4")
@@ -550,7 +550,7 @@ def cp_nasa7(fstream, parameters):
     """Write NASA7 polynomial for cp."""
     expression = (
         param2str(parameters[0])
-        + param2str(parameters[1], "* T")
+        + param2str(parameters[1], "* T[0]")
         + param2str(parameters[2], "* T2")
         + param2str(parameters[3], "* T3")
         + param2str(parameters[4], "* T4")
@@ -562,7 +562,7 @@ def dcpdtemp_nasa7(fstream, parameters):
     """Write NASA7 polynomial for dcpdtemp."""
     expression = (
         param2str(parameters[1])
-        + param2str(parameters[2] * 2.0, "* T")
+        + param2str(parameters[2] * 2.0, "* T[0]")
         + param2str(parameters[3] * 3.0, "* T2")
         + param2str(parameters[4] * 4.0, "* T3")
     )
@@ -575,7 +575,7 @@ def gibbs_nasa7(fstream, parameters, syms=None):
         param2str(parameters[5], "* invT", "+20.15e")
         + param2str(parameters[0] - parameters[6], "", "+20.15e")
         + param2str(-parameters[0], "* logT", "+20.15e")
-        + param2str((-parameters[1] / 2), "* T", "+20.15e")
+        + param2str((-parameters[1] / 2), "* T[0]", "+20.15e")
         + param2str((-parameters[2] / 6), "* T2", "+20.15e")
         + param2str((-parameters[3] / 12), "* T3", "+20.15e")
         + param2str((-parameters[4] / 20), "* T4", "+20.15e")
@@ -601,7 +601,7 @@ def helmholtz_nasa7(fstream, parameters, syms=None):
         param2str(parameters[5], "* invT")
         + param2str(parameters[0] - parameters[6] - 1.0, "")
         + param2str(-parameters[0], "* logT")
-        + param2str((-parameters[1] / 2), "* T")
+        + param2str((-parameters[1] / 2), "* T[0]")
         + param2str((-parameters[2] / 6), "* T2")
         + param2str((-parameters[3] / 12), "* T3")
         + param2str((-parameters[4] / 20), "* T4")
@@ -626,7 +626,7 @@ def internal_energy_nasa7(fstream, parameters, syms=None):
     """Write NASA7 polynomial for internal energy."""
     expression = (
         param2str(parameters[0] - 1.0, "")
-        + param2str(parameters[1] / 2, "* T")
+        + param2str(parameters[1] / 2, "* T[0]")
         + param2str(parameters[2] / 3, "* T2")
         + param2str(parameters[3] / 4, "* T3")
         + param2str(parameters[4] / 5, "* T4")
@@ -650,7 +650,7 @@ def enthalpy_nasa7(fstream, parameters, syms=None):
     """Write NASA7 polynomial for enthalpy."""
     expression = (
         param2str(parameters[0], "")
-        + param2str(parameters[1] / 2, "* T")
+        + param2str(parameters[1] / 2, "* T[0]")
         + param2str(parameters[2] / 3, "* T2")
         + param2str(parameters[3] / 4, "* T3")
         + param2str(parameters[4] / 5, "* T4")
@@ -673,7 +673,7 @@ def entropy_nasa7(fstream, parameters, syms=None):
     """Write NASA7 polynomial for entropy."""
     expression = (
         param2str(parameters[0], "* logT")
-        + param2str(parameters[1], "* T")
+        + param2str(parameters[1], "* T[0]")
         + param2str(parameters[2] / 2, "* T2")
         + param2str(parameters[3] / 3, "* T3")
         + param2str(parameters[4] / 4, "* T4")
@@ -698,7 +698,7 @@ def cv_nasa9(fstream, parameters):
         param2str(parameters[0], "* invT2")
         + param2str(parameters[1], "* invT")
         + param2str(parameters[2] - 1.0)
-        + param2str(parameters[3], "* T")
+        + param2str(parameters[3], "* T[0]")
         + param2str(parameters[4], " * T2")
         + param2str(parameters[5], "* T3")
         + param2str(parameters[6], "* T4")
@@ -735,7 +735,7 @@ def cp_nasa9(fstream, parameters):
         param2str(parameters[0], "* invT2")
         + param2str(parameters[1], "* invT")
         + param2str(parameters[2])
-        + param2str(parameters[3], "* T")
+        + param2str(parameters[3], "* T[0]")
         + param2str(parameters[4], " * T2")
         + param2str(parameters[5], "* T3")
         + param2str(parameters[6], "* T4")
@@ -749,7 +749,7 @@ def dcpdtemp_nasa9(fstream, parameters):
         param2str(-parameters[0] * 2.0, "* invT3")
         + param2str(-parameters[1], "* invT2")
         + param2str(parameters[3])
-        + param2str(parameters[4] * 2.0, "* T")
+        + param2str(parameters[4] * 2.0, "* T[0]")
         + param2str(parameters[5] * 3.0, "* T2")
         + param2str(parameters[6] * 4.0, "* T3")
     )
@@ -764,7 +764,7 @@ def gibbs_nasa9(fstream, parameters, syms=None):
         + param2str(parameters[1], "* logT * invT", "+20.15e")
         + param2str(-parameters[2], "* logT", "+20.15e")
         + param2str(parameters[2] - parameters[8], "", "+20.15e")
-        + param2str((-parameters[3] / 2), "* T", "+20.15e")
+        + param2str((-parameters[3] / 2), "* T[0]", "+20.15e")
         + param2str((-parameters[4] / 6), "* T2", "+20.15e")
         + param2str((-parameters[5] / 12), "* T3", "+20.15e")
         + param2str((-parameters[6] / 20), "* T4", "+20.15e")
@@ -794,7 +794,7 @@ def helmholtz_nasa9(fstream, parameters, syms=None):
         + param2str(parameters[1], "* logT * invT")
         + param2str(-parameters[2], "* logT")
         + param2str(parameters[2] - parameters[8] - 1.0, "")
-        + param2str((-parameters[3] / 2), "* T")
+        + param2str((-parameters[3] / 2), "* T[0]")
         + param2str((-parameters[4] / 6), "* T2")
         + param2str((-parameters[5] / 12), "* T3")
         + param2str((-parameters[6] / 20), "* T4")
@@ -823,7 +823,7 @@ def internal_energy_nasa9(fstream, parameters, syms=None):
         param2str(-parameters[0], "* invT2")
         + param2str(parameters[1], "* logT * invT")
         + param2str(parameters[2] - 1.0)
-        + param2str(parameters[3] / 2, "* T")
+        + param2str(parameters[3] / 2, "* T[0]")
         + param2str(parameters[4] / 3, "* T2")
         + param2str(parameters[5] / 4, "* T3")
         + param2str(parameters[6] / 5, "* T4")
@@ -851,7 +851,7 @@ def enthalpy_nasa9(fstream, parameters, syms=None):
         param2str(-parameters[0], "* invT2")
         + param2str(parameters[1], "* logT * invT")
         + param2str(parameters[2])
-        + param2str(parameters[3] / 2, "* T")
+        + param2str(parameters[3] / 2, "* T[0]")
         + param2str(parameters[4] / 3, "* T2")
         + param2str(parameters[5] / 4, "* T3")
         + param2str(parameters[6] / 5, "* T4")
@@ -878,7 +878,7 @@ def entropy_nasa9(fstream, parameters, syms=None):
         param2str(-parameters[0] / 2, "* invT2")
         + param2str(-parameters[1], "* invT")
         + param2str(parameters[2], "* logT")
-        + param2str(parameters[3], "* T")
+        + param2str(parameters[3], "* T[0]")
         + param2str(parameters[4] / 2, "* T2")
         + param2str(parameters[5] / 3, "* T3")
         + param2str(parameters[6] / 4, "* T4")

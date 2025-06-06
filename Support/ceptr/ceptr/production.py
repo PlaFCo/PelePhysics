@@ -55,17 +55,7 @@ def production_rate(
                 "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
                 " comp_qfqr(amrex::Real *  qf, amrex::Real * qr, const"
                 " amrex::Real * sc, const amrex::Real * sc_qss, const"
-                " amrex::Real T, const amrex::Real invT, const amrex::Real logT,"
-                " const amrex::Real /*Te*/, const amrex::Real /*invTe*/, const amrex::Real /*logTe*/)"
-            )
-        elif nelectron > 0:
-            cw.writer(
-                fstream,
-                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
-                " comp_qfqr(amrex::Real *  qf, amrex::Real * qr, const"
-                " amrex::Real * sc, const amrex::Real * /*sc_qss*/,const"
-                " amrex::Real T, const amrex::Real invT, const amrex::Real logT,"
-                " const amrex::Real Te, const amrex::Real invTe, const amrex::Real logTe)"
+                " amrex::Real * T, const amrex::Real * invT, const amrex::Real * logT)"
             )
         else:
             cw.writer(
@@ -73,17 +63,15 @@ def production_rate(
                 "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void"
                 " comp_qfqr(amrex::Real *  qf, amrex::Real * qr, const"
                 " amrex::Real * sc, const amrex::Real * /*sc_qss*/,const"
-                " amrex::Real T, const amrex::Real invT, const amrex::Real logT,"
-                " const amrex::Real /*Te*/, const amrex::Real /*invTe*/, const amrex::Real /*logTe*/)"
+                " amrex::Real * T, const amrex::Real * invT, const amrex::Real * logT)"
             )
     else:
         cw.writer(
             fstream,
             "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void comp_qfqr(amrex::Real *"
             " /*qf*/, amrex::Real * /*qr*/, const amrex::Real * /*sc*/, const"
-            " amrex::Real * /*sc_qss*/, const amrex::Real /*T*/, const amrex::Real"
-            " /*invT*/, const amrex::Real /*logT*/,"
-            " const amrex::Real /*Te*/, const amrex::Real /*invTe*/, const amrex::Real /*logTe*/)"
+            " amrex::Real * /*sc_qss*/, const amrex::Real* /*T*/, const amrex::Real*"
+            " /*invT*/, const amrex::Real* /*logT*/)"
         )
     cw.writer(fstream, "{")
 
@@ -173,7 +161,7 @@ def production_rate(
             fstream,
             f"amrex::Real refC = {cc.Patm_pa:g} /"
             f" {cc.R.to(cc.ureg.joule / (cc.ureg.mole / cc.ureg.kelvin)).m:g} *"
-            " invT;",
+            " invT[0];",
         )
         cw.writer(fstream, "amrex::Real refCinv = 1 / refC;")
 
@@ -288,29 +276,29 @@ def production_rate(
             if is_electron_temperature:
                 cw.writer(
                     fstream,
-                    f"           * exp(({beta:.15g}) * logTe -"
+                    f"           * exp(({beta:.15g}) * logT[1] -"
                     f" ({(ae):.15g})"
-                    " * invTe);",
+                    " * invT[1]);",
                 )
             else:
                 if (beta == 0) and (ae == 0):
                     cw.writer(fstream, "           ;")
                 else:
                     if ae == 0:
-                        cw.writer(fstream, f"           * exp(({beta:.15g}) * logT);")
+                        cw.writer(fstream, f"           * exp(({beta:.15g}) * logT[0]);")
                     elif beta == 0:
                         cw.writer(
                             fstream,
                             "           *"
                             f" exp(-({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g})"
-                            " * invT);",
+                            " * invT[0]);",
                         )
                     else:
                         cw.writer(
                             fstream,
-                            f"           * exp(({beta:.15g}) * logT -"
+                            f"           * exp(({beta:.15g}) * logT[0] -"
                             f" ({(1.0 / cc.Rc / cc.ureg.kelvin * ae).m:.15g})"
-                            " * invT);",
+                            " * invT[0]);",
                         )
 
             alpha = None
@@ -342,21 +330,21 @@ def production_rate(
                 elif low_ae.m == 0:
                     cw.writer(
                         fstream,
-                        f"           * exp({low_beta:.15g}  * logT);",
+                        f"           * exp({low_beta:.15g}  * logT[0]);",
                     )
                 elif low_beta == 0:
                     cw.writer(
                         fstream,
                         "           * exp(-"
                         f" ({(1.0 / cc.Rc / cc.ureg.kelvin * low_ae).m:.15g})"
-                        " *invT);",
+                        " *invT[0]);",
                     )
                 else:
                     cw.writer(
                         fstream,
-                        f"           * exp({low_beta:.15g}  * logT -"
+                        f"           * exp({low_beta:.15g}  * logT[0] -"
                         f" ({(1.0 / cc.Rc / cc.ureg.kelvin * low_ae).m:.15g})"
-                        " *invT);",
+                        " *invT[0]);",
                     )
                 if is_troe:
                     cw.writer(fstream, "F = redP / (1.0 + redP);")
@@ -366,7 +354,7 @@ def production_rate(
                         if 1.0 - troe[0] != 0:
                             cw.writer(
                                 fstream,
-                                f"    ({1.0 - troe[0]:.15g})*exp(-T *"
+                                f"    ({1.0 - troe[0]:.15g})*exp(-T[0] *"
                                 f" {1 / troe[1]:.15g})",
                             )
                     else:
@@ -375,20 +363,20 @@ def production_rate(
                         if troe[0] == 1:
                             cw.writer(
                                 fstream,
-                                f"    + exp(-T * {1 / troe[2]:.15g})",
+                                f"    + exp(-T[0] * {1 / troe[2]:.15g})",
                             )
                         else:
                             cw.writer(
                                 fstream,
-                                f"    + {troe[0]:.15g} * exp(-T * {1 / troe[2]:.15g})",
+                                f"    + {troe[0]:.15g} * exp(-T[0] * {1 / troe[2]:.15g})",
                             )
                     else:
                         cw.writer(fstream, "    + 0.0 ")
                     if ntroe == 4:
                         if troe[3] < 0:
-                            cw.writer(fstream, f"    + exp({-troe[3]:.15g} * invT));")
+                            cw.writer(fstream, f"    + exp({-troe[3]:.15g} * invT[0]));")
                         else:
-                            cw.writer(fstream, f"    + exp(-{troe[3]:.15g} * invT));")
+                            cw.writer(fstream, f"    + exp(-{troe[3]:.15g} * invT[0]));")
                     else:
                         cw.writer(fstream, "    + 0.0);")
                     cw.writer(fstream, "troe_c = -0.4 - 0.67 * logFcent;")
@@ -412,22 +400,22 @@ def production_rate(
                         cw.writer(
                             fstream,
                             f"F_sri = exp(X * log({sri[0]:.15g} *"
-                            f" exp({-sri[1]:.15g}*invT)",
+                            f" exp({-sri[1]:.15g}*invT[0])",
                         )
                     else:
                         cw.writer(
                             fstream,
                             f"F_sri = exp(X * log({sri[0]:.15g} *"
-                            f" exp(-{sri[1]:.15g}*invT)",
+                            f" exp(-{sri[1]:.15g}*invT[0])",
                         )
                     if sri[2] > 1.0e-100:
-                        cw.writer(fstream, f"   +  exp(logT/{sri[2]:.15g}) ")
+                        cw.writer(fstream, f"   +  exp(logT[0]/{sri[2]:.15g}) ")
                     else:
                         cw.writer(fstream, "   +  0. ")
                     cw.writer(
                         fstream,
                         f"   *  ({nsri} > 3 ?"
-                        f" {sri[3]:.15g}*exp({sri[4]:.15g}*logT : 1.0);",
+                        f" {sri[3]:.15g}*exp({sri[4]:.15g}*logT[0] : 1.0);",
                     )
                     cw.writer(fstream, "Corr = F * F_sri;")
                     cw.writer(fstream, f"qf[{idx}] *= Corr * k_f;")
@@ -468,37 +456,29 @@ def production_rate(
 
     # main function
     if n_reactions > 0:
-        if nelectron > 0:
-            cw.writer(
-                fstream,
-                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void "
-                " productionRate(amrex::Real * wdot, const amrex::Real * sc,"
-                " const amrex::Real T,  const amrex::Real Te)",
-            )
-        else:
-            cw.writer(
-                fstream,
-                "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void "
-                " productionRate(amrex::Real * wdot, const amrex::Real * sc,"
-                " const amrex::Real T,  const amrex::Real /*Te*/)",
-            )
+        cw.writer(
+            fstream,
+            "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void "
+            " productionRate(amrex::Real * wdot, const amrex::Real * sc,"
+            " const amrex::Real T[NUM_TEMP])",
+        )
     else:
         cw.writer(
             fstream,
             "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void "
             " productionRate(amrex::Real * wdot, const amrex::Real *"
-            " /*sc*/, const amrex::Real /*T*/, const amrex::Real /*Te*/)",
+            " /*sc*/, const amrex::Real* /*T*/)",
         )
     cw.writer(fstream, "{")
 
     if n_reactions == 0:
         cw.writer(fstream)
     else:
-        cw.writer(fstream, "const amrex::Real invT = 1.0 / T;")
-        cw.writer(fstream, "const amrex::Real logT = log(T);")
+        cw.writer(fstream, "const amrex::Real invT = 1.0 / T[0];")
+        cw.writer(fstream, "const amrex::Real logT = log(T[0]);")
         if nelectron > 0:
-            cw.writer(fstream, "const amrex::Real invTe = 1.0 / Te;")
-            cw.writer(fstream, "const amrex::Real logTe = log(Te);")
+            cw.writer(fstream, "const amrex::Real invTe = 1.0 / T[1];")
+            cw.writer(fstream, "const amrex::Real logTe = log(T[1]);")
         cw.writer(fstream)
         cw.writer(
             fstream,
@@ -1082,7 +1062,6 @@ def production_rate_light(fstream, mechanism, species_info, reaction_info):
     # i3body = reaction_info.index[3:5]
     # isimple = reaction_info.index[4:6]
     # ispecial = reaction_info.index[5:7]
-    ielectron = reaction_info.index[6:8]
 
     ntroe = itroe[1] - itroe[0]
     nsri = isri[1] - isri[0]
@@ -1090,7 +1069,6 @@ def production_rate_light(fstream, mechanism, species_info, reaction_info):
     # n3body = i3body[1] - i3body[0]
     # nsimple = isimple[1] - isimple[0]
     # nspecial = ispecial[1] - ispecial[0]
-    nelectron = ielectron[1] - ielectron[0]
 
     # qdot
     cw.writer(fstream)
@@ -1529,38 +1507,31 @@ def progress_rate_fr(fstream, mechanism, species_info, reaction_info):
     cw.writer(fstream, cw.comment("compute the progress rate for each reaction"))
     cw.writer(fstream, cw.comment("USES progressRate : todo switch to GPU"))
     
-    if nelectron > 0:
+    if n_reactions > 0:
         cw.writer(
             fstream,
             "void progressRateFR"
             + "(amrex::Real *  q_f, amrex::Real *  q_r, amrex::Real *  sc,"
-            " amrex::Real T, amrex::Real Te)",
-        )
-    elif n_reactions > 0:
-        cw.writer(
-            fstream,
-            "void progressRateFR"
-            + "(amrex::Real *  q_f, amrex::Real *  q_r, amrex::Real *  sc,"
-            " amrex::Real T, amrex::Real /*Te*/)",
+            " const amrex::Real T[NUM_TEMP])",
         )
     else:
         cw.writer(
             fstream,
             "void progressRateFR"
             + "(amrex::Real *  /*q_f*/, amrex::Real *  /*q_r*/, amrex::Real *  /*sc*/,"
-            " amrex::Real /*T*/, amrex::Real /*Te*/)",
+            " const amrex::Real * /*T*/)",
         )
 
     cw.writer(fstream, "{")
 
     if n_reactions > 0:
 
-        cw.writer(fstream, "const amrex::Real invT = 1.0 / T;")
-        cw.writer(fstream, "const amrex::Real logT = log(T);")
         if nelectron > 0:
-            cw.writer(fstream, "const amrex::Real invTe = 1.0 / Te;")
-            cw.writer(fstream, "const amrex::Real logTe = log(Te);")
-
+            cw.writer(fstream, "const amrex::Real invT[NUM_TEMP] = {1.0 / T[0], 1.0 / T[1]};")
+            cw.writer(fstream, "const amrex::Real logT[NUM_TEMP] = {log(T[0]), log(T[1])};")
+        else:
+            cw.writer(fstream, "const amrex::Real invT[NUM_TEMP] = {1.0 / T[0]};")
+            cw.writer(fstream, "const amrex::Real logT[NUM_TEMP] = {log(T[0])};")
         cw.writer(fstream, cw.comment("compute the Gibbs free energy"))
         cw.writer(fstream, f"amrex::Real g_RT[{species_info.n_species}];")
         cw.writer(fstream, "gibbs(g_RT, T);")
@@ -1590,10 +1561,8 @@ def progress_rate_fr(fstream, mechanism, species_info, reaction_info):
                 "comp_qss_coeff(kf_qss, qf_qss, qr_qss, sc, T, g_RT, g_RT_qss);",
             )
             cw.writer(fstream, "comp_sc_qss(sc_qss, qf_qss, qr_qss);")
-        if nelectron > 0:
-            cw.writer(fstream, "comp_qfqr(q_f, q_r, sc, sc_qss, T, invT, logT, Te, invTe, logTe);")
-        else:
-            cw.writer(fstream, "comp_qfqr(q_f, q_r, sc, sc_qss, T, invT, logT, 0.0, 0.0, 0.0);")
+
+        cw.writer(fstream, "comp_qfqr(q_f, q_r, sc, sc_qss, T, invT, logT);")
         cw.writer(fstream)
 
     cw.writer(fstream, "}")
