@@ -245,7 +245,7 @@ struct Manifold
   AMREX_FORCE_INLINE
   void RTY2WDOT(
     const amrex::Real /*R*/,
-    const amrex::Real /*T*/,
+    const amrex::Real* /*T*/,
     const amrex::Real Y[],
     amrex::Real WDOT[])
   {

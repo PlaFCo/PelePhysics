@@ -1405,7 +1405,11 @@ ReactorCvode::react(
 
 #ifdef AMREX_USE_GPU
   const int ncells = box.numPts();
+#ifndef PELE_USE_NLTE
   const int neq_tot = (NUM_SPECIES + 1) * ncells;
+#else
+  const int neq_tot = (NUM_SPECIES + 2) * ncells;
+#endif
 
   // Solution vector and execution policy
   auto y = utils::setNVectorGPU(neq_tot, atomic_reductions, stream);
@@ -1579,237 +1583,238 @@ ReactorCvode::react(
   return static_cast<int>(nfe);
 }
 
-#ifdef PELE_USE_NLTE
-int
-ReactorCvode::reactTe(
-  const amrex::Box& box,
-  amrex::Array4<amrex::Real> const& rY_in,
-  amrex::Array4<amrex::Real> const& rYsrc_in,
-  amrex::Array4<amrex::Real> const& T_in,
-  amrex::Array4<amrex::Real> const& Te_in,
-  amrex::Array4<amrex::Real> const& rEner_in,
-  amrex::Array4<amrex::Real> const& rEner_src_in,
-  amrex::Array4<amrex::Real> const& FC_in,
-  amrex::Array4<int> const& mask,
-  amrex::Real& dt_react,
-  amrex::Real& time
-#ifdef AMREX_USE_GPU
-  ,
-  amrex::gpuStream_t stream
-#endif
-)
-{
-  BL_PROFILE("Pele::ReactorCvode::react()");
+// #ifdef PELE_USE_NLTE
+// int
+// ReactorCvode::reactTe(
+//   const amrex::Box& box,
+//   amrex::Array4<amrex::Real> const& rY_in,
+//   amrex::Array4<amrex::Real> const& rYsrc_in,
+//   amrex::Array4<amrex::Real> const& T_in,
+//   amrex::Array4<amrex::Real> const& Te_in,
+//   amrex::Array4<amrex::Real> const& rEner_in,
+//   amrex::Array4<amrex::Real> const& rEner_src_in,
+//   amrex::Array4<amrex::Real> const& FC_in,
+//   amrex::Array4<int> const& mask,
+//   amrex::Real& dt_react,
+//   amrex::Real& time
+// #ifdef AMREX_USE_GPU
+//   ,
+//   amrex::gpuStream_t stream
+// #endif
+// )
+// {
+//   BL_PROFILE("Pele::ReactorCvode::react()");
 
-  // CPU and GPU version are very different such that most of the function
-  // is split between a GPU region and a CPU region
+//   // CPU and GPU version are very different such that most of the function
+//   // is split between a GPU region and a CPU region
 
-  amrex::Real time_start = time;
-  amrex::Real time_final = time + dt_react;
-  amrex::Real CvodeActual_time_final = 0.0;
+//   amrex::Real time_start = time;
+//   amrex::Real time_final = time + dt_react;
+//   amrex::Real CvodeActual_time_final = 0.0;
 
-#ifdef SUNDIALS_BUILD_WITH_PROFILING
-  SUNProfiler sun_profiler = nullptr;
-  SUNContext_GetProfiler(
-    *amrex::sundials::The_Sundials_Context(), &sun_profiler);
-#endif
+// #ifdef SUNDIALS_BUILD_WITH_PROFILING
+//   SUNProfiler sun_profiler = nullptr;
+//   SUNContext_GetProfiler(
+//     *amrex::sundials::The_Sundials_Context(), &sun_profiler);
+// #endif
 
-  // Set of SUNDIALs objects needed for Cvode
-  SUNMatrix A = nullptr;             // Jacobian matrix
-  auto* udata = new CVODEUserData{}; // Userdata container
-  SUNNonlinearSolver NLS = nullptr;  // Non-linear solver
-  SUNLinearSolver LS = nullptr;      // Linear solver
+//   // Set of SUNDIALs objects needed for Cvode
+//   SUNMatrix A = nullptr;             // Jacobian matrix
+//   auto* udata = new CVODEUserData{}; // Userdata container
+//   SUNNonlinearSolver NLS = nullptr;  // Non-linear solver
+//   SUNLinearSolver LS = nullptr;      // Linear solver
 
-  // Call CVodeCreate to create the solver memory and specify the Backward
-  // Differentiation Formula and the use of a Newton iteration
-  void* cvode_mem =
-    CVodeCreate(CV_BDF, *amrex::sundials::The_Sundials_Context());
-  ; // Internal Cvode memory
+//   // Call CVodeCreate to create the solver memory and specify the Backward
+//   // Differentiation Formula and the use of a Newton iteration
+//   void* cvode_mem =
+//     CVodeCreate(CV_BDF, *amrex::sundials::The_Sundials_Context());
+//   ; // Internal Cvode memory
 
-  //----------------------------------------------------------
-  // GPU Region
-  //----------------------------------------------------------
+//   //----------------------------------------------------------
+//   // GPU Region
+//   //----------------------------------------------------------
 
-#ifdef AMREX_USE_GPU
-  const int ncells = box.numPts();
-  const int neq_tot = (NUM_SPECIES + 2) * ncells;
+// #ifdef AMREX_USE_GPU
+//   const int ncells = box.numPts();
+//   const int neq_tot = (NUM_SPECIES + 2) * ncells;
 
-  // Solution vector and execution policy
-  auto y = utils::setNVectorGPU(neq_tot, atomic_reductions, stream);
+//   // Solution vector and execution policy
+//   auto y = utils::setNVectorGPU(neq_tot, atomic_reductions, stream);
 
-  // Solution data array
-  amrex::Real* yvec_d = N_VGetDeviceArrayPointer(y);
+//   // Solution data array
+//   amrex::Real* yvec_d = N_VGetDeviceArrayPointer(y);
 
-  // Populate the userData
-  amrex::Gpu::streamSynchronize();
-  allocUserData(udata, ncells, A, stream);
+//   // Populate the userData
+//   amrex::Gpu::streamSynchronize();
+//   allocUserData(udata, ncells, A, stream);
 
-  // Fill data
-  flatten(
-    box, ncells, rY_in, rYsrc_in, T_in, Te_in, rEner_in, rEner_src_in, yvec_d,
-    udata->rYsrc_ext, udata->rhoe_init, udata->rhoesrc_ext);
+//   // Fill data
+//   flattente(
+//     box, ncells, rY_in, rYsrc_in, T_in, Te_in, rEner_in, rEner_src_in, yvec_d,
+//     udata->rYsrc_ext, udata->rhoe_init, udata->rhoesrc_ext);
 
-#ifdef AMREX_USE_OMP
-  amrex::Gpu::Device::streamSynchronize();
-#endif
+// #ifdef AMREX_USE_OMP
+//   amrex::Gpu::Device::streamSynchronize();
+// #endif
 
-  initCvode(y, A, udata, NLS, LS, cvode_mem, stream, time_start, ncells);
+//   initCvode(y, A, udata, NLS, LS, cvode_mem, stream, time_start, ncells);
 
-  // Setup tolerances with typical values
-  utils::set_sundials_solver_tols<Ordering>(
-    *amrex::sundials::The_Sundials_Context(), cvode_mem, udata->ncells, relTol,
-    absTol, m_typ_vals, "cvode", verbose);
+//   // Setup tolerances with typical values
+//   utils::set_sundials_solver_tols<Ordering>(
+//     *amrex::sundials::The_Sundials_Context(), cvode_mem, udata->ncells, relTol,
+//     absTol, m_typ_vals, "cvode", verbose);
 
-  // Actual CVODE solve
-  BL_PROFILE_VAR("Pele::ReactorCvode::react():CVode", AroundCVODE);
-  int flag =
-    CVode(cvode_mem, time_final, y, &CvodeActual_time_final, CV_NORMAL);
-  if (utils::check_flag(&flag, "CVode", 1)) {
-    return (1);
-  }
-  BL_PROFILE_VAR_STOP(AroundCVODE);
+//   // Actual CVODE solve
+//   BL_PROFILE_VAR("Pele::ReactorCvode::react():CVode", AroundCVODE);
+//   int flag =
+//     CVode(cvode_mem, time_final, y, &CvodeActual_time_final, CV_NORMAL);
+//   if (utils::check_flag(&flag, "CVode", 1)) {
+//     return (1);
+//   }
+//   BL_PROFILE_VAR_STOP(AroundCVODE);
 
-#ifdef MOD_REACTOR
-  dt_react =
-    time_start - CvodeActual_time_final; // Actual dt_react performed by Cvode
-  time += dt_react;                      // Increment time in reactor mode
-#endif
+// #ifdef MOD_REACTOR
+//   dt_react =
+//     time_start - CvodeActual_time_final; // Actual dt_react performed by Cvode
+//   time += dt_react;                      // Increment time in reactor mode
+// #endif
 
-#ifdef AMREX_USE_OMP
-  amrex::Gpu::Device::streamSynchronize();
-#endif
+// #ifdef AMREX_USE_OMP
+//   amrex::Gpu::Device::streamSynchronize();
+// #endif
 
-  // Get workload estimate
-  long int nfe;
-  flag = CVodeGetNumRhsEvals(cvode_mem, &nfe);
+//   // Get workload estimate
+//   long int nfe;
+//   flag = CVodeGetNumRhsEvals(cvode_mem, &nfe);
 
-  amrex::Gpu::DeviceVector<long int> v_nfe(ncells, nfe);
-  long int* d_nfe = v_nfe.data();
-  unflatten(
-    box, ncells, rY_in, T_in, rEner_in, rEner_src_in, FC_in, yvec_d,
-    udata->rhoe_init, d_nfe, dt_react);
+//   amrex::Gpu::DeviceVector<long int> v_nfe(ncells, nfe);
+//   long int* d_nfe = v_nfe.data();
+//   unflattente(
+//     box, ncells, rY_in, T_in, Te_in, rEner_in, rEner_src_in, FC_in, yvec_d,
+//     udata->rhoe_init, d_nfe, dt_react);
 
-  if (udata->verbose > 1) {
-    print_final_stats(cvode_mem, LS != nullptr);
-  }
+//   if (udata->verbose > 1) {
+//     print_final_stats(cvode_mem, LS != nullptr);
+//   }
 
-#else
-  //----------------------------------------------------------
-  // CPU Region
-  //----------------------------------------------------------
+// #else
+//   //----------------------------------------------------------
+//   // CPU Region
+//   //----------------------------------------------------------
 
-  N_Vector y = nullptr; // Solution vector
+//   N_Vector y = nullptr; // Solution vector
 
-  // Perform integration one cell at a time
-  const int icell = 0;
-  const int ncells = 1;
+//   // Perform integration one cell at a time
+//   const int icell = 0;
+//   const int ncells = 1;
 
-  int omp_thread = 0;
-#ifdef AMREX_USE_OMP
-  omp_thread = omp_get_thread_num();
-#endif
+//   int omp_thread = 0;
+// #ifdef AMREX_USE_OMP
+//   omp_thread = omp_get_thread_num();
+// #endif
 
-  initCvode(y, A, udata, NLS, LS, cvode_mem, time_start, ncells);
+//   initCvode(y, A, udata, NLS, LS, cvode_mem, time_start, ncells);
 
-  // Update TypicalValues
-  // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
-  utils::set_sundials_solver_tols<Ordering>(
-    *amrex::sundials::The_Sundials_Context(), cvode_mem, udata->ncells, relTol,
-    absTol, m_typ_vals, "cvode", verbose);
+//   // Update TypicalValues
+//   // NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
+//   utils::set_sundials_solver_tols<Ordering>(
+//     *amrex::sundials::The_Sundials_Context(), cvode_mem, udata->ncells, relTol,
+//     absTol, m_typ_vals, "cvode", verbose);
 
-  const auto captured_reactor_type = m_reactor_type;
-  const auto captured_clean_init_massfrac = m_clean_init_massfrac;
-  ParallelFor(
-    box, [=, &CvodeActual_time_final] AMREX_GPU_DEVICE(
-           int i, int j, int k) noexcept {
-      if (mask(i, j, k) != -1) {
+//   const auto captured_reactor_type = m_reactor_type;
+//   const auto captured_clean_init_massfrac = m_clean_init_massfrac;
+//   ParallelFor(
+//     box, [=, &CvodeActual_time_final] AMREX_GPU_DEVICE(
+//            int i, int j, int k) noexcept {
+//       if (mask(i, j, k) != -1) {
 
-        amrex::Real* yvec_d = N_VGetArrayPointer(y);
-        utils::box_flattente<Ordering>(
-          icell, i, j, k, ncells, captured_reactor_type,
-          captured_clean_init_massfrac, rY_in, rYsrc_in, T_in, Te_in, rEner_in,
-          rEner_src_in, yvec_d, udata->rYsrc_ext, udata->rhoe_init,
-          udata->rhoesrc_ext);
+//         amrex::Real* yvec_d = N_VGetArrayPointer(y);
+//         utils::box_flattente<Ordering>(
+//           icell, i, j, k, ncells, captured_reactor_type,
+//           captured_clean_init_massfrac, rY_in, rYsrc_in, T_in, Te_in, rEner_in,
+//           rEner_src_in, yvec_d, udata->rYsrc_ext, udata->rhoe_init,
+//           udata->rhoesrc_ext);
 
-        std::cout << "yvec_d" << yvec_d[NUM_SPECIES+1] << "\n";
-        // ReInit CVODE is faster
-        CVodeReInit(cvode_mem, time_start, y);
+//         std::cout << "yvec_d" << yvec_d[NUM_SPECIES+1] << "\n";
+//         // ReInit CVODE is faster
+//         CVodeReInit(cvode_mem, time_start, y);
 
-        std::cout << "yvec_d 2->" << yvec_d[NUM_SPECIES+1] << "\n";
-        BL_PROFILE_VAR("Pele::ReactorCvode::react():CVode", AroundCVODE);
-        CVode(cvode_mem, time_final, y, &CvodeActual_time_final, CV_NORMAL);
-        BL_PROFILE_VAR_STOP(AroundCVODE);
-        std::cout << "yvec_d 3->" << yvec_d[NUM_SPECIES+1] << "\n";
+//         std::cout << "yvec_d 2->" << yvec_d[NUM_SPECIES+1] << "\n";
+//         BL_PROFILE_VAR("Pele::ReactorCvode::react():CVode", AroundCVODE);
+//         CVode(cvode_mem, time_final, y, &CvodeActual_time_final, CV_NORMAL);
+//         BL_PROFILE_VAR_STOP(AroundCVODE);
+//         std::cout << "yvec_d 3->" << yvec_d[NUM_SPECIES+1] << "\n";
 
-        // cppcheck-suppress knownConditionTrueFalse
-        if ((udata->verbose > 1) && (omp_thread == 0)) {
-          amrex::Print() << "Additional verbose info --\n";
-          print_final_stats(cvode_mem, LS != nullptr);
-          amrex::Print() << "\n -------------------------------------\n";
-        }
+//         // cppcheck-suppress knownConditionTrueFalse
+//         if ((udata->verbose > 1) && (omp_thread == 0)) {
+//           amrex::Print() << "Additional verbose info --\n";
+//           print_final_stats(cvode_mem, LS != nullptr);
+//           amrex::Print() << "\n -------------------------------------\n";
+//         }
 
-        amrex::Real actual_dt = CvodeActual_time_final - time_start;
+//         amrex::Real actual_dt = CvodeActual_time_final - time_start;
 
-        // Get estimate of how hard the integration process was
-        long int nfe = 0;
-        long int nfeLS = 0;
-        CVodeGetNumRhsEvals(cvode_mem, &nfe);
-        if (LS != nullptr) {
-          CVodeGetNumLinRhsEvals(cvode_mem, &nfeLS);
-        }
-        const long int nfe_tot = nfe + nfeLS;
+//         // Get estimate of how hard the integration process was
+//         long int nfe = 0;
+//         long int nfeLS = 0;
+//         CVodeGetNumRhsEvals(cvode_mem, &nfe);
+//         if (LS != nullptr) {
+//           CVodeGetNumLinRhsEvals(cvode_mem, &nfeLS);
+//         }
+//         const long int nfe_tot = nfe + nfeLS;
 
-        utils::box_unflattente<Ordering>(
-          icell, i, j, k, ncells, captured_reactor_type,
-          captured_clean_init_massfrac, rY_in, T_in, Te_in, rEner_in, rEner_src_in,
-          FC_in, yvec_d, udata->rhoe_init, nfe_tot, dt_react);
+//         utils::box_unflattente<Ordering>(
+//           icell, i, j, k, ncells, captured_reactor_type,
+//           captured_clean_init_massfrac, rY_in, T_in, Te_in, rEner_in, rEner_src_in,
+//           FC_in, yvec_d, udata->rhoe_init, nfe_tot, dt_react);
 
-        // cppcheck-suppress knownConditionTrueFalse
-        if ((udata->verbose > 3) && (omp_thread == 0)) {
-          amrex::Print() << "END : time curr is " << CvodeActual_time_final
-                         << " and actual dt_react is " << actual_dt << "\n";
-        }
-      } else {
-        FC_in(i, j, k, 0) = 0.0;
-      }
-    });
+//         // cppcheck-suppress knownConditionTrueFalse
+//         if ((udata->verbose > 3) && (omp_thread == 0)) {
+//           amrex::Print() << "END : time curr is " << CvodeActual_time_final
+//                          << " and actual dt_react is " << actual_dt << "\n";
+//         }
+//       } else {
+//         FC_in(i, j, k, 0) = 0.0;
+//       }
+//     });
 
-#ifdef MOD_REACTOR
-  dt_react =
-    time_start -
-    time_final; // In this case, assumes all individual CVODE calls nailed it.
-  time += dt_react; // Increment time in reactor mode
-#endif
+// #ifdef MOD_REACTOR
+//   dt_react =
+//     time_start -
+//     time_final; // In this case, assumes all individual CVODE calls nailed it.
+//   time += dt_react; // Increment time in reactor mode
+// #endif
 
-  long int nfe =
-    20; // Dummy, the return value is no longer used for this function.
+//   long int nfe =
+//     20; // Dummy, the return value is no longer used for this function.
 
-#endif // End GPU check
+// #endif // End GPU check
 
-#ifdef SUNDIALS_BUILD_WITH_PROFILING
-  if (m_print_profiling) {
-    SUNProfiler_Print(sun_profiler, stdout);
-  }
-#endif
+// #ifdef SUNDIALS_BUILD_WITH_PROFILING
+//   if (m_print_profiling) {
+//     SUNProfiler_Print(sun_profiler, stdout);
+//   }
+// #endif
 
-  // Clean up
-  N_VDestroy(y);
-  CVodeFree(&cvode_mem);
-  if (LS != nullptr) {
-    SUNLinSolFree(LS);
-  }
-  if (NLS != nullptr) {
-    SUNNonlinSolFree(NLS);
-  }
-  if (A != nullptr) {
-    SUNMatDestroy(A);
-  }
-  freeUserData(udata);
+//   // Clean up
+//   N_VDestroy(y);
+//   CVodeFree(&cvode_mem);
+//   if (LS != nullptr) {
+//     SUNLinSolFree(LS);
+//   }
+//   if (NLS != nullptr) {
+//     SUNNonlinSolFree(NLS);
+//   }
+//   if (A != nullptr) {
+//     SUNMatDestroy(A);
+//   }
+//   freeUserData(udata);
 
-  return static_cast<int>(nfe);
-}
+//   return static_cast<int>(nfe);
+// }
 
-#endif // PELE_USE_NLTE
+// #endif // PELE_USE_NLTE
+
 int
 ReactorCvode::react(
   sunrealtype* rY_in,

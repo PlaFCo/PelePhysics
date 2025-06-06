@@ -731,8 +731,12 @@ class Converter:
         n_hom_species = len(self.species_info.nonqssa_species_list)
         n_hom_reactions = self.mechanism.n_reactions
         site_density = n_het_b_elem = n_het_species = n_het_reactions = 0
-
         all_species_list = self.species_info.nonqssa_species_list
+
+
+        assert len(self.reaction_info.index) == 8
+        ielectron = self.reaction_info.index[6:8]
+        nelectron = ielectron[1] - ielectron[0]
 
         cw.writer(fstream)
         cw.writer(fstream, "#include <AMReX_Gpu.H>")
@@ -816,6 +820,16 @@ class Converter:
             fstream,
             f"#define NUM_SPECIES (NUM_{qssa_str}GAS_SPECIES + NUM_SURFACE_SPECIES)",
         )
+        if nelectron > 0:
+            cw.writer(
+                fstream,
+                f"#define NUM_TEMP 2",
+            )
+        else:
+            cw.writer(
+                fstream,
+                f"#define NUM_TEMP 1",
+            )
         cw.writer(
             fstream, "#define NUM_REACTIONS (NUM_GAS_REACTIONS + NUM_SURFACE_REACTIONS)"
         )

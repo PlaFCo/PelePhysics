@@ -1,3 +1,117 @@
+// void
+// integrate_Array4(
+//   int& lev,
+//   amrex::Real& dt,
+//   int& ndt,
+//   int& omp_thread,
+//   amrex::MFIter& mfi,
+//   amrex::Vector<amrex::MultiFab>& mf,
+//   amrex::Vector<amrex::MultiFab>& rY_source_ext,
+//   amrex::Vector<amrex::MultiFab>& mfE,
+//   amrex::Vector<amrex::MultiFab>& rY_source_energy_ext,
+//   amrex::Vector<amrex::MultiFab>& fctCount,
+//   amrex::Vector<amrex::iMultiFab>& dummyMask,
+//   std::unique_ptr<pele::physics::reactions::ReactorBase>& reactor,
+//   pele::physics::PeleParams<pele::physics::transport::TransParm<
+//     pele::physics::PhysicsType::eos_type,
+//     pele::physics::PhysicsType::transport_type>>& trans_parms)
+// {
+
+//   BL_PROFILE_VAR_NS("React", ReactInLoop);
+//   int tmp_fc;
+//   const amrex::Box& box = mfi.tilebox();
+//   const int nc = box.numPts();
+//   auto const& rhoY = mf[lev].array(mfi);
+//   auto const& T = mf[lev].array(mfi, NUM_SPECIES);
+//   auto const& rhoE = mfE[lev].array(mfi);
+//   auto const& frcExt = rY_source_ext[lev].array(mfi);
+//   auto const& frcEExt = rY_source_energy_ext[lev].array(mfi);
+//   auto const& fc = fctCount[lev].array(mfi);
+//   auto const& mask = dummyMask[lev].array(mfi);
+//   amrex::Real time = 0.0;
+//   amrex::Real dt_lev = dt / std::pow(2, lev);
+//   amrex::Real dt_incr = dt_lev / ndt;
+//   // if (omp_thread == 0) {
+//   //   amrex::Print() << "  [" << lev << "]"
+//   //                  << " integrating " << nc << " cells" << std::endl;
+//   // }
+
+//   // Get transport coeffs
+//   auto const* ltransparm = trans_parms.device_parm();
+//   amrex::FArrayBox rho_fab(box, 1, amrex::The_Async_Arena());
+//   auto const& rho_a = rho_fab.array();
+//   amrex::FArrayBox Y_fab(box, NUM_SPECIES, amrex::The_Async_Arena());
+//   auto const& Y_a = Y_fab.array();
+//   amrex::FArrayBox D_fab(box, NUM_SPECIES, amrex::The_Async_Arena());
+//   auto const& D_a = D_fab.array();
+//   amrex::FArrayBox mu_fab(box, 1, amrex::The_Async_Arena());
+//   auto const& mu_a = mu_fab.array();
+//   amrex::FArrayBox xi_fab(box, 1, amrex::The_Async_Arena());
+//   auto const& xi_a = xi_fab.array();
+//   amrex::FArrayBox lam_fab(box, 1, amrex::The_Async_Arena());
+//   auto const& lam_a = lam_fab.array();
+//   amrex::FArrayBox chi_fab(box, NUM_SPECIES, amrex::The_Async_Arena());
+//   auto const& chi_a = chi_fab.array();
+//   amrex::ParallelFor(box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+//     rho_a(i, j, k) = 0.0;
+//     for (int n = 0; n < NUM_SPECIES; n++) {
+//       rho_a(i, j, k) += rhoY(i, j, k, n);
+//     }
+//     for (int n = 0; n < NUM_SPECIES; n++) {
+//       Y_a(i, j, k, n) = rhoY(i, j, k, n) / rho_a(i, j, k);
+//     }
+//   });
+//   amrex::launch(box, [=] AMREX_GPU_DEVICE(amrex::Box const& tbx) {
+//     auto trans = pele::physics::PhysicsType::transport();
+//     trans.get_transport_coeffs(
+//       tbx, Y_a, T, rho_a, D_a, chi_a, mu_a, xi_a, lam_a, ltransparm);
+//   });
+
+//   // Solve
+//   BL_PROFILE_VAR_START(ReactInLoop);
+//   std::ofstream myfile;
+//   myfile.open("results.txt");
+//   myfile << "time,temperature,density,Y[1],viscosity" << std::endl;
+//   myfile << 0 << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0] << ","
+//         << Y_a.dataPtr()[1] <<"," << mu_a.dataPtr()[0] << std::endl;
+//   double timeElapsed = 0;
+//   for (int ii = 0; ii < ndt; ++ii) {
+
+//     tmp_fc = reactor->react(
+//       box, rhoY, frcExt, T, rhoE, frcEExt, fc, mask, dt_incr, time
+// #ifdef AMREX_USE_GPU
+//       ,
+//       amrex::Gpu::gpuStream()
+// #endif
+//     );
+
+//     // Transport
+//     amrex::ParallelFor(box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+//       rho_a(i, j, k) = 0.0;
+//       for (int n = 0; n < NUM_SPECIES; n++) {
+//         rho_a(i, j, k) += rhoY(i, j, k, n);
+//       }
+//       for (int n = 0; n < NUM_SPECIES; n++) {
+//         Y_a(i, j, k, n) = rhoY(i, j, k, n) / rho_a(i, j, k);
+//       }
+//     });
+//     amrex::launch(box, [=] AMREX_GPU_DEVICE(amrex::Box const& tbx) {
+//       auto trans = pele::physics::PhysicsType::transport();
+//       trans.get_transport_coeffs(
+//         tbx, Y_a, T, rho_a, D_a, chi_a, mu_a, xi_a, lam_a, ltransparm);
+//     });
+
+//     dt_incr = dt_lev / ndt;
+//     timeElapsed += dt_incr;
+//     amrex::Gpu::Device::streamSynchronize();
+//     myfile << timeElapsed << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0]<< "," << Y_a.dataPtr()[1] << "," << mu_a.dataPtr()[0] << std::endl;
+    
+
+//   }
+//   BL_PROFILE_VAR_STOP(ReactInLoop);
+//   myfile.close();
+// }
+
 void
 integrate_Array4(
   int& lev,
@@ -22,122 +136,13 @@ integrate_Array4(
   const amrex::Box& box = mfi.tilebox();
   const int nc = box.numPts();
   auto const& rhoY = mf[lev].array(mfi);
-  auto const& T = mf[lev].array(mfi, NUM_SPECIES);
-  auto const& rhoE = mfE[lev].array(mfi);
-  auto const& frcExt = rY_source_ext[lev].array(mfi);
-  auto const& frcEExt = rY_source_energy_ext[lev].array(mfi);
-  auto const& fc = fctCount[lev].array(mfi);
-  auto const& mask = dummyMask[lev].array(mfi);
-  amrex::Real time = 0.0;
-  amrex::Real dt_lev = dt / std::pow(2, lev);
-  amrex::Real dt_incr = dt_lev / ndt;
-  // if (omp_thread == 0) {
-  //   amrex::Print() << "  [" << lev << "]"
-  //                  << " integrating " << nc << " cells" << std::endl;
-  // }
-
-  // Get transport coeffs
-  auto const* ltransparm = trans_parms.device_parm();
-  amrex::FArrayBox rho_fab(box, 1, amrex::The_Async_Arena());
-  auto const& rho_a = rho_fab.array();
-  amrex::FArrayBox Y_fab(box, NUM_SPECIES, amrex::The_Async_Arena());
-  auto const& Y_a = Y_fab.array();
-  amrex::FArrayBox D_fab(box, NUM_SPECIES, amrex::The_Async_Arena());
-  auto const& D_a = D_fab.array();
-  amrex::FArrayBox mu_fab(box, 1, amrex::The_Async_Arena());
-  auto const& mu_a = mu_fab.array();
-  amrex::FArrayBox xi_fab(box, 1, amrex::The_Async_Arena());
-  auto const& xi_a = xi_fab.array();
-  amrex::FArrayBox lam_fab(box, 1, amrex::The_Async_Arena());
-  auto const& lam_a = lam_fab.array();
-  amrex::FArrayBox chi_fab(box, NUM_SPECIES, amrex::The_Async_Arena());
-  auto const& chi_a = chi_fab.array();
-  amrex::ParallelFor(box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-    rho_a(i, j, k) = 0.0;
-    for (int n = 0; n < NUM_SPECIES; n++) {
-      rho_a(i, j, k) += rhoY(i, j, k, n);
-    }
-    for (int n = 0; n < NUM_SPECIES; n++) {
-      Y_a(i, j, k, n) = rhoY(i, j, k, n) / rho_a(i, j, k);
-    }
-  });
-  amrex::launch(box, [=] AMREX_GPU_DEVICE(amrex::Box const& tbx) {
-    auto trans = pele::physics::PhysicsType::transport();
-    trans.get_transport_coeffs(
-      tbx, Y_a, T, rho_a, D_a, chi_a, mu_a, xi_a, lam_a, ltransparm);
-  });
-
-  // Solve
-  BL_PROFILE_VAR_START(ReactInLoop);
-  std::ofstream myfile;
-  myfile.open("results.txt");
-  myfile << "time,temperature,density,Y[1],viscosity" << std::endl;
-  myfile << 0 << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0] << ","
-        << Y_a.dataPtr()[1] <<"," << mu_a.dataPtr()[0] << std::endl;
-  double timeElapsed = 0;
-  for (int ii = 0; ii < ndt; ++ii) {
-
-    tmp_fc = reactor->react(
-      box, rhoY, frcExt, T, rhoE, frcEExt, fc, mask, dt_incr, time
-#ifdef AMREX_USE_GPU
-      ,
-      amrex::Gpu::gpuStream()
+#ifdef PELE_USE_NLTE
+  AMREX_ALWAYS_ASSERT_WITH_MESSAGE(mf[lev].nComp()>= NUM_SPECIES +2, "components less than NUM_SPECIES+2");
+#ifndef E_ID
+  amrex::Abort("NLTE model requires electrons as species");
 #endif
-    );
-
-    // Transport
-    amrex::ParallelFor(box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      rho_a(i, j, k) = 0.0;
-      for (int n = 0; n < NUM_SPECIES; n++) {
-        rho_a(i, j, k) += rhoY(i, j, k, n);
-      }
-      for (int n = 0; n < NUM_SPECIES; n++) {
-        Y_a(i, j, k, n) = rhoY(i, j, k, n) / rho_a(i, j, k);
-      }
-    });
-    amrex::launch(box, [=] AMREX_GPU_DEVICE(amrex::Box const& tbx) {
-      auto trans = pele::physics::PhysicsType::transport();
-      trans.get_transport_coeffs(
-        tbx, Y_a, T, rho_a, D_a, chi_a, mu_a, xi_a, lam_a, ltransparm);
-    });
-
-    dt_incr = dt_lev / ndt;
-    timeElapsed += dt_incr;
-    amrex::Gpu::Device::streamSynchronize();
-    myfile << timeElapsed << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0]<< "," << Y_a.dataPtr()[1] << "," << mu_a.dataPtr()[0] << std::endl;
-    
-
-  }
-  BL_PROFILE_VAR_STOP(ReactInLoop);
-  myfile.close();
-}
-
-void
-integrate_Array4Te(
-  int& lev,
-  amrex::Real& dt,
-  int& ndt,
-  int& omp_thread,
-  amrex::MFIter& mfi,
-  amrex::Vector<amrex::MultiFab>& mf,
-  amrex::Vector<amrex::MultiFab>& rY_source_ext,
-  amrex::Vector<amrex::MultiFab>& mfE,
-  amrex::Vector<amrex::MultiFab>& rY_source_energy_ext,
-  amrex::Vector<amrex::MultiFab>& fctCount,
-  amrex::Vector<amrex::iMultiFab>& dummyMask,
-  std::unique_ptr<pele::physics::reactions::ReactorBase>& reactor,
-  pele::physics::PeleParams<pele::physics::transport::TransParm<
-    pele::physics::PhysicsType::eos_type,
-    pele::physics::PhysicsType::transport_type>>& trans_parms)
-{
-
-  BL_PROFILE_VAR_NS("React", ReactInLoop);
-  int tmp_fc;
-  const amrex::Box& box = mfi.tilebox();
-  const int nc = box.numPts();
-  auto const& rhoY = mf[lev].array(mfi);
+#endif
   auto const& T = mf[lev].array(mfi, NUM_SPECIES);
-  auto const& Te = mf[lev].array(mfi, NUM_SPECIES + 1);
   auto const& rhoE = mfE[lev].array(mfi, 0);
   auto const& rhoEe = mfE[lev].array(mfi, 1);
   auto const& frcExt = rY_source_ext[lev].array(mfi);
@@ -199,14 +204,14 @@ integrate_Array4Te(
   for (int ii = 0; ii < ndt; ++ii) {
     // Set electric field, electron temperature, and Joule source term
     amrex::Real redEfield_value = redEfield_func(0.0, 0.0, 0.0); // Example value, replace with actual
-    Te(0, 0, 0) = redEfield_to_tempe(redEfield_value);
+    T(0, 0, 0, 1) = redEfield_to_tempe(redEfield_value);
     amrex::Real joule_source = redEfield_to_hsrc(redEfield_value, rhoY(0, 0, 0, E_ID));
     frcEExt_E(0, 0, 0) = joule_source;
     frcEExt_Ee(0, 0, 0) = 0.0; // Assuming no source term for electron energy since we are using LFA
-    std::cout << Te(0, 0, 0) << " " << frcEExt_E(0, 0, 0) << " "
+    std::cout << T(0, 0, 0, 1) << " " << frcEExt_E(0, 0, 0) << " "
               << frcEExt_Ee(0, 0, 0) << std::endl;
-    tmp_fc = reactor->reactTe(
-      box, rhoY, frcExt, T, Te, rhoE, frcEExt, fc, mask, dt_incr, time
+    tmp_fc = reactor->react(
+      box, rhoY, frcExt, T, rhoE, frcEExt, fc, mask, dt_incr, time
 #ifdef AMREX_USE_GPU
       ,
       amrex::Gpu::gpuStream()
