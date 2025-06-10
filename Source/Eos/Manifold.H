@@ -259,7 +259,7 @@ struct Manifold
   AMREX_FORCE_INLINE
   static void RTY2JAC(
     const amrex::Real /*R*/,
-    const amrex::Real /*T*/,
+    const amrex::Real* /*T*/,
     const amrex::Real* /*Y[]*/,
     amrex::Real* /*JAC[]*/,
     const int /*HP*/)

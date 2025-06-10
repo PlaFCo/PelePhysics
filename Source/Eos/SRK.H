@@ -287,7 +287,7 @@ struct SRK
     for (int ii = 0; ii < NUM_SPECIES; ii++) {
       for (int jj = 0; jj < NUM_SPECIES; jj++) {
         d2AmdT2 += tmp1 * Y[ii] * Y[jj] *
-                   (-4.0 * T * amlocder[ii] * amlocder[jj] +
+                   (-4.0 * T[0] * amlocder[ii] * amlocder[jj] +
                     amloc[ii] * amlocder[jj] + amloc[jj] * amlocder[ii]);
       }
     }
@@ -384,7 +384,7 @@ struct SRK
 
     CKMMWY(Y, wbar);
     MixingRuleBm(Y, bm);
-    Calc_Am_and_derivs(T[0], Y, am, dAmdT, d2AmdT2);
+    Calc_Am_and_derivs(T, Y, am, dAmdT, d2AmdT2);
 
     tau = 1.0 / R;
     K1 = (1.0 / bm) * log1p(bm * R);
@@ -424,10 +424,10 @@ struct SRK
   {
     amrex::Real am, bm, d2AmdT2;
     // Alternative: MixingRuleBm then Calc_Am_and_derivs
-    MixingRuleAmBm(T[0], Y, am, bm);
-    Calc_d2AmdT2(T[0], Y, d2AmdT2);
+    MixingRuleAmBm(T, Y, am, bm);
+    Calc_d2AmdT2(T, Y, d2AmdT2);
     CKCVBS(T, Y, Cv);
-    Cv += T * d2AmdT2 * (1.0 / bm) * log1p(bm * R);
+    Cv += T[0] * d2AmdT2 * (1.0 / bm) * log1p(bm * R);
   }
 
   AMREX_GPU_HOST_DEVICE
@@ -477,11 +477,11 @@ struct SRK
     amrex::Real dT = 100000.0;
     while (std::abs(dT) > convCritT && nIter < maxIter) {
       nIter++;
-      Calc_Am_and_derivs(Tn[0], Y, am, dAmdT, d2AmdT2);
+      Calc_Am_and_derivs(Tn, Y, am, dAmdT, d2AmdT2);
       // ideal gas internal energy
-      CKUBMS(Tn[0], Y, Eig);
+      CKUBMS(Tn, Y, Eig);
       // ideal gas heat capacity
-      CKCVBS(Tn[0], Y, Cv);
+      CKCVBS(Tn, Y, Cv);
       // real gas heat capacity
       Cv += Tn[0] * d2AmdT2 * K1;
 
@@ -529,7 +529,7 @@ struct SRK
     amrex::Real wbar = 0.0, tau, am, bm;
     tau = 1.0 / R;
     CKMMWY(Y, wbar);
-    MixingRuleAmBm(T[0], Y, am, bm);
+    MixingRuleAmBm(T, Y, am, bm);
     P = (Constants::RU / wbar) * T[0] / (tau - bm) - am / (tau * (tau + bm));
   }
 
@@ -580,19 +580,19 @@ struct SRK
     InvEosT1Denom = 1.0 / eosT1Denom;
     InvEosT2Denom = 1.0 / eosT2Denom;
 
-    Pnp1 = Rm * T * InvEosT1Denom - am * InvEosT2Denom;
+    Pnp1 = Rm * T[0] * InvEosT1Denom - am * InvEosT2Denom;
     nIter = 0;
 
     // Newton Iteration loop
     while (std::abs(P - Pnp1) > convCritP && nIter < maxIter) {
       nIter += 1;
-      Calc_dAmdT(T[0], Y, dAmdT);
+      Calc_dAmdT(T, Y, dAmdT);
       amrex::Real dpdT = Rm * InvEosT1Denom - dAmdT * InvEosT2Denom;
       // Newton iteration: Tnext = T - (p(T,Y,R) - Ptarget)/dpdT
       T[0] -= (Pnp1 - P) / dpdT;
       // Calculate updated pressure to use as a convergence criterion
-      MixingRuleAm(T[0], Y, am);
-      Pnp1 = Rm * T * InvEosT1Denom - am * InvEosT2Denom;
+      MixingRuleAm(T, Y, am);
+      Pnp1 = Rm * T[0] * InvEosT1Denom - am * InvEosT2Denom;
     }
   }
 
@@ -608,8 +608,8 @@ struct SRK
     amrex::Real K1, InvEosT1Denom, InvEosT3Denom, wbar = 0.0, RmT, InvRuT,
                                                   InvBm, tau;
 
-    MixingRuleAmBm(T[0], Y, am, bm);
-    Calc_dAmdY(T[0], Y, dAmdY);
+    MixingRuleAmBm(T, Y, am, bm);
+    Calc_dAmdY(T, Y, dAmdY);
     CKMMWY(Y, wbar);
 
     InvBm = 1.0 / bm;
@@ -680,10 +680,10 @@ struct SRK
     CKUMS(T, Ei);
 
     // non-ideal portion : Combine Am and Derivs for Speedup?
-    MixingRuleAmBm(T[0], Y, am, bm);
-    Calc_dAmdT(T[0], Y, dAmdT);
-    Calc_dAmdY(T[0], Y, dAmdY);
-    Calc_d2AmdTY(T[0], Y, d2AmdTY);
+    MixingRuleAmBm(T, Y, am, bm);
+    Calc_dAmdT(T, Y, dAmdT);
+    Calc_dAmdY(T, Y, dAmdY);
+    Calc_d2AmdTY(T, Y, d2AmdTY);
 
     inv_bm = 1.0 / bm;
     K1 = inv_bm * log1p(bm * R);
@@ -715,8 +715,8 @@ struct SRK
     }
 
     // Add in non-ideal portion
-    MixingRuleAmBm(T[0], Y, am, bm);
-    Calc_dAmdT(T[0], Y, dAmdT);
+    MixingRuleAmBm(T, Y, am, bm);
+    Calc_dAmdT(T, Y, dAmdT);
     // below was log(1 + bm/tau), tau = 1/R so this is simpler)
     K1 = (1.0 / bm) * log1p(bm * R);
     E += (T[0] * dAmdT - am) * K1;
@@ -747,9 +747,9 @@ struct SRK
   {
     // Calculate RHO
     amrex::Real am, bm, Z, wbar = 0.0, K1;
-    MixingRuleAmBm(T[0], Y, am, bm);
+    MixingRuleAmBm(T, Y, am, bm);
     CKMMWY(Y, wbar);
-    Calc_CompressFactor_Z(Z, am, bm, P, T[0], wbar);
+    Calc_CompressFactor_Z(Z, am, bm, P, T, wbar);
     R = P * wbar / (Z * Constants::RU * T[0]);
 
     // Calculate E - ideal gas portion then add non-ideal portion
@@ -759,7 +759,7 @@ struct SRK
     for (int ii = 0; ii < NUM_SPECIES; ii++) {
       E += Ei[ii] * Y[ii];
     }
-    Calc_dAmdT(T[0], Y, dAmdT);
+    Calc_dAmdT(T, Y, dAmdT);
     K1 = (1.0 / bm) * log1p(bm * R); // R = 1/tau
     E += (T[0] * dAmdT - am) * K1;
   }
@@ -773,9 +773,9 @@ struct SRK
     amrex::Real& R)
   {
     amrex::Real am, bm, Z, wbar = 0.0;
-    MixingRuleAmBm(T[0], Y, am, bm);
+    MixingRuleAmBm(T, Y, am, bm);
     CKMMWY(Y, wbar);
-    Calc_CompressFactor_Z(Z, am, bm, P, T[0], wbar);
+    Calc_CompressFactor_Z(Z, am, bm, P, T, wbar);
     R = P * wbar / (Z * Constants::RU * T[0]);
   }
 
@@ -821,9 +821,9 @@ struct SRK
     // Non-ideal part: Could be optimized a bit more by combining all derivative
     // calls
     MixingRuleBm(Y, bm);
-    Calc_Am_and_derivs(T[0], Y, am, dAmdT, d2AmdT2);
-    Calc_dAmdY(T[0], Y, dAmdY);
-    Calc_d2AmdTY(T[0], Y, d2AmdTY);
+    Calc_Am_and_derivs(T, Y, am, dAmdT, d2AmdT2);
+    Calc_dAmdY(T, Y, dAmdY);
+    Calc_d2AmdTY(T, Y, d2AmdTY);
     CKMMWY(Y, wbar);
 
     amrex::Real tau = 1.0 / R;
@@ -880,7 +880,7 @@ struct SRK
 
     CKMMWY(Y, wbar);
     MixingRuleBm(Y, bm);
-    Calc_Am_and_derivs(T[0], Y, am, dAmdT, d2AmdT2);
+    Calc_Am_and_derivs(T, Y, am, dAmdT, d2AmdT2);
 
     tau = 1.0 / R;
     K1 = (1.0 / bm) * log1p(bm * R);
@@ -1007,15 +1007,15 @@ struct SRK
     amrex::Real am, bm, dAmdT, d2AmdT2, wbar = 0.0, Cv = 0.0;
 
     CKMMWY(Y, wbar);
-    MixingRuleBm(Y[0], bm);
-    Calc_Am_and_derivs(T[0], Y, am, dAmdT, d2AmdT2);
+    MixingRuleBm(Y, bm);
+    Calc_Am_and_derivs(T, Y, am, dAmdT, d2AmdT2);
 
     amrex::Real Rm = Constants::RU / wbar;
     amrex::Real tau = 1.0 / R;
     amrex::Real InvEosT1Denom = 1.0 / (tau - bm);
     amrex::Real InvEosT2Denom = 1.0 / (tau * (tau + bm));
     CKCVBS(T, Y, Cv);
-    Cv += T * d2AmdT2 * (1.0 / bm) * log1p(bm * R);
+    Cv += T[0] * d2AmdT2 * (1.0 / bm) * log1p(bm * R);
 
     amrex::Real dpdT = Rm * InvEosT1Denom - dAmdT * InvEosT2Denom;
     amrex::Real dedtau = InvEosT2Denom * (am - T[0] * dAmdT);
@@ -1040,9 +1040,9 @@ struct SRK
 
     // Optimize by combining Am derivate calls?
     CKMMWY(Y, wbar);
-    MixingRuleAmBm(T[0], Y, am, bm);
-    Calc_dAmdY(T[0], Y, dAmdY);
-    Calc_d2AmdY2(T[0], Y, d2AmdY2);
+    MixingRuleAmBm(T, Y, am, bm);
+    Calc_dAmdY(T, Y, dAmdY);
+    Calc_d2AmdY2(T, Y, d2AmdY2);
 
     amrex::Real tau = 1.0 / R;
     amrex::Real InvBm = 1.0 / bm;

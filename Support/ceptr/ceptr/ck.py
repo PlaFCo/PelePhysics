@@ -1341,7 +1341,7 @@ def ckytcr(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKYTCR"
         + cc.sym
-        + "(const amrex::Real rho, amrex::Real /*T*/, const amrex::Real y[], "
+        + "(const amrex::Real rho,const amrex::Real* /*T*/, const amrex::Real y[], "
         " amrex::Real c[])",
     )
     cw.writer(fstream, "{")
@@ -1447,7 +1447,7 @@ def ckxtcr(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKXTCR"
         + cc.sym
-        + "(const amrex::Real rho, const amrex::Real /*T*/, const amrex::Real"
+        + "(const amrex::Real rho, const amrex::Real* /*T*/, const amrex::Real"
         " x[], amrex::Real c[])",
     )
     cw.writer(fstream, "{")
@@ -1700,7 +1700,7 @@ def ckgml(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKGML"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real gml[])",
+        + "(const amrex::Real* T, amrex::Real gml[])",
     )
     cw.writer(fstream, "{")
 
@@ -1733,7 +1733,7 @@ def ckaml(fstream, mechanism, species_info):
         fstream,
         "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKAML"
         + cc.sym
-        + "(const amrex::Real T, amrex::Real aml[])",
+        + "(const amrex::Real* T, amrex::Real aml[])",
     )
     cw.writer(fstream, "{")
 

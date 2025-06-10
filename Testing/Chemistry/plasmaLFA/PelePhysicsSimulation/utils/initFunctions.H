@@ -19,7 +19,7 @@ parse_input(
   int& use_typ_vals,
   std::array<int, 3>& ncells,
   int& max_grid_size,
-  amrex::Real& temperature)
+  amrex::Real temperature[NUM_TEMP])
 {
   chem_integrator = "";
   pp.get("chem_integrator", chem_integrator);
@@ -100,8 +100,10 @@ parse_input(
   pp.query("max_grid_size", max_grid_size);
 
 
-  ppstate.get("finaltemperature", temperature);
-  amrex::Print() << "target final temperatur:" << temperature << std::endl;
+  ppstate.get("finaltemperature", temperature[0]);
+  amrex::Print() << "target final temperatur:" << temperature[0] << std::endl;
+  ppstate.get("finaltemperature", temperature[1]);
+  amrex::Print() << "target final temperatur:" << temperature[1] << std::endl;
 }
 
 
@@ -170,7 +172,7 @@ initialize_data(
   amrex::Vector<amrex::BoxArray>& grids,
   amrex::Vector<amrex::DistributionMapping>& dmaps,
   int& ode_iE,
-  amrex::Real temperature)
+  amrex::Real temperature[NUM_TEMP])
 {
   if (ode_iE < 2){
 
@@ -208,7 +210,11 @@ initialize_data(
         amrex::Array4<amrex::Real> const& E_a = mfE[lev].array(mfi);
         amrex::Array4<amrex::Real> const& rE_a =
           rY_source_energy_ext[lev].array(mfi);
-        auto const& temp = temperature;
+#ifndef PELE_USE_NLTE
+        const amrex::Real temp[NUM_TEMP] = {temperature[0]};
+#else
+        const amrex::Real temp[NUM_TEMP] = {temperature[0], temperature[1]};
+#endif
         amrex::ParallelFor(
           box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             initialize_solution(
@@ -256,12 +262,15 @@ initialize_data(
         amrex::Array4<amrex::Real> const& E_a = mfE[lev].array(mfi);
         amrex::Array4<amrex::Real> const& rE_a =
           rY_source_energy_ext[lev].array(mfi);
-        auto const& temp = temperature;
-        auto const& tempe = temperature;
+#ifndef PELE_USE_NLTE
+        const amrex::Real temp[NUM_TEMP] = {temperature[0]};
+#else
+        const amrex::Real temp[NUM_TEMP] = {temperature[0], temperature[1]};
+#endif
         amrex::ParallelFor(
           box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            initialize_solution2t(
-              i, j, k,  ode_iE, rY_a, rYs_a, E_a, rE_a, geomdata, temp, tempe);
+            initialize_solution(
+              i, j, k,  ode_iE, rY_a, rYs_a, E_a, rE_a, geomdata, temp);
           });
       }
     }
@@ -285,7 +294,7 @@ reset_temperature(
   amrex::Vector<amrex::BoxArray>& grids,
   amrex::Vector<amrex::DistributionMapping>& dmaps,
   int& ode_iE,
-  amrex::Real new_temperature)
+  amrex::Real new_temperature[NUM_TEMP])
 {
 
   // -----------------------------------------------------------------------------
@@ -306,11 +315,15 @@ reset_temperature(
       amrex::Array4<amrex::Real> const& E_a = mfE[lev].array(mfi);
       amrex::Array4<amrex::Real> const& rE_a =
         rY_source_energy_ext[lev].array(mfi);
-      auto const& temp = new_temperature;
+#ifndef PELE_USE_NLTE
+      const amrex::Real temp[NUM_TEMP] = {new_temperature[0]};
+#else
+      const amrex::Real temp[NUM_TEMP] = {new_temperature[0], new_temperature[1]};
+#endif
       amrex::ParallelFor(
         box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-          initialize_solution2t(
-            i, j, k,  ode_iE, rY_a, rYs_a, E_a, rE_a, geomdata, temp, temp);
+          initialize_solution(
+            i, j, k,  ode_iE, rY_a, rYs_a, E_a, rE_a, geomdata, temp);
         });
     }
   }

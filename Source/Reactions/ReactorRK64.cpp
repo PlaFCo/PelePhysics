@@ -221,8 +221,11 @@ ReactorRK64::react(
     amrex::Real mass_frac[NUM_SPECIES] = {0.0};
     eos.RY2RRinvY(soln_reg, rho, rho_inv, mass_frac);
 
-    amrex::Real temp = T_in(i, j, k, 0);
-
+    amrex::Real temp[NUM_TEMP] = {0,0};
+    temp[0] = T_in(i, j, k, 0);
+#ifdef PELE_USE_NLTE
+    temp[1] = T_in(i, j, k, 1);
+#endif
     amrex::Real Enrg_loc = rEner_in(i, j, k, 0) * rho_inv;
     if (captured_reactor_type == ReactorTypes::e_reactor_type) {
       eos.REY2T(rho, Enrg_loc, mass_frac, temp);
@@ -231,7 +234,10 @@ ReactorRK64::react(
     } else {
       amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
     }
-    soln_reg[NUM_SPECIES] = temp;
+    soln_reg[NUM_SPECIES] = temp[0];
+#ifdef PELE_USE_NLTE
+    soln_reg[NUM_SPECIES + 1] = temp[1];
+#endif
     carryover_reg[NUM_SPECIES] = soln_reg[NUM_SPECIES];
 
     amrex::Real dt_rk = dt_react / amrex::Real(captured_nsubsteps_guess);
@@ -294,7 +300,10 @@ ReactorRK64::react(
     }
     eos.RY2RRinvY(soln_reg, rho, rho_inv, mass_frac);
 
-    temp = soln_reg[NUM_SPECIES];
+    temp[0] = soln_reg[NUM_SPECIES];
+#ifdef PELE_USE_NLTE
+    temp[1] = soln_reg[NUM_SPECIES + 1];
+#endif
     rEner_in(i, j, k, 0) = rhoe_init[0] + dt_react * rhoesrc_ext[0];
     Enrg_loc = rEner_in(i, j, k, 0) * rho_inv;
 
@@ -302,10 +311,17 @@ ReactorRK64::react(
       eos.REY2T(rho, Enrg_loc, mass_frac, temp);
     } else if (captured_reactor_type == ReactorTypes::h_reactor_type) {
       eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+#ifdef PELE_USE_NLTE
+    } else if (captured_reactor_type == ReactorTypes::hlfa_reactor_type) {
+      eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
+#endif // PELE_USE_NLTE 
     } else {
       amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
     }
-    T_in(i, j, k, 0) = temp;
+    T_in(i, j, k, 0) = temp[0];
+#ifdef PELE_USE_NLTE
+    T_in(i, j, k, 1) = temp[1];
+#endif
     FC_in(i, j, k, 0) = nsteps;
   });
 

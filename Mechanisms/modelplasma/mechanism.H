@@ -51,7 +51,7 @@ void CKKFKR(
   amrex::Real* q_f,
   amrex::Real* q_r);
 void progressRateFR(
-  amrex::Real* q_f, amrex::Real* q_r, amrex::Real* sc, amrex::Real* T);
+  amrex::Real* q_f, amrex::Real* q_r, amrex::Real* sc, const amrex::Real* T);
 //  SPARSE INFORMATION
 void SPARSITY_INFO(int* nJdata, const int* consP, int NCELLS);
 void SPARSITY_INFO_SYST(int* nJdata, const int* consP, int NCELLS);
@@ -1073,7 +1073,7 @@ CKYTCP(
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 CKYTCR(
   const amrex::Real rho,
-  amrex::Real /*T*/,
+  const amrex::Real* /*T*/,
   const amrex::Real y[],
   amrex::Real c[])
 {
@@ -1119,7 +1119,7 @@ CKXTCP(
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 CKXTCR(
   const amrex::Real rho,
-  const amrex::Real /*T*/,
+  const amrex::Real* /*T*/,
   const amrex::Real x[],
   amrex::Real c[])
 {

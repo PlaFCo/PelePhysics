@@ -356,7 +356,8 @@ struct Fuego
   {
     amrex::Real wbar = 0.0;
     CKMMWY(Y, wbar);
-    amrex::Real T[0] = P * wbar / (R * Constants::RU);
+    amrex::Real T[NUM_TEMP];
+    T[0] = P * wbar / (R * Constants::RU);
     amrex::Real ei[NUM_SPECIES];
     CKUMS(T, ei);
     E = 0.0;

@@ -64,7 +64,7 @@ get_bdf_matrix_and_rhs(
 
   get_rho_and_massfracs(soln, rho, massfrac);
 
-  eos.RTY2JAC(rho, soln[NUM_SPECIES], massfrac, Jmat1d, consP);
+  eos.RTY2JAC(rho, soln, massfrac, Jmat1d, consP);
   for (int ii = 0; ii < NUM_SPECIES; ii++) {
     for (int jj = 0; jj < NUM_SPECIES; jj++) {
       Jmat2d[ii][jj] = -bdfp.FCOEFFMAT[tstepscheme][0] *
@@ -376,7 +376,11 @@ ReactorBDF::react(
     }
     get_rho_and_massfracs(soln_n, rho, massfrac);
 
-    amrex::Real temp = T_in(i, j, k, 0);
+    amrex::Real temp[NUM_TEMP] = {0,0};
+    temp[0] = T_in(i, j, k, 0);
+#ifdef PELE_USE_NLTE
+    temp[1] = T_in(i, j, k, 1);
+#endif
     amrex::Real Enrg_loc = rEner_in(i, j, k, 0) / rho;
     auto eos = pele::physics::PhysicsType::eos();
     if (captured_reactor_type == ReactorTypes::e_reactor_type) {
@@ -386,7 +390,10 @@ ReactorBDF::react(
     } else {
       amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
     }
-    soln_n[NUM_SPECIES] = temp;
+    soln_n[NUM_SPECIES] = temp[0];
+#ifdef PELE_USE_NLTE
+    soln_n[NUM_SPECIES+1] = temp[1];
+#endif
     amrex::Real rhoe_init[] = {rEner_in(i, j, k, 0)};
     amrex::Real rhoesrc_ext[] = {rEner_src_in(i, j, k, 0)};
     for (int sp = 0; sp < NUM_SPECIES; sp++) {
@@ -463,7 +470,10 @@ ReactorBDF::react(
       rY_in(i, j, k, sp) = soln_n[sp];
     }
 
-    temp = soln_n[NUM_SPECIES];
+    temp[0] = soln_n[NUM_SPECIES];
+#ifdef PELE_USE_NLTE
+    temp[1] = soln_n[NUM_SPECIES + 1];
+#endif
     rEner_in(i, j, k, 0) = rhoe_init[0] + dt_react * rhoesrc_ext[0];
     Enrg_loc = rEner_in(i, j, k, 0) / rho;
 
@@ -471,10 +481,17 @@ ReactorBDF::react(
       eos.REY2T(rho, Enrg_loc, massfrac, temp);
     } else if (captured_reactor_type == ReactorTypes::h_reactor_type) {
       eos.RHY2T(rho, Enrg_loc, massfrac, temp);
+#ifdef PELE_USE_NLTE
+    } else if (captured_reactor_type == ReactorTypes::hlfa_reactor_type) {
+      eos.RHY2T(rho, Enrg_loc, massfrac, temp);
+#endif // PELE_USE_NLTE 
     } else {
       amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
     }
-    T_in(i, j, k, 0) = temp;
+    T_in(i, j, k, 0) = temp[0];
+#ifdef PELE_USE_NLTE
+    T_in(i, j, k, 1) = temp[1];
+#endif    
     FC_in(i, j, k, 0) = captured_nsubsteps;
   });
 

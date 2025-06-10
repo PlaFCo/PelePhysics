@@ -106,7 +106,7 @@ cJac(
 
   for (int tid = 0; tid < ncells; tid++) {
     // Offset in case several cells
-    int offset = tid * (NUM_SPECIES + 1);
+    int offset = tid * (NUM_SPECIES + NUM_TEMP);
 
     // rho MKS
     amrex::Real rho = 0.0;
@@ -114,76 +114,11 @@ cJac(
       rho = rho + ydata[offset + i];
     }
 
-    amrex::Real temp = ydata[offset + NUM_SPECIES];
-
-    amrex::Real massfrac[NUM_SPECIES] = {0.0};
-    // Yks
-    for (int i = 0; i < NUM_SPECIES; i++) {
-      massfrac[i] = ydata[offset + i] / rho;
-    }
-
-    // Jac
-    amrex::Real Jmat_tmp[(NUM_SPECIES + 1) * (NUM_SPECIES + 1)] = {0.0};
-    const int consP =
-      static_cast<int>(reactor_type == ReactorTypes::h_reactor_type);
-    auto eos = pele::physics::PhysicsType::eos();
-    eos.RTY2JAC(rho, temp, massfrac, Jmat_tmp, consP);
-
-    // fill the sunMat and scale
-    for (int i = 0; i < NUM_SPECIES; i++) {
-      // cppcheck-suppress cstyleCast
-      amrex::Real* J_col = SM_COLUMN_D(J, offset + i);
-      for (int k = 0; k < NUM_SPECIES; k++) {
-        J_col[offset + k] =
-          Jmat_tmp[i * (NUM_SPECIES + 1) + k] * mw(k) * imw(i);
-      }
-      J_col[offset + NUM_SPECIES] =
-        Jmat_tmp[i * (NUM_SPECIES + 1) + NUM_SPECIES] * imw(i);
-    }
-    // cppcheck-suppress cstyleCast
-    amrex::Real* J_col = SM_COLUMN_D(J, offset + NUM_SPECIES);
-    for (int i = 0; i < NUM_SPECIES; i++) {
-      J_col[offset + i] = Jmat_tmp[NUM_SPECIES * (NUM_SPECIES + 1) + i] * mw(i);
-    }
-    // J_col = SM_COLUMN_D(J, offset); // Never read
-  }
-
-  return (0);
-}
-
+    amrex::Real temp[NUM_TEMP] = {0.0};
+    temp[0] = ydata[offset + NUM_SPECIES];
 #ifdef PELE_USE_NLTE
-int
-cJacTe(                    // FIXME looks like a copy from cJac, but need Te
-  amrex::Real /* tn */,
-  N_Vector u,
-  N_Vector /* fu */,
-  SUNMatrix J,
-  void* user_data,
-  N_Vector /* tmp1 */,
-  N_Vector /* tmp2 */,
-  N_Vector /* tmp3 */)
-{
-  BL_PROFILE("Pele::ReactorCvode::cJacDense()");
-
-  // Make local copies of pointers to input data
-  amrex::Real* ydata = N_VGetArrayPointer(u);
-
-  // Make local copies of pointers in user_data
-  auto* udata = static_cast<CVODEUserData*>(user_data);
-  auto ncells = udata->ncells;
-  auto reactor_type = udata->reactor_type;
-
-  for (int tid = 0; tid < ncells; tid++) {
-    // Offset in case several cells
-    int offset = tid * (NUM_SPECIES + 1);
-
-    // rho MKS
-    amrex::Real rho = 0.0;
-    for (int i = 0; i < NUM_SPECIES; i++) {
-      rho = rho + ydata[offset + i];
-    }
-
-    amrex::Real temp = ydata[offset + NUM_SPECIES];
+    temp[1] = ydata[offset + NUM_SPECIES + 1];
+#endif
 
     amrex::Real massfrac[NUM_SPECIES] = {0.0};
     // Yks
@@ -219,7 +154,80 @@ cJacTe(                    // FIXME looks like a copy from cJac, but need Te
 
   return (0);
 }
-#endif // PELE_USE_NLTE
+
+// #ifdef PELE_USE_NLTE
+// int
+// cJacTe(                    // FIXME looks like a copy from cJac, but need Te
+//   amrex::Real /* tn */,
+//   N_Vector u,
+//   N_Vector /* fu */,
+//   SUNMatrix J,
+//   void* user_data,
+//   N_Vector /* tmp1 */,
+//   N_Vector /* tmp2 */,
+//   N_Vector /* tmp3 */)
+// {
+//   BL_PROFILE("Pele::ReactorCvode::cJacDense()");
+
+//   // Make local copies of pointers to input data
+//   amrex::Real* ydata = N_VGetArrayPointer(u);
+
+//   // Make local copies of pointers in user_data
+//   auto* udata = static_cast<CVODEUserData*>(user_data);
+//   auto ncells = udata->ncells;
+//   auto reactor_type = udata->reactor_type;
+
+//   for (int tid = 0; tid < ncells; tid++) {
+//     // Offset in case several cells
+//     int offset = tid * (NUM_SPECIES + NUM_TEMP);
+
+//     // rho MKS
+//     amrex::Real rho = 0.0;
+//     for (int i = 0; i < NUM_SPECIES; i++) {
+//       rho = rho + ydata[offset + i];
+//     }
+
+//     amrex::Real temp[NUM_TEMP] = {0.0};
+//     temp[0] = ydata[offset + NUM_SPECIES];
+// #ifdef PELE_USE_NLTE
+//     temp[1] = ydata[offset + NUM_SPECIES + 1];
+// #endif
+
+//     amrex::Real massfrac[NUM_SPECIES] = {0.0};
+//     // Yks
+//     for (int i = 0; i < NUM_SPECIES; i++) {
+//       massfrac[i] = ydata[offset + i] / rho;
+//     }
+
+//     // Jac
+//     amrex::Real Jmat_tmp[(NUM_SPECIES + 1) * (NUM_SPECIES + 1)] = {0.0};
+//     const int consP =
+//       static_cast<int>(reactor_type == ReactorTypes::h_reactor_type);
+//     auto eos = pele::physics::PhysicsType::eos();
+//     eos.RTY2JAC(rho, temp, massfrac, Jmat_tmp, consP);
+
+//     // fill the sunMat and scale
+//     for (int i = 0; i < NUM_SPECIES; i++) {
+//       // cppcheck-suppress cstyleCast
+//       amrex::Real* J_col = SM_COLUMN_D(J, offset + i);
+//       for (int k = 0; k < NUM_SPECIES; k++) {
+//         J_col[offset + k] =
+//           Jmat_tmp[i * (NUM_SPECIES + 1) + k] * mw(k) * imw(i);
+//       }
+//       J_col[offset + NUM_SPECIES] =
+//         Jmat_tmp[i * (NUM_SPECIES + 1) + NUM_SPECIES] * imw(i);
+//     }
+//     // cppcheck-suppress cstyleCast
+//     amrex::Real* J_col = SM_COLUMN_D(J, offset + NUM_SPECIES);
+//     for (int i = 0; i < NUM_SPECIES; i++) {
+//       J_col[offset + i] = Jmat_tmp[NUM_SPECIES * (NUM_SPECIES + 1) + i] * mw(i);
+//     }
+//     // J_col = SM_COLUMN_D(J, offset); // Never read
+//   }
+
+//   return (0);
+// }
+// #endif // PELE_USE_NLTE
 // Analytical SPARSE CSR Jacobian evaluation
 int
 cJac_sps(
@@ -262,7 +270,7 @@ cJac_sps(
   amrex::Real temp_save_lcl = 0.0;
   for (int tid = 0; tid < ncells; tid++) {
     // Offset in case several cells
-    int offset = tid * (NUM_SPECIES + 1);
+    int offset = tid * (NUM_SPECIES + NUM_TEMP);
     int offset_J = tid * NNZ;
     // rho MKS
     amrex::Real rho = 0.0;
@@ -275,16 +283,20 @@ cJac_sps(
     for (int i = 0; i < NUM_SPECIES; i++) {
       massfrac[i] = ydata[offset + i] * rhoinv;
     }
-    amrex::Real temp = ydata[offset + NUM_SPECIES];
+    amrex::Real temp[NUM_TEMP] = {0.0};
+    temp[0] = ydata[offset + NUM_SPECIES];
+#ifdef PELE_USE_NLTE
+    temp[1] = ydata[offset + NUM_SPECIES + 1];
+#endif
 
     // Do we recompute Jac ?
     amrex::Real Jmat_tmp[(NUM_SPECIES + 1) * (NUM_SPECIES + 1)] = {0.0};
-    if (fabs(temp - temp_save_lcl) > 1.0) {
+    if (fabs(temp[0] - temp_save_lcl) > 1.0) {
       const int consP =
         static_cast<int>(reactor_type == ReactorTypes::h_reactor_type);
       auto eos = pele::physics::PhysicsType::eos();
       eos.RTY2JAC(rho, temp, massfrac, Jmat_tmp, consP);
-      temp_save_lcl = temp;
+      temp_save_lcl = temp[0];
       // rescale
       for (int i = 0; i < NUM_SPECIES; i++) {
         for (int k = 0; k < NUM_SPECIES; k++) {
@@ -309,98 +321,98 @@ cJac_sps(
 
   return (0);
 }
-#ifdef PELE_USE_NLTE
-// Analytical SPARSE CSR Jacobian evaluation
-int
-cJacTe_sps(                    // FIXME looks like a copy from cJac, but need Te
-  amrex::Real /* tn */,
-  N_Vector u,
-  N_Vector /* fu */,
-  SUNMatrix J,
-  void* user_data,
-  N_Vector /* tmp1 */,
-  N_Vector /* tmp2 */,
-  N_Vector /* tmp3 */)
-{
-  BL_PROFILE("Pele::ReactorCvode::cJacSparse()");
-  // Make local copies of pointers to input data
-  amrex::Real* ydata = N_VGetArrayPointer(u);
+// #ifdef PELE_USE_NLTE
+// // Analytical SPARSE CSR Jacobian evaluation
+// int
+// cJacTe_sps(                    // FIXME looks like a copy from cJac, but need Te
+//   amrex::Real /* tn */,
+//   N_Vector u,
+//   N_Vector /* fu */,
+//   SUNMatrix J,
+//   void* user_data,
+//   N_Vector /* tmp1 */,
+//   N_Vector /* tmp2 */,
+//   N_Vector /* tmp3 */)
+// {
+//   BL_PROFILE("Pele::ReactorCvode::cJacSparse()");
+//   // Make local copies of pointers to input data
+//   amrex::Real* ydata = N_VGetArrayPointer(u);
 
-  // Make local copies of pointers in user_data (cell M)*/
-  auto* udata = static_cast<CVODEUserData*>(user_data);
-  auto NNZ = udata->NNZ;
-  auto reactor_type = udata->reactor_type;
-  auto ncells = udata->ncells;
-  auto* colVals_c = udata->colVals_c;
-  auto* rowPtrs_c = udata->rowPtrs_c;
+//   // Make local copies of pointers in user_data (cell M)*/
+//   auto* udata = static_cast<CVODEUserData*>(user_data);
+//   auto NNZ = udata->NNZ;
+//   auto reactor_type = udata->reactor_type;
+//   auto ncells = udata->ncells;
+//   auto* colVals_c = udata->colVals_c;
+//   auto* rowPtrs_c = udata->rowPtrs_c;
 
-  sunindextype* rowPtrs_tmp = SUNSparseMatrix_IndexPointers(J);
-  sunindextype* colIndx_tmp = SUNSparseMatrix_IndexValues(J);
-  amrex::Real* Jdata = SUNSparseMatrix_Data(J);
-  // Fixed colVal
-  for (int i = 0; i < NNZ * ncells; i++) {
-    colIndx_tmp[i] = (sunindextype)colVals_c[i];
-  }
-  rowPtrs_tmp[0] = (sunindextype)rowPtrs_c[0];
-  // Fixed rowPtrs
-  for (int i = 0; i < ncells * (NUM_SPECIES + 2); i++) {
-    rowPtrs_tmp[i + 1] = (sunindextype)rowPtrs_c[i + 1];
-  }
+//   sunindextype* rowPtrs_tmp = SUNSparseMatrix_IndexPointers(J);
+//   sunindextype* colIndx_tmp = SUNSparseMatrix_IndexValues(J);
+//   amrex::Real* Jdata = SUNSparseMatrix_Data(J);
+//   // Fixed colVal
+//   for (int i = 0; i < NNZ * ncells; i++) {
+//     colIndx_tmp[i] = (sunindextype)colVals_c[i];
+//   }
+//   rowPtrs_tmp[0] = (sunindextype)rowPtrs_c[0];
+//   // Fixed rowPtrs
+//   for (int i = 0; i < ncells * (NUM_SPECIES + 2); i++) {
+//     rowPtrs_tmp[i + 1] = (sunindextype)rowPtrs_c[i + 1];
+//   }
 
-  // Temp vectors
-  // Save Jac from cell to cell if more than one
-  amrex::Real temp_save_lcl = 0.0;
-  for (int tid = 0; tid < ncells; tid++) {
-    // Offset in case several cells
-    int offset = tid * (NUM_SPECIES + 2);
-    int offset_J = tid * NNZ;
-    // rho MKS
-    amrex::Real rho = 0.0;
-    for (int i = 0; i < NUM_SPECIES; i++) {
-      rho = rho + ydata[offset + i];
-    }
-    // Yks
-    amrex::Real massfrac[NUM_SPECIES] = {0.0};
-    amrex::Real rhoinv = 1.0 / rho;
-    for (int i = 0; i < NUM_SPECIES; i++) {
-      massfrac[i] = ydata[offset + i] * rhoinv;
-    }
-    amrex::Real temp = ydata[offset + NUM_SPECIES];
-    amrex::Real tempE = ydata[offset + NUM_SPECIES + 1];
+//   // Temp vectors
+//   // Save Jac from cell to cell if more than one
+//   amrex::Real temp_save_lcl = 0.0;
+//   for (int tid = 0; tid < ncells; tid++) {
+//     // Offset in case several cells
+//     int offset = tid * (NUM_SPECIES + 2);
+//     int offset_J = tid * NNZ;
+//     // rho MKS
+//     amrex::Real rho = 0.0;
+//     for (int i = 0; i < NUM_SPECIES; i++) {
+//       rho = rho + ydata[offset + i];
+//     }
+//     // Yks
+//     amrex::Real massfrac[NUM_SPECIES] = {0.0};
+//     amrex::Real rhoinv = 1.0 / rho;
+//     for (int i = 0; i < NUM_SPECIES; i++) {
+//       massfrac[i] = ydata[offset + i] * rhoinv;
+//     }
+//     amrex::Real temp = ydata[offset + NUM_SPECIES];
+//     amrex::Real tempE = ydata[offset + NUM_SPECIES + 1];
 
-    // Do we recompute Jac ?
-    amrex::Real Jmat_tmp[(NUM_SPECIES + 2) * (NUM_SPECIES + 2)] = {0.0};
-    if (fabs(temp - temp_save_lcl) > 1.0) {
-      const int consP =
-        static_cast<int>(reactor_type == ReactorTypes::h_reactor_type);
-      auto eos = pele::physics::PhysicsType::eos();
-      eos.RTTY2JAC(rho, temp, tempE, massfrac, Jmat_tmp, consP);
-      temp_save_lcl = temp;
-      // rescale FIXME check that indices are OK here for NLTE
-      for (int i = 0; i < NUM_SPECIES; i++) {
-        for (int k = 0; k < NUM_SPECIES; k++) {
-          Jmat_tmp[k * (NUM_SPECIES + 2) + i] *= mw(i) * imw(k);
-        }
-        Jmat_tmp[i * (NUM_SPECIES + 2) + NUM_SPECIES] *= imw(i);
-      }
-      for (int i = 0; i < NUM_SPECIES; i++) {
-        Jmat_tmp[NUM_SPECIES * (NUM_SPECIES + 2) + i] *= mw(i);
-      }
-    }
-    // Go from Dense to Sparse
-    for (int i = 1; i < NUM_SPECIES + 2; i++) {
-      int nbVals = rowPtrs_c[i] - rowPtrs_c[i - 1];
-      for (int j = 0; j < nbVals; j++) {
-        int idx = colVals_c[rowPtrs_c[i - 1] + j];
-        Jdata[offset_J + rowPtrs_c[i - 1] + j] =
-          Jmat_tmp[(i - 1) + (NUM_SPECIES + 2) * idx];
-      }
-    }
-  }
+//     // Do we recompute Jac ?
+//     amrex::Real Jmat_tmp[(NUM_SPECIES + 2) * (NUM_SPECIES + 2)] = {0.0};
+//     if (fabs(temp - temp_save_lcl) > 1.0) {
+//       const int consP =
+//         static_cast<int>(reactor_type == ReactorTypes::h_reactor_type);
+//       auto eos = pele::physics::PhysicsType::eos();
+//       eos.RTTY2JAC(rho, temp, tempE, massfrac, Jmat_tmp, consP);
+//       temp_save_lcl = temp;
+//       // rescale FIXME check that indices are OK here for NLTE
+//       for (int i = 0; i < NUM_SPECIES; i++) {
+//         for (int k = 0; k < NUM_SPECIES; k++) {
+//           Jmat_tmp[k * (NUM_SPECIES + 2) + i] *= mw(i) * imw(k);
+//         }
+//         Jmat_tmp[i * (NUM_SPECIES + 2) + NUM_SPECIES] *= imw(i);
+//       }
+//       for (int i = 0; i < NUM_SPECIES; i++) {
+//         Jmat_tmp[NUM_SPECIES * (NUM_SPECIES + 2) + i] *= mw(i);
+//       }
+//     }
+//     // Go from Dense to Sparse
+//     for (int i = 1; i < NUM_SPECIES + 2; i++) {
+//       int nbVals = rowPtrs_c[i] - rowPtrs_c[i - 1];
+//       for (int j = 0; j < nbVals; j++) {
+//         int idx = colVals_c[rowPtrs_c[i - 1] + j];
+//         Jdata[offset_J + rowPtrs_c[i - 1] + j] =
+//           Jmat_tmp[(i - 1) + (NUM_SPECIES + 2) * idx];
+//       }
+//     }
+//   }
 
-  return (0);
-}
-#endif // PELE_USE_NLTE
+//   return (0);
+// }
+// #endif // PELE_USE_NLTE
 #ifdef PELE_USE_KLU
 // Analytical SPARSE KLU CSC Jacobian evaluation
 int
@@ -444,7 +456,7 @@ cJac_KLU(
   amrex::Real temp_save_lcl = 0.0;
   for (int tid = 0; tid < ncells; tid++) {
     // Offset in case several cells
-    int offset = tid * (NUM_SPECIES + 1);
+    int offset = tid * (NUM_SPECIES + NUM_TEMP);
     // rho
     amrex::Real rho = 0.0;
     for (int i = 0; i < NUM_SPECIES; i++) {
@@ -491,97 +503,97 @@ cJac_KLU(
 
   return (0);
 }
-#ifdef PELE_USE_NLTE
-int
-cJacTe_KLU(                    // FIXME looks like a copy from cJac, but need Te
-  amrex::Real /* tn */,
-  N_Vector u,
-  N_Vector /* fu */,
-  SUNMatrix J,
-  void* user_data,
-  N_Vector /* tmp1 */,
-  N_Vector /* tmp2 */,
-  N_Vector /* tmp3 */)
-{
-  BL_PROFILE("Pele::ReactorCvode::cJacSparseKLU()");
+// #ifdef PELE_USE_NLTE
+// int
+// cJacTe_KLU(                    // FIXME looks like a copy from cJac, but need Te
+//   amrex::Real /* tn */,
+//   N_Vector u,
+//   N_Vector /* fu */,
+//   SUNMatrix J,
+//   void* user_data,
+//   N_Vector /* tmp1 */,
+//   N_Vector /* tmp2 */,
+//   N_Vector /* tmp3 */)
+// {
+//   BL_PROFILE("Pele::ReactorCvode::cJacSparseKLU()");
 
-  // Make local copies of pointers to input data
-  amrex::Real* ydata = N_VGetArrayPointer(u);
+//   // Make local copies of pointers to input data
+//   amrex::Real* ydata = N_VGetArrayPointer(u);
 
-  // Make local copies of pointers in user_data (cell M)
-  CVODEUserData* udata = static_cast<CVODEUserData*>(user_data);
-  auto NNZ = udata->NNZ;
-  auto reactor_type = udata->reactor_type;
-  auto ncells = udata->ncells;
-  auto colPtrs = udata->colPtrs;
-  auto rowVals = udata->rowVals;
+//   // Make local copies of pointers in user_data (cell M)
+//   CVODEUserData* udata = static_cast<CVODEUserData*>(user_data);
+//   auto NNZ = udata->NNZ;
+//   auto reactor_type = udata->reactor_type;
+//   auto ncells = udata->ncells;
+//   auto colPtrs = udata->colPtrs;
+//   auto rowVals = udata->rowVals;
 
-  // Fixed RowVals
-  sunindextype* colptrs_tmp = SUNSparseMatrix_IndexPointers(J);
-  sunindextype* rowvals_tmp = SUNSparseMatrix_IndexValues(J);
-  amrex::Real* Jdata = SUNSparseMatrix_Data(J);
-  for (int i = 0; i < NNZ; i++) {
-    rowvals_tmp[i] = rowVals[0][i];
-  }
-  // Fixed colPtrs
-  colptrs_tmp[0] = colPtrs[0][0];
-  for (int i = 0; i < ncells * (NUM_SPECIES + 2); i++) {  // FIME NUM_SPECIES + 2
-    colptrs_tmp[i + 1] = colPtrs[0][i + 1];
-  }
+//   // Fixed RowVals
+//   sunindextype* colptrs_tmp = SUNSparseMatrix_IndexPointers(J);
+//   sunindextype* rowvals_tmp = SUNSparseMatrix_IndexValues(J);
+//   amrex::Real* Jdata = SUNSparseMatrix_Data(J);
+//   for (int i = 0; i < NNZ; i++) {
+//     rowvals_tmp[i] = rowVals[0][i];
+//   }
+//   // Fixed colPtrs
+//   colptrs_tmp[0] = colPtrs[0][0];
+//   for (int i = 0; i < ncells * (NUM_SPECIES + 2); i++) {  // FIME NUM_SPECIES + 2
+//     colptrs_tmp[i + 1] = colPtrs[0][i + 1];
+//   }
 
-  // Save Jac from cell to cell if more than one
-  amrex::Real temp_save_lcl = 0.0;
-  for (int tid = 0; tid < ncells; tid++) {
-    // Offset in case several cells
-    int offset = tid * (NUM_SPECIES + 2);    // FIME NUM_SPECIES + 2
-    // rho
-    amrex::Real rho = 0.0;
-    for (int i = 0; i < NUM_SPECIES; i++) {
-      rho = rho + ydata[offset + i];
-    }
-    // Yks
-    amrex::Real massfrac[NUM_SPECIES] = {0.0};
-    amrex::Real rhoinv = 1.0 / rho;
-    for (int i = 0; i < NUM_SPECIES; i++) {
-      massfrac[i] = ydata[offset + i] * rhoinv;
-    }
-    amrex::Real temp = ydata[offset + NUM_SPECIES];
-    amrex::Real tempE = ydata[offset + NUM_SPECIES + 1];
+//   // Save Jac from cell to cell if more than one
+//   amrex::Real temp_save_lcl = 0.0;
+//   for (int tid = 0; tid < ncells; tid++) {
+//     // Offset in case several cells
+//     int offset = tid * (NUM_SPECIES + 2);    // FIME NUM_SPECIES + 2
+//     // rho
+//     amrex::Real rho = 0.0;
+//     for (int i = 0; i < NUM_SPECIES; i++) {
+//       rho = rho + ydata[offset + i];
+//     }
+//     // Yks
+//     amrex::Real massfrac[NUM_SPECIES] = {0.0};
+//     amrex::Real rhoinv = 1.0 / rho;
+//     for (int i = 0; i < NUM_SPECIES; i++) {
+//       massfrac[i] = ydata[offset + i] * rhoinv;
+//     }
+//     amrex::Real temp = ydata[offset + NUM_SPECIES];
+//     amrex::Real tempE = ydata[offset + NUM_SPECIES + 1];
 
-    // Do we recompute Jac ?
-    amrex::Real Jmat_tmp[(NUM_SPECIES + 2) * (NUM_SPECIES + 2)] = {0.0};
-    if (fabs(temp - temp_save_lcl) > 1.0) {
-      const int consP = reactor_type == ReactorTypes::h_reactor_type;
-      auto eos = pele::physics::PhysicsType::eos();
-      eos.RTTY2JAC(rho, temp, tempE, massfrac, Jmat_tmp, consP);
-      temp_save_lcl = temp;
-      // rescale
-      for (int i = 0; i < NUM_SPECIES; i++) {
-        for (int k = 0; k < NUM_SPECIES; k++) {
-          Jmat_tmp[k * (NUM_SPECIES + 2) + i] *= mw(i) * imw(k);
-        }
-        Jmat_tmp[i * (NUM_SPECIES + 2) + NUM_SPECIES] *= imw(i);
-      }
-      for (int i = 0; i < NUM_SPECIES; i++) {
-        Jmat_tmp[NUM_SPECIES * (NUM_SPECIES + 2) + i] *= mw(i);  // FIXME not sure about the NUM_SPECIES + 2 here also may need to fix dTe row
-      }
-    }
-    // Go from Dense to Sparse
-    BL_PROFILE_VAR("DensetoSps", DtoS);
-    for (int i = 1; i < NUM_SPECIES + 3; i++) {
-      int nbVals = colPtrs[0][i] - colPtrs[0][i - 1];
-      for (int j = 0; j < nbVals; j++) {
-        int idx = rowVals[0][colPtrs[0][i - 1] + j];
-        Jdata[colPtrs[0][offset + i - 1] + j] =
-          Jmat_tmp[(i - 1) * (NUM_SPECIES + 2) + idx];
-      }
-    }
-    BL_PROFILE_VAR_STOP(DtoS);
-  }
+//     // Do we recompute Jac ?
+//     amrex::Real Jmat_tmp[(NUM_SPECIES + 2) * (NUM_SPECIES + 2)] = {0.0};
+//     if (fabs(temp - temp_save_lcl) > 1.0) {
+//       const int consP = reactor_type == ReactorTypes::h_reactor_type;
+//       auto eos = pele::physics::PhysicsType::eos();
+//       eos.RTTY2JAC(rho, temp, tempE, massfrac, Jmat_tmp, consP);
+//       temp_save_lcl = temp;
+//       // rescale
+//       for (int i = 0; i < NUM_SPECIES; i++) {
+//         for (int k = 0; k < NUM_SPECIES; k++) {
+//           Jmat_tmp[k * (NUM_SPECIES + 2) + i] *= mw(i) * imw(k);
+//         }
+//         Jmat_tmp[i * (NUM_SPECIES + 2) + NUM_SPECIES] *= imw(i);
+//       }
+//       for (int i = 0; i < NUM_SPECIES; i++) {
+//         Jmat_tmp[NUM_SPECIES * (NUM_SPECIES + 2) + i] *= mw(i);  // FIXME not sure about the NUM_SPECIES + 2 here also may need to fix dTe row
+//       }
+//     }
+//     // Go from Dense to Sparse
+//     BL_PROFILE_VAR("DensetoSps", DtoS);
+//     for (int i = 1; i < NUM_SPECIES + 3; i++) {
+//       int nbVals = colPtrs[0][i] - colPtrs[0][i - 1];
+//       for (int j = 0; j < nbVals; j++) {
+//         int idx = rowVals[0][colPtrs[0][i - 1] + j];
+//         Jdata[colPtrs[0][offset + i - 1] + j] =
+//           Jmat_tmp[(i - 1) * (NUM_SPECIES + 2) + idx];
+//       }
+//     }
+//     BL_PROFILE_VAR_STOP(DtoS);
+//   }
 
-  return (0);
-}
-#endif // PELE_USE_NLTE
+//   return (0);
+// }
+// #endif // PELE_USE_NLTE
 #endif
 #endif
 } // namespace pele::physics::reactions::cvode

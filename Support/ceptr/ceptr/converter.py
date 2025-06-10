@@ -682,7 +682,7 @@ class Converter:
         cw.writer(
             fstream,
             "void progressRateFR(amrex::Real *  q_f, amrex::Real *  q_r,"
-            + "amrex::Real *  sc, amrex::Real * T);",
+            + "amrex::Real *  sc, const amrex::Real * T);",
         )
         cw.writer(fstream, cw.comment(" SPARSE INFORMATION "))
         cw.writer(

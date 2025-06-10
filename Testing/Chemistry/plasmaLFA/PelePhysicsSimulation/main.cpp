@@ -43,7 +43,8 @@ main(int argc, char* argv[])
     bool do_plt;
     int initFromChk, reactFunc, ode_ncells, ndt, ode_iE, use_typ_vals,
       max_grid_size;
-    amrex::Real dt, rtol, atol, temperature;
+    amrex::Real dt, rtol, atol;
+    amrex::Real temperature[NUM_TEMP];
     std::array<int, 3> ncells;
     amrex::ParmParse pp;
     amrex::ParmParse ppode("ode");
@@ -99,7 +100,7 @@ main(int argc, char* argv[])
     amrex::Real f_Tnm1;
     amrex::Real Tn;
     amrex::Real Tnm1;
-    amrex::Real Tnp1 = temperature;
+    amrex::Real Tnp1 = temperature[0];
     amrex::GpuArray<amrex::Real, NUM_SPECIES> x;
     amrex::GpuArray<amrex::Real, NUM_SPECIES> y;
     amrex::Vector<double> solution(NUM_SPECIES + 1);
@@ -110,7 +111,7 @@ main(int argc, char* argv[])
 
     reset_temperature(
       num_grow, mf, rY_source_ext, mfE, rY_source_energy_ext, fctCount,
-      dummyMask, finest_level, geoms, grids, dmaps, ode_iE, Tnp1)
+      dummyMask, finest_level, geoms, grids, dmaps, ode_iE, temperature)
 
     BL_PROFILE_VAR_STOP(InitData);
       amrex::Print() << "after reset temperature function" <<  "\n";
@@ -134,7 +135,7 @@ main(int argc, char* argv[])
 #endif
           amrex::Print() << "reactFunc->"<< reactFunc <<  "\n";
           if (reactFunc == 1) {
-            integrate_Array4Te(
+            integrate_Array4(
               lev, dt, ndt, omp_thread, mfi, mf, rY_source_ext, mfE,
               rY_source_energy_ext, fctCount, dummyMask, reactor, trans_parms);
             amrex::Print() << "integrate Array4->"<< "\n";
@@ -209,8 +210,8 @@ main(int argc, char* argv[])
     for (int i = 0; i < NUM_SPECIES; ++i) {
       fprintf(fp, "%30.29e ", solution[i]);
     }
-    fprintf(fp, "%30.29e ", f_Tn+temperature);
-    fprintf(fp, "%30.29e ", Tnp1);
+    fprintf(fp, "%30.29e ", temperature[0]);
+    fprintf(fp, "%30.29e ", temperature[1]);
     fclose(fp);
 
     // Finalize

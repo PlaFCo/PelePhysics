@@ -60,20 +60,27 @@ ReactorNull::react(
       Y_loc[n] = rY_loc[n] / rho_loc;
     }
     amrex::Real energy_loc = renergy_loc / rho_loc;
-    amrex::Real T_loc = T_in(i, j, k, 0);
+    amrex::Real T_loc[NUM_TEMP] = {0,0};
+    T_loc[0] = T_in(i, j, k, 0);
+#ifdef PELE_USE_NLTE
+    T_loc[1] = T_in(i, j, k, 1);
+#endif
     auto eos = pele::physics::PhysicsType::eos(leosparm);
     if (captured_reactor_type == ReactorTypes::e_reactor_type) {
       eos.REY2T(rho_loc, energy_loc, Y_loc, T_loc);
     } else if (captured_reactor_type == ReactorTypes::h_reactor_type) {
       eos.RHY2T(rho_loc, energy_loc, Y_loc, T_loc);
 #ifdef PELE_USE_NLTE
-    } else if (captured_reactor_type == ReactorTypes::hfa_reactor_type) {
+    } else if (captured_reactor_type == ReactorTypes::hlfa_reactor_type) {
       eos.RHY2T(rho_loc, energy_loc, Y_loc, T_loc);
 #endif // PELE_USE_NLTE 
     } else {
       amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3 if NLTE.");
     }
-    T_in(i, j, k, 0) = T_loc;
+    T_in(i, j, k, 0) = T_loc[0];
+#ifdef PELE_USE_NLTE
+    T_in(i, j, k, 1) = T_loc[1];
+#endif
     FC_in(i, j, k, 0) = 0.0;
   });
 

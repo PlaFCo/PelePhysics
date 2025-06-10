@@ -206,18 +206,18 @@ Precond(
     for (int i = 0; i < NUM_SPECIES; i++) {
       massfrac[i] = u_d[i] * rhoinv;
     }
-    amrex::Real temp = u_d[NUM_SPECIES];
+    amrex::Real temp[NUM_TEMP] = {0.0};
+    temp[0] = u_d[NUM_SPECIES];
+#ifdef PELE_USE_NLTE
+    temp[1] = u_d[NUM_SPECIES + 1];
+#endif
     // Activities
     amrex::Real activity[NUM_SPECIES] = {0.0};
     auto eos = pele::physics::PhysicsType::eos();
     eos.RTY2C(rho, temp, massfrac, activity);
     int consP = static_cast<int>(reactor_type == ReactorTypes::h_reactor_type);
     amrex::Real Jmat[(NUM_SPECIES + 1) * (NUM_SPECIES + 1)] = {0.0};
-#ifdef PELE_USE_NLTE
-    DWDOT_SIMPLIFIED(Jmat, activity,  &temp, &temp, &consP);
-#else
-    DWDOT_SIMPLIFIED(Jmat, activity,  &temp, &consP);
-#endif //PELE_USE_NLTE
+    DWDOT_SIMPLIFIED(Jmat, activity,  temp, &consP);
 
     // Scale Jacobian.  Load into P.
     SUNDlsMat_denseScale(0.0, Jbd[0][0], NUM_SPECIES + 1, NUM_SPECIES + 1);
@@ -515,22 +515,22 @@ Precond_custom(
       for (int i = 0; i < NUM_SPECIES; i++) {
         massfrac[i] = u_d[offset + i] * rhoinv;
       }
-      amrex::Real temp = u_d[offset + NUM_SPECIES];
+      amrex::Real temp[NUM_TEMP] =  {0.0};
+      temp[0] = u_d[offset + NUM_SPECIES];
+#ifdef PELE_USE_NLTE
+      temp[1] = u_d[offset + NUM_SPECIES + 1];
+#endif
       // Activities
       amrex::Real activity[NUM_SPECIES] = {0.0};
       auto eos = pele::physics::PhysicsType::eos();
       eos.RTY2C(rho, temp, massfrac, activity);
 
       // Do we recompute Jac ?
-      if (fabs(temp - temp_save_lcl) > 1.0) {
+      if (fabs(temp[0] - temp_save_lcl) > 1.0) {
         // Formalism
         int consP =
           static_cast<int>(reactor_type == ReactorTypes::h_reactor_type);
-#ifdef PELE_USE_NLTE
-        DWDOT_SIMPLIFIED(JSPSmat[tid], activity, &temp, &temp, &consP);
-#else
-        DWDOT_SIMPLIFIED(JSPSmat[tid], activity, &temp, &consP);
-#endif //PELE_USE_NLTE
+        DWDOT_SIMPLIFIED(JSPSmat[tid], activity, temp, &consP);
 
         for (int i = 0; i < NUM_SPECIES; i++) {
           for (int k = 0; k < NUM_SPECIES; k++) {
@@ -541,7 +541,7 @@ Precond_custom(
         for (int i = 0; i < NUM_SPECIES; i++) {
           (JSPSmat[tid])[NUM_SPECIES * (NUM_SPECIES + 1) + i] *= mw[i];
         }
-        temp_save_lcl = temp;
+        temp_save_lcl = temp[0];
       } else {
         // if not: copy the one from prev cell
         for (int i = 0; i < NUM_SPECIES + 1; i++) {

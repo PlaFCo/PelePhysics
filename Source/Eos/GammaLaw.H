@@ -106,7 +106,7 @@ struct GammaLaw
   AMREX_GPU_HOST_DEVICE
   AMREX_FORCE_INLINE
   void TY2Cv(
-    const aamrex::Real* /*T[NUM_TEMP]*/,
+    const amrex::Real* /*T[NUM_TEMP]*/,
     const amrex::Real Y[NUM_SPECIES],
     amrex::Real& Cv) const
   {
@@ -412,7 +412,7 @@ struct GammaLaw
   AMREX_GPU_HOST_DEVICE
   AMREX_FORCE_INLINE
   void
-  TY2G(const amrex::Real /*T*/, const amrex::Real* /*Y*/, amrex::Real& G) const
+  TY2G(const amrex::Real* /*T*/, const amrex::Real* /*Y*/, amrex::Real& G) const
   {
     G = gamma;
   }
