@@ -222,7 +222,7 @@ box_flatten(
           || reactor_type == ReactorTypes::hlfa_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
   } else {
-    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
+    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3 (hlfa).");
   }
   y_vect[vec_index<OrderType>(NUM_SPECIES, icell, ncells)] = temp[0];
 #ifdef PELE_USE_NLTE
@@ -370,10 +370,11 @@ box_unflatten(
   auto eos = pele::physics::PhysicsType::eos();
   if (reactor_type == ReactorTypes::e_reactor_type) {
     eos.REY2T(rho, Enrg_loc, mass_frac, temp);
-  } else if (reactor_type == ReactorTypes::h_reactor_type) {
+  } else if (reactor_type == ReactorTypes::h_reactor_type 
+          || reactor_type == ReactorTypes::hlfa_reactor_type) {
     eos.RHY2T(rho, Enrg_loc, mass_frac, temp);
   } else {
-    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h).");
+    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3 (hlfa).");
   }
   temperature(i, j, k, 0) = temp[0];
 #ifdef PELE_USE_NLTE
@@ -650,7 +651,7 @@ fKernelSpec(
       eos.RTY2Cp(rho_pt, temp.arr, massfrac.arr, Cv_pt);
       eos.RTY2WDOT(rho_pt, temp.arr, massfrac.arr, cdots_pt.arr);
   } else {
-    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3 if NLTE.");
+    amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3 (hlfa).");
   }
 #endif
 
@@ -663,6 +664,20 @@ fKernelSpec(
   }
   ydot_d[vec_index<OrderType>(NUM_SPECIES, icell, ncells)] =
     rhoesrc * (rho_pt_inv / Cv_pt);
+  
+#ifdef PELE_USE_NLTE
+  eos.RTY2WDOT_e(rho_pt, temp.arr, massfrac.arr, cdotsTe_pt.arr);
+  amrex::Real rhoeleesrc = 0.0;
+  for (int n = 0; n < NUM_SPECIES; n++) {
+    const amrex::Real cdotTe_rYs =
+      cdotsTe_pt[n] + rYs[spec_index<OrderType>(n, icell, ncells)];
+    rhoeleesrc -= cdotTe_rYs * ei_pt[n];
+  }
+  rhoesrc -= rhoeleesrc;
+  ydot_d[vec_index<OrderType>(NUM_SPECIES, icell, ncells)] =
+  rhoesrc * (rho_pt_inv / Cv_pt);
+  ydot_d[vec_index<OrderType>(NUM_SPECIES + 1, icell, ncells)] = rhoeleesrc * (rho_pt_inv / Cve_pt);
+#endif
 }
 
 #ifdef AMREX_USE_GPU

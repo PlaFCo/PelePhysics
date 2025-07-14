@@ -282,16 +282,16 @@ ReactorCvode::initCvode(
   const amrex::Real& a_time,
   const int ncells)
 {
-#ifdef PELE_USE_NLTE
+
   int addTe = 0; // No Te for LM
+#ifdef PELE_USE_NLTE
   // Solution vector
   if (m_reactor_type > 2 ){
     addTe = 1; // Add 1 for Te
   }
-  int neq_tot = (NUM_SPECIES + 1 + addTe) * ncells;
-#else
-  int neq_tot = (NUM_SPECIES + 1 ) * ncells;
 #endif
+
+  int neq_tot = (NUM_SPECIES + 1 + addTe) * ncells;
   a_y = N_VNew_Serial(neq_tot, *amrex::sundials::The_Sundials_Context());
   if (utils::check_flag(static_cast<void*>(a_y), "N_VNew_Serial", 0) != 0) {
     return (1);
