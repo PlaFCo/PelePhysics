@@ -192,24 +192,31 @@ integrate_Array4(
     trans.get_transport_coeffs(
       tbx, Y_a, T, rho_a, D_a, chi_a, mu_a, xi_a, lam_a, ltransparm);
   });
-
   // Solve
   BL_PROFILE_VAR_START(ReactInLoop);
   std::ofstream myfile;
   myfile.open("results.txt");
-  myfile << "time,temperature,density,Y[1],viscosity" << std::endl;
-  myfile << 0 << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0] << ","
-        << Y_a.dataPtr()[1] <<"," << mu_a.dataPtr()[0] << std::endl;
+  myfile << "time,temperature,temperaturee,density,Y[2],viscosity" << std::endl;
+  amrex::Real initEf = redEfield_func(0.0, 0.0, 0.0); // Example value, replace with actual
+  T(0, 0, 0, 1) = redEfield_to_tempe(initEf);
+
+  myfile << 0 << "," << T.dataPtr()[0]<< "," << T.dataPtr()[1] << "," << rho_a.dataPtr()[0] << ","
+        << Y_a.dataPtr()[2] <<"," << mu_a.dataPtr()[0] << std::endl;
   double timeElapsed = 0;
   for (int ii = 0; ii < ndt; ++ii) {
     // Set electric field, electron temperature, and Joule source term
     amrex::Real redEfield_value = redEfield_func(0.0, 0.0, 0.0); // Example value, replace with actual
     T(0, 0, 0, 1) = redEfield_to_tempe(redEfield_value);
-    amrex::Real joule_source = redEfield_to_hsrc(redEfield_value, rhoY(0, 0, 0, E_ID));
+    amrex::Real N = 101325.0/1.381e-23/T(0,0,0,0);
+    amrex::Real ne = rhoY(0, 0, 0, E_ID)/ 9.109e-31;
+    amrex::Print() << "ne->"<< ne << std::endl;
+    amrex::Real joule_source =  redEfield_to_hsrc(redEfield_value, rhoY(0, 0, 0, E_ID), N);
+    // amrex::Print() << "Joule source term: " << joule_source << std::endl;
     frcEExt_E(0, 0, 0) = joule_source;
+    std::cout << "Joule source term: " << std::log(frcEExt_E(0, 0, 0)) << std::endl;
     frcEExt_Ee(0, 0, 0) = 0.0; // Assuming no source term for electron energy since we are using LFA
-    std::cout << T(0, 0, 0, 1) << " " << frcEExt_E(0, 0, 0) << " "
-              << frcEExt_Ee(0, 0, 0) << std::endl;
+    // std::cout << T(0, 0, 0, 1) << " " << frcEExt_E(0, 0, 0) << " "
+    //           << frcEExt_Ee(0, 0, 0) << std::endl;
     tmp_fc = reactor->react(
       box, rhoY, frcExt, T, rhoE, frcEExt, fc, mask, dt_incr, time
 #ifdef AMREX_USE_GPU
@@ -217,7 +224,6 @@ integrate_Array4(
       amrex::Gpu::gpuStream()
 #endif
     );
-
     // Transport
     amrex::ParallelFor(box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       rho_a(i, j, k) = 0.0;
@@ -233,11 +239,10 @@ integrate_Array4(
       trans.get_transport_coeffs(
         tbx, Y_a, T, rho_a, D_a, chi_a, mu_a, xi_a, lam_a, ltransparm);
     });
-
     dt_incr = dt_lev / ndt;
     timeElapsed += dt_incr;
     amrex::Gpu::Device::streamSynchronize();
-    myfile << timeElapsed << "," << T.dataPtr()[0] << "," << rho_a.dataPtr()[0]<< "," << Y_a.dataPtr()[1] << "," << mu_a.dataPtr()[0] << std::endl;
+    myfile << timeElapsed << "," << T.dataPtr()[0]<< "," << T.dataPtr()[1] << "," << rho_a.dataPtr()[0]<< "," << Y_a.dataPtr()[E_ID] << "," << mu_a.dataPtr()[0] << std::endl;
   }
   BL_PROFILE_VAR_STOP(ReactInLoop);
   myfile.close();

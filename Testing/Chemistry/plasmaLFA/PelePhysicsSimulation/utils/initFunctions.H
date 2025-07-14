@@ -103,7 +103,7 @@ parse_input(
   ppstate.get("finaltemperature", temperature[0]);
   amrex::Print() << "target final temperatur:" << temperature[0] << std::endl;
   ppstate.get("finaltemperature", temperature[1]);
-  amrex::Print() << "target final temperatur:" << temperature[1] << std::endl;
+  amrex::Print() << "target final temperatur electron:" << temperature[1] << std::endl;
 }
 
 
@@ -224,7 +224,6 @@ initialize_data(
     }
   }
   else {
-
     // Local field approximation case
     // add a second energy equation which is the electron energy equation and is kept
     // constant throughout the simulation

@@ -12,33 +12,35 @@ amrex::Real redEfield_func(
   const amrex::Real x,
   const amrex::Real y,
   const amrex::Real z)
-{
-  // Example electric field function
-  // This is a placeholder; replace with the actual field calculation
-  return std::cos(x)*std::cos(y);
+{  // Example electric field function
+   // [redEfield] = Td
+  return 1.1;
 }
 
-
 // Nitrogen
-amrex::Real redEfield_to_tempe(const amrex::Real redEfield)
+amrex::Real redEfield_to_tempe(const amrex::Real redEfield) // units: Td
 {
   // Convert electric field to electron temperature
+  // [redEfield] = Td
+  // [tempe] = eV
   amrex::Real redEfield2 = redEfield*redEfield;
   amrex::Real redEfield3 = redEfield2 * redEfield;
   amrex::Real redEfield4 = redEfield3 * redEfield;
   amrex::Real redEfield5 = redEfield4 * redEfield;
   amrex::Real redEfield6 = redEfield5 * redEfield;
   amrex::Real redEfield7 = redEfield6 * redEfield;
-  amrex::Real coeff[8] = { 2.80762643e-09, -3.44166229e-07,  1.72107619e-05, -4.52557319e-04,
-  6.73930552e-03, -5.73558598e-02,  2.73334591e-01,  1.44603888e-02};
+  amrex::Real coeff[8] = {2.80762643e-09, -3.44166229e-07, 1.72107619e-05, -4.52557319e-04,
+  6.73930552e-03, -5.73558598e-02, 2.73334591e-01, 1.44603888e-02};
   amrex::Real tempe = coeff[0] + coeff[1]*redEfield + coeff[2]*redEfield2 + coeff[3]*redEfield3
     + coeff[4]*redEfield4 + coeff[5]*redEfield5 + coeff[6]*redEfield6 + coeff[7]*redEfield7;
   return tempe; // Example conversion factor
 }
 
-amrex::Real tempe_to_redEfield(const amrex::Real tempe)
+amrex::Real tempe_to_redEfield(const amrex::Real tempe) 
 {
   // Convert electric field to electron temperature
+  // [tempe] = eV
+  // [redEfield] = Td
   amrex::Real tempe2 = tempe*tempe;
   amrex::Real tempe3 = tempe2 * tempe;
   amrex::Real tempe4 = tempe3 * tempe;
@@ -54,6 +56,8 @@ amrex::Real tempe_to_redEfield(const amrex::Real tempe)
 amrex::Real electron_mobilityN2(
   amrex::Real redEfield)
   {
+    // [redEfield] = Td
+    // [mobility] = m-1 s-1 V-1
     amrex::Real log_redEfield = std::log10(redEfield);
     amrex::Real log_redEfield2 = log_redEfield * log_redEfield;
     amrex::Real log_redEfield3 = log_redEfield2 * log_redEfield;
@@ -65,19 +69,26 @@ amrex::Real electron_mobilityN2(
  -9.29756879e+24,  1.04424317e+25, -5.18591049e+24,  4.08807283e+24};
     return coeff[0] + coeff[1]*log_redEfield + coeff[2]*log_redEfield2 + coeff[3]*log_redEfield3
       + coeff[4]*log_redEfield4 + coeff[5]*log_redEfield5 + coeff[6]*log_redEfield6 + coeff[7]*log_redEfield7;
-  }
+}
 
 amrex::Real redEfield_to_hsrc(
   const amrex::Real redEfield,
-  const amrex::Real rhoYe)
+  const amrex::Real rhoYe,
+  const amrex::Real N)
 {
-  // Convert electric field to energy source term
-  // This is a placeholder; replace with the actual conversion
+  // Convert electric field to energy/enthalpy source term
+  // [redEfield] = Td
+  // [rhoYe] = kg m^-3
+  // [N] = m^-3
+  // [hsrc] = J m^-3 s^-1
+  // m-3 * V m^2 * V * m^2 * m-1 s-1 V-1 * e  * m-3
+  // m-3 s-1
   amrex::Real ne = rhoYe / 9.109e-31; // Convert mass density to number density
-  const amrex::Real factor = 1e-6; // Example conversion factor
+  amrex::Print() << ne << "\n";
+  const amrex::Real factor = 1.0e-21*1.0e-21; // Td to V m^2
   const amrex::Real C = 1.602e-19; // Elementary charge in Coulombs
   amrex::Real redMob = electron_mobilityN2(redEfield);
-  return  ne * redEfield*redEfield * redMob * C; // J m^-3 s^-1
+  return  std::abs(  ne * factor*redEfield*N*redEfield*N * redMob/N * C ); // J m^-3 s^-1
 }
 
 AMREX_GPU_HOST_DEVICE

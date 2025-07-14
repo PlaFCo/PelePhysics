@@ -1,5 +1,5 @@
 #include "mechanism.H"
-const int rmap[NUM_REACTIONS] = {2, 0, 1};
+const int rmap[NUM_REACTIONS] = {1, 0};
 
 // Returns 0-based map of reaction order
 void
@@ -15,21 +15,20 @@ GET_RMAP(int* _rmap)
 void
 CKINU(const int i, int& nspec, int ki[], int nu[])
 {
-  const int ns[NUM_GAS_REACTIONS] = {3, 4, 4};
-  const int kiv[NUM_GAS_REACTIONS * 4] = {0, 2, 1, 0, 2, 0, 2, 1, 2, 1, 2, 0};
-  const int nuv[NUM_GAS_REACTIONS * 4] = {-1, 1, 1,  0,  -2, -1,
-                                          3,  1, -1, -1, 1,  1};
+  const int ns[NUM_GAS_REACTIONS] = {3, 3};
+  const int kiv[NUM_GAS_REACTIONS * 3] = {0, 2, 1, 2, 1, 0};
+  const int nuv[NUM_GAS_REACTIONS * 3] = {-1, 1, 1, -1, -1, 1};
   if (i < 1) {
     // Return max num species per reaction
-    nspec = 4;
+    nspec = 3;
   } else {
     if (i > NUM_GAS_REACTIONS) {
       nspec = -1;
     } else {
       nspec = ns[i - 1];
       for (int j = 0; j < nspec; ++j) {
-        ki[j] = kiv[(i - 1) * 4 + j] + 1;
-        nu[j] = nuv[(i - 1) * 4 + j];
+        ki[j] = kiv[(i - 1) * 3 + j] + 1;
+        nu[j] = nuv[(i - 1) * 3 + j];
       }
     }
   }
@@ -58,7 +57,7 @@ CKKFKR(
   progressRateFR(q_f, q_r, c, T);
 
   // convert to chemkin units
-  for (int id = 0; id < 3; ++id) {
+  for (int id = 0; id < 2; ++id) {
     q_f[id] *= 1.0e-6;
     q_r[id] *= 1.0e-6;
   }

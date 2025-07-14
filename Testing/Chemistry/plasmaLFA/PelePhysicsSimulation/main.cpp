@@ -93,7 +93,6 @@ main(int argc, char* argv[])
     BL_PROFILE_VAR_STOP(InitData);
 
     // React
-    amrex::Print() << " \n STARTING THE ADVANCE \n";
 
     amrex::Real norm;
     amrex::Real f_Tn;
@@ -105,16 +104,15 @@ main(int argc, char* argv[])
     amrex::GpuArray<amrex::Real, NUM_SPECIES> y;
     amrex::Vector<double> solution(NUM_SPECIES + 1);
     auto eos = pele::physics::PhysicsType::eos();
-    amrex::Print() << "before temperature loop" <<  "\n";
     
     // for( int temp_iter = 0; temp_iter < 50; temp_iter++) {
 
-    reset_temperature(
-      num_grow, mf, rY_source_ext, mfE, rY_source_energy_ext, fctCount,
-      dummyMask, finest_level, geoms, grids, dmaps, ode_iE, temperature)
+    // reset_temperature(
+    //   num_grow, mf, rY_source_ext, mfE, rY_source_energy_ext, fctCount,
+    //   dummyMask, finest_level, geoms, grids, dmaps, ode_iE, temperature)
 
     BL_PROFILE_VAR_STOP(InitData);
-      amrex::Print() << "after reset temperature function" <<  "\n";
+      // amrex::Print() << "after reset temperature function" <<  "\n";
 
       for (int lev = 0; lev <= finest_level; ++lev) {
         amrex::Real lvl_strt = amrex::ParallelDescriptor::second();
@@ -125,20 +123,16 @@ main(int argc, char* argv[])
 #else
         const bool tiling = amrex::TilingIfNotGPU();
 #endif
-      amrex::Print() << "level loop ->"<< lev <<  "\n";
       for (amrex::MFIter mfi(mf[lev], tiling); mfi.isValid(); ++mfi) {
 
-          amrex::Print() << "mfi iter ->" <<  "\n";
           int omp_thread = 0;
 #ifdef AMREX_USE_OMP
           omp_thread = omp_get_thread_num();
 #endif
-          amrex::Print() << "reactFunc->"<< reactFunc <<  "\n";
           if (reactFunc == 1) {
             integrate_Array4(
               lev, dt, ndt, omp_thread, mfi, mf, rY_source_ext, mfE,
               rY_source_energy_ext, fctCount, dummyMask, reactor, trans_parms);
-            amrex::Print() << "integrate Array4->"<< "\n";
 
             Tnp1 = mf[lev].array(mfi, NUM_SPECIES)(0, 0, 0);
             amrex::Real rho = 0.0;
