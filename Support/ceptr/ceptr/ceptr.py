@@ -96,6 +96,7 @@ def convert(
     gas_name,
     interface_name,
     plog_pressure,
+    non_local_thermal_equilibrium,
 ):
     """Convert a mechanism file."""
     print(f"""Converting file {fname}""")
@@ -120,6 +121,7 @@ def convert(
         qss_format_input,
         qss_symbolic_jac,
         plog_pressure,
+        non_local_thermal_equilibrium,
     )
     conv.writer()
     conv.formatter()
@@ -252,7 +254,13 @@ def main():
         type=float,
         default=None,
     )
-
+    parser.add_argument(
+        "-nlte",
+        "--non_local_thermal_equilibrium",
+        help="Write routines for non-local thermal equilibrium (NLTE) chemistry",
+        action="store_true",
+        default=False
+    )
     args = parser.parse_args()
 
     if args.chemistry == "heterogeneous":
@@ -270,6 +278,7 @@ def main():
             args.gas_name,
             args.interface_name,
             args.plog_pressure,
+            args.non_local_thermal_equilibrium
         )
     elif args.lst:
         convert_lst(

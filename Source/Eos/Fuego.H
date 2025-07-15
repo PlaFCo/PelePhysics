@@ -84,6 +84,46 @@ struct Fuego
     TY2Cp(T, Y, Cp);
   }
 
+#ifdef PELE_USE_NLTE
+  AMREX_GPU_HOST_DEVICE
+  AMREX_FORCE_INLINE
+  static void
+  TY2Cpe(const amrex::Real T[NUM_TEMP], const amrex::Real Y[NUM_SPECIES], amrex::Real& Cpe)
+  {
+    CKCPEBS(T, Y, Cpe);
+  }
+  AMREX_GPU_HOST_DEVICE
+  AMREX_FORCE_INLINE
+  static void RTY2Cpe(
+    const amrex::Real /*R*/,
+    const amrex::Real T[NUM_TEMP],
+    const amrex::Real Y[NUM_SPECIES],
+    amrex::Real& Cpe,
+    amrex::Real& Cpt)
+  {
+    amrex::Real Cp;
+    TY2Cp(T, Y, Cp);
+    TY2Cpe(T, Y, Cpe);
+    Cpt = Cp - Cpe;
+  }
+  AMREX_GPU_HOST_DEVICE
+  AMREX_FORCE_INLINE
+  static void RTY2WDOTe(
+    const amrex::Real R,
+    const amrex::Real T[NUM_TEMP],
+    const amrex::Real Y[NUM_SPECIES],
+    amrex::Real WDOT[NUM_SPECIES])
+  {
+    amrex::Real C[NUM_SPECIES];
+    CKYTCR(R, T, Y, C);
+    CKWCE(T, C, WDOT);
+
+    for (int n = 0; n < NUM_SPECIES; n++) {
+      WDOT[n] *= mw(n);
+    }
+  }
+#endif
+
   AMREX_GPU_HOST_DEVICE
   AMREX_FORCE_INLINE
   static void

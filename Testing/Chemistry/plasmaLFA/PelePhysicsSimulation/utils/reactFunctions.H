@@ -197,24 +197,24 @@ integrate_Array4(
   std::ofstream myfile;
   myfile.open("results.txt");
   myfile << "time,temperature,temperaturee,density,Y[2],viscosity" << std::endl;
-  amrex::Real initEf = redEfield_func(0.0, 0.0, 0.0); // Example value, replace with actual
-  T(0, 0, 0, 1) = redEfield_to_tempe(initEf);
+  // amrex::Real initEf = redEfield_func(0.0, 0.0, 0.0); // Example value, replace with actual
+  // T(0, 0, 0, 1) = redEfield_to_tempe(initEf);
 
   myfile << 0 << "," << T.dataPtr()[0]<< "," << T.dataPtr()[1] << "," << rho_a.dataPtr()[0] << ","
         << Y_a.dataPtr()[2] <<"," << mu_a.dataPtr()[0] << std::endl;
   double timeElapsed = 0;
   for (int ii = 0; ii < ndt; ++ii) {
     // Set electric field, electron temperature, and Joule source term
-    amrex::Real redEfield_value = redEfield_func(0.0, 0.0, 0.0); // Example value, replace with actual
-    T(0, 0, 0, 1) = redEfield_to_tempe(redEfield_value);
-    amrex::Real N = 101325.0/1.381e-23/T(0,0,0,0);
-    amrex::Real ne = rhoY(0, 0, 0, E_ID)/ 9.109e-31;
-    amrex::Print() << "ne->"<< ne << std::endl;
-    amrex::Real joule_source =  redEfield_to_hsrc(redEfield_value, rhoY(0, 0, 0, E_ID), N);
+    // amrex::Real redEfield_value = redEfield_func(0.0, 0.0, 0.0); // Example value, replace with actual
+    // T(0, 0, 0, 1) = redEfield_to_tempe(redEfield_value);
+    // amrex::Real N = 101325.0/1.381e-23/T(0,0,0,0);
+    // amrex::Real ne = rhoY(0, 0, 0, E_ID)/ 9.109e-31;
+    // amrex::Print() << "ne->"<< ne << std::endl;
+    // amrex::Real joule_source =  redEfield_to_hsrc(redEfield_value, rhoY(0, 0, 0, E_ID), N);
     // amrex::Print() << "Joule source term: " << joule_source << std::endl;
-    frcEExt_E(0, 0, 0) = joule_source;
-    std::cout << "Joule source term: " << std::log(frcEExt_E(0, 0, 0)) << std::endl;
-    frcEExt_Ee(0, 0, 0) = 0.0; // Assuming no source term for electron energy since we are using LFA
+    frcEExt(0, 0, 0) = 1.0e6; // W/m3
+    // std::cout << "Joule source term: " << std::log(frcEExt_E(0, 0, 0)) << std::endl;
+    // frcEExt_Ee(0, 0, 0) = 0.0; // Assuming no source term for electron energy since we are using LFA
     // std::cout << T(0, 0, 0, 1) << " " << frcEExt_E(0, 0, 0) << " "
     //           << frcEExt_Ee(0, 0, 0) << std::endl;
     tmp_fc = reactor->react(

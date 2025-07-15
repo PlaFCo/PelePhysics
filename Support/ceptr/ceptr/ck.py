@@ -203,6 +203,43 @@ def ckcpbs(fstream, mechanism, species_info):
     )
     cw.writer(fstream, "}")
 
+def ckcpebs(fstream, mechanism, species_info):
+    """Write ckpbs."""
+    cw.writer(fstream)
+    cw.writer(fstream, cw.comment("Returns the mean specific heat at CP (Eq. 34)"))
+    cw.writer(
+        fstream,
+        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKCPEBS"
+        + cc.sym
+        + "(const amrex::Real T[NUM_TEMP], const amrex::Real y[], amrex::Real& cpbs)",
+    )
+    cw.writer(fstream, "{")
+
+    cw.writer(fstream, "amrex::Real result = 0.0; ")
+
+    cw.writer(fstream)
+
+    models = cth.analyze_thermodynamics(mechanism, species_info.nonqssa_species_list)
+    cw.writer(fstream, cw.comment("compute Cp/R at the given temperature"))
+    cw.writer(fstream, "const amrex::Real T2 = T[0] * T[0];")
+    cw.writer(fstream, "const amrex::Real T3 = T[0] * T[0] * T[0];")
+    cw.writer(fstream, "const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];")
+    index = (
+        species_info.ordered_idx_map['E'] - species_info.n_species
+    )
+    cw.writer(fstream, cw.comment(f"species {index}: {'E'}"))
+    cw.writer(
+        fstream,
+        (f"result += y[{index}] * (+2.50000000e+00) * 1822.8884868472639482;"),
+                )
+    cw.writer(fstream)
+    cw.writer(
+        fstream,
+        "cpbs = result *"
+        f" {(cc.R * cc.ureg.kelvin * cc.ureg.mole / cc.ureg.erg).m:1.14e};",
+    )
+    cw.writer(fstream, "}")
+
 
 def ckcvbl(fstream, mechanism, species_info):
     """Write ckcvbl."""
@@ -2028,6 +2065,42 @@ def ckwc(fstream, species_info):
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("convert to chemkin units"))
     cw.writer(fstream, "productionRate(wdot, C, T);")
+
+    # convert C and wdot to chemkin units
+    cw.writer(fstream)
+    cw.writer(fstream, cw.comment("convert to chemkin units"))
+    cw.writer(fstream, f"for (int id = 0; id < {n_species}; ++id) {{")
+    cw.writer(fstream, "C[id] *= 1.0e-6;")
+    cw.writer(fstream, "wdot[id] *= 1.0e-6;")
+    cw.writer(fstream, "}")
+
+    cw.writer(fstream, "}")
+
+def ckwce(fstream, species_info):
+    """Write ckwec."""
+    n_species = species_info.n_species
+    
+    cw.writer(fstream)
+    cw.writer(fstream, cw.comment("compute the production rate of electron impact reactions"))
+    cw.writer(
+        fstream,
+        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKWCE"
+        + cc.sym
+        + "(const amrex::Real T[NUM_TEMP], amrex::Real C[], amrex::Real wdot[])",
+    )
+    cw.writer(fstream, "{")
+
+    # convert C to SI units
+    cw.writer(fstream)
+    cw.writer(fstream, cw.comment("convert to SI"))
+    cw.writer(fstream, f"for (int id = 0; id < {n_species}; ++id) {{")
+    cw.writer(fstream, "C[id] *= 1.0e6;")
+    cw.writer(fstream, "}")
+
+    # call productionRate
+    cw.writer(fstream)
+    cw.writer(fstream, cw.comment("convert to chemkin units"))
+    cw.writer(fstream, "productionRateEle(wdot, C, T);")
 
     # convert C and wdot to chemkin units
     cw.writer(fstream)

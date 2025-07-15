@@ -35,6 +35,7 @@ class Converter:
         qss_format_input=None,
         qss_symbolic_jacobian=False,
         plog_pressure=None,
+        non_local_thermal_equilibrium=False,
     ):
         self.mechIsAHetMech = chemistry == "heterogeneous"
 
@@ -42,6 +43,8 @@ class Converter:
         self.interface = interface
 
         self.jacobian = jacobian
+
+        self.nlte = non_local_thermal_equilibrium
 
         # Symbolic computations
         self.qss_symbolic_jacobian = qss_symbolic_jacobian
@@ -139,6 +142,7 @@ class Converter:
             self.mechanism,
             qss_format_input,
         )
+
 
     def set_species(self):
         """Set the species."""
@@ -532,6 +536,19 @@ class Converter:
                 cj.dproduction_rate(
                     hdr, self.species_info
                 )
+                if self.nlte:
+                    # write NLTE-specific functions
+                    cp.production_rate_ele(
+                    hdr,
+                    self.mechanism,
+                    self.species_info,
+                    self.reaction_info,
+                    self.syms,
+                    )
+                    cck.ckcpebs(hdr, self.mechanism, self.species_info)
+                    cck.ckwce(hdr, self.species_info)
+
+
 
             # Transport
             cw.writer(hdr)

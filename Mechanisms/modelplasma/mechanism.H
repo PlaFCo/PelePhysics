@@ -1385,13 +1385,11 @@ productionRate(
     wdot[1] -= qdot;
     wdot[2] -= qdot;
   }
+
   {
     // reaction 0:  N2 + E => E + N2p + E
-    const amrex::Real k_f = 0.0;
-    if (T[1] > 0.66) {
     const amrex::Real k_f =
       0.647816915814558 * exp((-2.74) * logTe - (0.78740157480315) * invTe);
-    }
     const amrex::Real qf = k_f * (sc[0] * sc[2]);
     const amrex::Real qr = 0.0;
     const amrex::Real qdot = qf - qr;
@@ -1925,6 +1923,128 @@ DWDOT(
   for (int k = 0; k < 3; k++) {
     J[12 + k] *= 1.e-6;
     J[k * 4 + 3] *= 1.e6;
+  }
+}
+
+// GPU version of productionRate: no more use of thermo namespace vectors
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
+comp_qfqr_ele(
+  amrex::Real* qf,
+  amrex::Real* qr,
+  const amrex::Real* sc,
+  const amrex::Real* /*sc_qss*/,
+  const amrex::Real* T,
+  const amrex::Real* invT,
+  const amrex::Real* logT)
+{
+
+  // reaction 1: E + N2p + M <=> N2 + M
+  qf[0] = sc[1] * sc[2];
+  qr[0] = sc[0];
+
+  // reaction 0: N2 + E => E + N2p + E
+  qf[1] = sc[0] * sc[2];
+  qr[1] = 0.0;
+
+  // compute the mixture concentration
+  amrex::Real mixture = 0.0;
+  for (int i = 0; i < 3; ++i) {
+    mixture += sc[i];
+  }
+
+  // compute the Gibbs free energy
+  amrex::Real g_RT[3];
+  gibbs(g_RT, T);
+
+  // reference concentration: P_atm / (RT) in inverse mol/m^3
+  amrex::Real refC = 101325 / 8.31446 * invT[0];
+  amrex::Real refCinv = 1 / refC;
+
+  // Evaluate the kfs
+  amrex::Real k_f, Corr;
+
+  // reaction 0:  N2 + E => E + N2p + E
+  k_f = 0.647816915814558 * exp((-2.74) * logT[1] - (1.27) * invT[1]);
+  qf[1] *= k_f;
+  qr[1] *= k_f * exp(-(g_RT[0] - g_RT[1] - g_RT[2])) * (refCinv);
+}
+
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
+productionRateEle(
+  amrex::Real* wdot, const amrex::Real* sc, const amrex::Real T[NUM_TEMP])
+{
+  const amrex::Real invT = 1.0 / T[0];
+  const amrex::Real logT = log(T[0]);
+  const amrex::Real invTe = 1.0 / T[1];
+  const amrex::Real logTe = log(T[1]);
+
+  // reference concentration: P_atm / (RT) in inverse mol/m^3
+  const amrex::Real refC = 101325 / 8.31446 * invT;
+  const amrex::Real refCinv = 1 / refC;
+
+  for (int i = 0; i < 3; ++i) {
+    wdot[i] = 0.0;
+  }
+
+  // compute the mixture concentration
+  amrex::Real mixture = 0.0;
+  for (int i = 0; i < 3; ++i) {
+    mixture += sc[i];
+  }
+
+  // compute the Gibbs free energy
+  amrex::Real g_RT[3];
+  gibbs(g_RT, T);
+
+  {
+  }
+
+  {
+    // reaction 0:  N2 + E => E + N2p + E
+    const amrex::Real k_f =
+      0.647816915814558 * exp((-2.74) * logTe - (0.78740157480315) * invTe);
+    const amrex::Real qf = k_f * (sc[0] * sc[2]);
+    const amrex::Real qr = 0.0;
+    const amrex::Real qdot = qf - qr;
+    wdot[0] -= qdot;
+    wdot[1] += qdot;
+    wdot[2] += qdot;
+  }
+}
+
+// Returns the mean specific heat at CP (Eq. 34)
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
+CKCPEBS(const amrex::Real T[NUM_TEMP], const amrex::Real y[], amrex::Real& cpbs)
+{
+  amrex::Real result = 0.0;
+
+  // compute Cp/R at the given temperature
+  const amrex::Real T2 = T[0] * T[0];
+  const amrex::Real T3 = T[0] * T[0] * T[0];
+  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  // species -1: E
+  result += y[-1] * (+2.50000000e+00) * 1822.8884868472639482;
+
+  cpbs = result * 8.31446261815324e+07;
+}
+
+// compute the production rate of electron impact reactions
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
+CKWCE(const amrex::Real T[NUM_TEMP], amrex::Real C[], amrex::Real wdot[])
+{
+
+  // convert to SI
+  for (int id = 0; id < 3; ++id) {
+    C[id] *= 1.0e6;
+  }
+
+  // convert to chemkin units
+  productionRateEle(wdot, C, T);
+
+  // convert to chemkin units
+  for (int id = 0; id < 3; ++id) {
+    C[id] *= 1.0e-6;
+    wdot[id] *= 1.0e-6;
   }
 }
 

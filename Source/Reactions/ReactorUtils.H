@@ -666,17 +666,36 @@ fKernelSpec(
     rhoesrc * (rho_pt_inv / Cv_pt);
   
 #ifdef PELE_USE_NLTE
-  eos.RTY2WDOT_e(rho_pt, temp.arr, massfrac.arr, cdotsTe_pt.arr);
+  amrex::Real Cvt_pt = 1.0;
+  amrex::Real Cve_pt = 1.0;
+  amrex::Real rhoelecollesrc = 0.0;
+  if (reactor_type != ReactorTypes::hlfa_reactor_type) {
+    amrex::Abort("Wrong reactor type. Choose 3 (hlfa).");
+  }
+  amrex::GpuArray<amrex::Real, NUM_SPECIES> cdotsTe_pt = {0.0};
+  eos.RTY2Cpe(rho_pt, temp.arr, massfrac.arr, Cve_pt, Cvt_pt);
+  eos.RTY2WDOTe(rho_pt, temp.arr, massfrac.arr, cdotsTe_pt.arr);
+  eos.RTY2EleColl(rho_pt, temp.arr, massfrac.arr, rhoelecollesrc);
   amrex::Real rhoeleesrc = 0.0;
   for (int n = 0; n < NUM_SPECIES; n++) {
     const amrex::Real cdotTe_rYs =
       cdotsTe_pt[n] + rYs[spec_index<OrderType>(n, icell, ncells)];
     rhoeleesrc -= cdotTe_rYs * ei_pt[n];
   }
-  rhoesrc -= rhoeleesrc;
+  rhoesrc -= rhoeleesrc; //remove contribution from e-impact reactions
+  
+  // rhoesrc_ext is the power input
+  rhoesrc -=  rhoesrc_ext[icell]; //remove external energy source
+  rhoeleesrc +=  rhoesrc_ext[icell]; //external energy source only added to electrons
+
+  // add collisional energy exchange
+  rhoesrc -= rhoelecollesrc; //add collisional energy exchange (source if Te>T)
+  rhoeleesrc += rhoelecollesrc; //add collisional energy exchange (sink if Te>T)
+
   ydot_d[vec_index<OrderType>(NUM_SPECIES, icell, ncells)] =
-  rhoesrc * (rho_pt_inv / Cv_pt);
-  ydot_d[vec_index<OrderType>(NUM_SPECIES + 1, icell, ncells)] = rhoeleesrc * (rho_pt_inv / Cve_pt);
+  rhoesrc * (rho_pt_inv / Cvt_pt); //calculate gas temperature source term
+  ydot_d[vec_index<OrderType>(NUM_SPECIES + 1, icell, ncells)] = 
+  rhoeleesrc * (rho_pt_inv / Cve_pt); // calculate electron temperature source term
 #endif
 }
 
