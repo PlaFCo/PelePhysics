@@ -376,7 +376,7 @@ ReactorBDF::react(
     }
     get_rho_and_massfracs(soln_n, rho, massfrac);
 
-    amrex::Real temp[NUM_TEMP] = {0,0};
+    amrex::Real temp[NUM_TEMP] = {0.0};
     temp[0] = T_in(i, j, k, 0);
 #ifdef PELE_USE_NLTE
     temp[1] = T_in(i, j, k, 1);

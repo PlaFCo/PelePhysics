@@ -48,14 +48,14 @@ CKINU(const int i, int& nspec, int ki[], int nu[])
 void
 CKKFKR(
   const amrex::Real P,
-  const amrex::Real T,
+  const amrex::Real T[NUM_TEMP],
   const amrex::Real x[],
   amrex::Real q_f[],
   amrex::Real q_r[])
 {
   amrex::Real c[10]; // temporary storage
   amrex::Real PORT =
-    1e6 * P / (8.31446261815324e+07 * T); // 1e6 * P/RT so c goes to SI units
+    1e6 * P / (8.31446261815324e+07 * T[0]); // 1e6 * P/RT so c goes to SI units
 
   // Compute conversion, see Eq 10
   for (int id = 0; id < 10; ++id) {
@@ -76,10 +76,13 @@ CKKFKR(
 // USES progressRate : todo switch to GPU
 void
 progressRateFR(
-  amrex::Real* q_f, amrex::Real* q_r, amrex::Real* sc, amrex::Real T)
+  amrex::Real* q_f,
+  amrex::Real* q_r,
+  amrex::Real* sc,
+  const amrex::Real T[NUM_TEMP])
 {
-  const amrex::Real invT = 1.0 / T;
-  const amrex::Real logT = log(T);
+  const amrex::Real invT[NUM_TEMP] = {1.0 / T[0]};
+  const amrex::Real logT[NUM_TEMP] = {log(T[0])};
   // compute the Gibbs free energy
   amrex::Real g_RT[10];
   gibbs(g_RT, T);
@@ -188,7 +191,8 @@ SPARSITY_INFO(int* nJdata, const int* consP, int NCELLS)
   for (int n = 0; n < 10; n++) {
     conc[n] = 1.0 / 10.000000;
   }
-  aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
+  amrex::Real tmpT[NUM_TEMP] = {1500.0};
+  aJacobian(Jac.data(), conc.data(), tmpT, *consP);
 
   int nJdata_tmp = 0;
   for (int k = 0; k < 11; k++) {
@@ -211,7 +215,8 @@ SPARSITY_INFO_SYST(int* nJdata, const int* consP, int NCELLS)
   for (int n = 0; n < 10; n++) {
     conc[n] = 1.0 / 10.000000;
   }
-  aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
+  amrex::Real tmpT[NUM_TEMP] = {1500.0};
+  aJacobian(Jac.data(), conc.data(), tmpT, *consP);
 
   int nJdata_tmp = 0;
   for (int k = 0; k < 11; k++) {
@@ -239,7 +244,8 @@ SPARSITY_INFO_SYST_SIMPLIFIED(int* nJdata, const int* consP)
   for (int n = 0; n < 10; n++) {
     conc[n] = 1.0 / 10.000000;
   }
-  aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);
+  amrex::Real tmpT[NUM_TEMP] = {1500.0};
+  aJacobian_precond(Jac.data(), conc.data(), tmpT, *consP);
 
   int nJdata_tmp = 0;
   for (int k = 0; k < 11; k++) {
@@ -267,8 +273,8 @@ SPARSITY_PREPROC_CSC(int* rowVals, int* colPtrs, const int* consP, int NCELLS)
   for (int n = 0; n < 10; n++) {
     conc[n] = 1.0 / 10.000000;
   }
-  aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
-
+  amrex::Real tmpT[NUM_TEMP] = {1500.0};
+  aJacobian(Jac.data(), conc.data(), tmpT, *consP);
   colPtrs[0] = 0;
   int nJdata_tmp = 0;
   for (int nc = 0; nc < NCELLS; nc++) {
@@ -297,7 +303,8 @@ SPARSITY_PREPROC_CSR(
   for (int n = 0; n < 10; n++) {
     conc[n] = 1.0 / 10.000000;
   }
-  aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
+  amrex::Real tmpT[NUM_TEMP] = {1500.0};
+  aJacobian(Jac.data(), conc.data(), tmpT, *consP);
 
   if (base == 1) {
     rowPtrs[0] = 1;
@@ -343,7 +350,8 @@ SPARSITY_PREPROC_SYST_CSR(
   for (int n = 0; n < 10; n++) {
     conc[n] = 1.0 / 10.000000;
   }
-  aJacobian(Jac.data(), conc.data(), 1500.0, *consP);
+  amrex::Real tmpT[NUM_TEMP] = {1500.0};
+  aJacobian(Jac.data(), conc.data(), tmpT, *consP);
 
   if (base == 1) {
     rowPtr[0] = 1;
@@ -399,7 +407,8 @@ SPARSITY_PREPROC_SYST_SIMPLIFIED_CSC(
   for (int n = 0; n < 10; n++) {
     conc[n] = 1.0 / 10.000000;
   }
-  aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);
+  amrex::Real tmpT[NUM_TEMP] = {1500.0};
+  aJacobian_precond(Jac.data(), conc.data(), tmpT, *consP);
 
   colPtrs[0] = 0;
   int nJdata_tmp = 0;
@@ -432,7 +441,8 @@ SPARSITY_PREPROC_SYST_SIMPLIFIED_CSR(
   for (int n = 0; n < 10; n++) {
     conc[n] = 1.0 / 10.000000;
   }
-  aJacobian_precond(Jac.data(), conc.data(), 1500.0, *consP);
+  amrex::Real tmpT[NUM_TEMP] = {1500.0};
+  aJacobian(Jac.data(), conc.data(), tmpT, *consP);
 
   if (base == 1) {
     rowPtr[0] = 1;

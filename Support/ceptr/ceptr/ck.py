@@ -880,6 +880,40 @@ def ckabms(fstream, mechanism, species_info):
 
     cw.writer(fstream, "}")
 
+# data = species.input_data['electron_parameters']['collision-frequency']
+# print(data)
+def ckt2coll(fstream, mechanism, species_info):
+    """Write ckt2coll."""
+    cw.writer(fstream)
+    cw.writer(fstream)
+    cw.writer(fstream, cw.comment("Electron collision frequency assuming hard sphere cross section"))
+    cw.writer(
+        fstream,
+        "AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void CKT2COLL"
+        + cc.sym
+        + "(amrex::Real RHO, const amrex::Real T[NUM_TEMP], amrex::Real C[], amrex::Real collsrc)",
+    )
+    cw.writer(fstream, "{")
+    n_species = species_info.n_species
+    cw.writer(fstream, cw.comment("convert to SI"))
+    cw.writer(fstream, f"for (int id = 0; id < {n_species}; ++id) "+"{")
+    cw.writer(fstream, "  C[id] *= 1.0e6;")
+    cw.writer(fstream, "}")
+    cw.writer(fstream, cw.comment("calculate collision frequency"))
+    cw.writer(fstream, "amrex::Real freq_M = 0;")
+    cw.writer(fstream, "amrex::Real freq_spe = 0;")
+    cw.writer(fstream, "amrex::Real electron_thermal_vel = 0;")
+    cw.writer(fstream, "electron_thermal_vel = sqrt(8.0 * 1.380649e-23 * T[1] / (3.14159265358979323846 * 9.10938356e-31));")
+    for spec in species_info.nonqssa_species:
+        species = mechanism.species(spec.name)
+        diameter = species.input_data['transport']['diameter']
+        cw.writer(fstream, f"freq_spe = RHO * C[{spec.idx}] * imw({spec.idx}) * 6.022e23 * electron_thermal_vel * (3.14159265358979323846 / 4.0) * {diameter} * {diameter} * 1.0e-20 ;")
+        cw.writer(fstream, f"freq_M += freq_spe * imw({spec.idx});")
+    electron_id = species_info.ordered_idx_map['E']
+    cw.writer(fstream, f"amrex::Real ru = 8.31446261815324;")
+    cw.writer(fstream, f"collsrc = 3.0 * C[{electron_id}] * RHO * ru * (T[1] - T[0]) * freq_M;")
+
+    cw.writer(fstream, "}")
 
 def ckpx(fstream, mechanism, species_info):
     """Write ckpx."""

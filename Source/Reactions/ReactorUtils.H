@@ -684,16 +684,17 @@ fKernelSpec(
   }
   rhoesrc -= rhoeleesrc; //remove contribution from e-impact reactions
   
+  // add collisional energy exchange
+  rhoesrc -= rhoelecollesrc; //add collisional energy exchange (here source if Te>T)
+  rhoeleesrc += rhoelecollesrc; //add collisional energy exchange (here sink if Te>T)
+  
   // rhoesrc_ext is the power input
   rhoesrc -=  rhoesrc_ext[icell]; //remove external energy source
   rhoeleesrc +=  rhoesrc_ext[icell]; //external energy source only added to electrons
-
-  // add collisional energy exchange
-  rhoesrc -= rhoelecollesrc; //add collisional energy exchange (source if Te>T)
-  rhoeleesrc += rhoelecollesrc; //add collisional energy exchange (sink if Te>T)
-
+  
   ydot_d[vec_index<OrderType>(NUM_SPECIES, icell, ncells)] =
   rhoesrc * (rho_pt_inv / Cvt_pt); //calculate gas temperature source term
+
   ydot_d[vec_index<OrderType>(NUM_SPECIES + 1, icell, ncells)] = 
   rhoeleesrc * (rho_pt_inv / Cve_pt); // calculate electron temperature source term
 #endif

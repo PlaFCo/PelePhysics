@@ -2048,6 +2048,38 @@ CKWCE(const amrex::Real T[NUM_TEMP], amrex::Real C[], amrex::Real wdot[])
   }
 }
 
+// Electron collision frequency assuming hard sphere cross section
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
+CKT2COLL(
+  amrex::Real RHO,
+  const amrex::Real T[NUM_TEMP],
+  amrex::Real C[],
+  amrex::Real collsrc)
+{
+  // convert to SI
+  for (int id = 0; id < 3; ++id) {
+    C[id] *= 1.0e6;
+  }
+  // calculate collision frequency
+  amrex::Real freq_M = 0;
+  amrex::Real freq_spe = 0;
+  amrex::Real electron_thermal_vel = 0;
+  electron_thermal_vel =
+    sqrt(8.0 * 1.380649e-23 * T[1] / (3.14159265358979323846 * 9.10938356e-31));
+  freq_spe = RHO * C[0] * imw(0) * 6.022e23 * electron_thermal_vel *
+             (3.14159265358979323846 / 4.0) * 3.621 * 3.621 * 1.0e-20;
+  freq_M += freq_spe * imw(0);
+  freq_spe = RHO * C[1] * imw(1) * 6.022e23 * electron_thermal_vel *
+             (3.14159265358979323846 / 4.0) * 3.621 * 3.621 * 1.0e-20;
+  freq_M += freq_spe * imw(1);
+  freq_spe = RHO * C[2] * imw(2) * 6.022e23 * electron_thermal_vel *
+             (3.14159265358979323846 / 4.0) * 425.00000000000006 *
+             425.00000000000006 * 1.0e-20;
+  freq_M += freq_spe * imw(2);
+  amrex::Real ru = 8.31446261815324;
+  collsrc = 3.0 * C[2] * RHO * ru * (T[1] - T[0]) * freq_M;
+}
+
 // Transport function declarations
 
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void

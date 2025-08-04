@@ -221,7 +221,7 @@ ReactorRK64::react(
     amrex::Real mass_frac[NUM_SPECIES] = {0.0};
     eos.RY2RRinvY(soln_reg, rho, rho_inv, mass_frac);
 
-    amrex::Real temp[NUM_TEMP] = {0,0};
+    amrex::Real temp[NUM_TEMP] = {0.0};
     temp[0] = T_in(i, j, k, 0);
 #ifdef PELE_USE_NLTE
     temp[1] = T_in(i, j, k, 1);

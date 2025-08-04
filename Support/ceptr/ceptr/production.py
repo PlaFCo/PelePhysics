@@ -177,6 +177,8 @@ def production_rate(
             )
         if nsri > 0:
             cw.writer(fstream, "amrex::Real redP, F, X, F_sri;")
+        if nlindemann > 0:
+            cw.writer(fstream, "amrex::Real redP;")
         cw.writer(fstream)
 
         # Loop like you're going through them in the mech.Linp order

@@ -547,6 +547,7 @@ class Converter:
                     )
                     cck.ckcpebs(hdr, self.mechanism, self.species_info)
                     cck.ckwce(hdr, self.species_info)
+                    cck.ckt2coll(hdr, self.mechanism, self.species_info)
 
 
 
@@ -842,7 +843,7 @@ class Converter:
         cw.writer(fstream)
         cw.writer(fstream, "#define NUM_FIT 4")
         cw.writer(fstream)
-        if nelectron > 0:
+        if self.nlte > 0:
             cw.writer(
                 fstream,
                 "#define NUM_TEMP 2",

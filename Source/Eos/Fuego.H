@@ -71,7 +71,7 @@ struct Fuego
   TY2Cp(const amrex::Real T[NUM_TEMP], const amrex::Real Y[NUM_SPECIES], amrex::Real& Cp)
   {
     CKCPBS(T, Y, Cp);
-  }
+  }  
 
   AMREX_GPU_HOST_DEVICE
   AMREX_FORCE_INLINE
@@ -122,6 +122,18 @@ struct Fuego
       WDOT[n] *= mw(n);
     }
   }
+  AMREX_GPU_HOST_DEVICE
+  AMREX_FORCE_INLINE
+  static void RTY2EleColl(
+    const amrex::Real R,
+    const amrex::Real T[NUM_TEMP],
+    const amrex::Real Y[NUM_SPECIES],
+    amrex::Real& collsrc)
+  {
+    amrex::Real C[NUM_SPECIES];
+    CKYTCR(R, T, Y, C);
+    CKT2COLL(R, T, C, collsrc);
+  }
 #endif
 
   AMREX_GPU_HOST_DEVICE
@@ -161,7 +173,7 @@ struct Fuego
     amrex::Real tmp[NUM_SPECIES];
     amrex::Real wbar = 0.0;
     CKMMWY(Y, wbar);
-    amrex::Real T[NUM_TEMP] = {0,0};
+    amrex::Real T[NUM_TEMP] = {0.0};
     T[0] = P * wbar / (R * Constants::RU);
     CKCVMS(T, tmp);
     amrex::Real Cv = 0.0;

@@ -30,6 +30,9 @@ species:
     diameter: 3.621
     polarizability: 1.76
     rotational-relaxation: 4.0
+  electron_parameters:
+    collision-frequency: 1.0e+10
+    cross-section: 1.0
 - name: E
   composition: {E: 1}
   thermo:
@@ -44,6 +47,8 @@ species:
     well-depth: 850.0
     diameter: 425.0
     rotational-relaxation: 1.0
+  electron_parameters:
+    collision-frequency: 0.0
 - name: N2p
   composition: {N: 2, E: -1}
   thermo:
@@ -62,6 +67,8 @@ species:
     diameter: 3.621
     polarizability: 1.76
     rotational-relaxation: 4.0
+  electron_parameters:
+    collision-frequency: 1.0e+10
 
 reactions:
 - equation: E + N2 => N2p + E + E  # (from IST-Lisbon database lxcat.net + LoKI-B solver)
@@ -70,12 +77,6 @@ reactions:
   b: -2.74
   Ea: 1.27
   Eshift: 0.66
-# - equation: E + E + N2 => N2p + E + E + E  # (fake reaction)
-#   type: electron-temperature
-#   A: 147.8169158145577
-#   b: -0.74
-#   Ea: 0.27
-#   Eshift: 0.1
 - equation: E + M + N2p <=> N2 + M
   type: three-body
   rate-constant: {A: 1.807e+14, b: 2.0, Ea: 7.631e+04}

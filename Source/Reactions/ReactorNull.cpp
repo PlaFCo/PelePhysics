@@ -60,7 +60,7 @@ ReactorNull::react(
       Y_loc[n] = rY_loc[n] / rho_loc;
     }
     amrex::Real energy_loc = renergy_loc / rho_loc;
-    amrex::Real T_loc[NUM_TEMP] = {0,0};
+    amrex::Real T_loc[NUM_TEMP] = {0.0};
     T_loc[0] = T_in(i, j, k, 0);
 #ifdef PELE_USE_NLTE
     T_loc[1] = T_in(i, j, k, 1);
