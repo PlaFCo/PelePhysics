@@ -102,9 +102,18 @@ ReactorRK64::react(
         sp = 0.0;
       }
       for (int stage = 0; stage < rkp.nstages_rk64; stage++) {
+        #ifndef PELE_USE_NLTE
         utils::fKernelSpec<Ordering>(
           0, 1, current_time - time_init, captured_reactor_type, soln_reg, ydot,
           rhoe_init, rhoesrc_ext, rYsrc_ext, leosparm);
+        #else
+        const amrex::Real* rhoeelesrc_ext = nullptr;
+        std::cout << "BDF reactor is not compatible with NLTE ";
+        return;
+        utils::fKernelSpec<Ordering>(
+          0, 1, current_time - time_init, captured_reactor_type, soln_reg, ydot,
+          rhoe_init, rhoesrc_ext, rYsrc_ext, leosparm, rkp);
+        #endif
 
         for (int sp = 0; sp < neq; sp++) {
           error_reg[sp] += rkp.err_rk64[stage] * dt_rk * ydot[sp];
@@ -258,10 +267,18 @@ ReactorRK64::react(
         sp = 0.0;
       }
       for (int stage = 0; stage < rkp.nstages_rk64; stage++) {
+        #ifndef PELE_USE_NLTE
         utils::fKernelSpec<Ordering>(
           0, 1, current_time - time_init, captured_reactor_type, soln_reg, ydot,
           rhoe_init, rhoesrc_ext, rYsrc_ext, leosparm);
-
+        #else
+        const amrex::Real* rhoeelesrc_ext = nullptr;
+        std::cout << "BDF reactor is not compatible with NLTE ";
+        return;
+        utils::fKernelSpec<Ordering>(
+          0, 1, current_time - time_init, captured_reactor_type, soln_reg, ydot,
+          rhoe_init, rhoesrc_ext, rhoeelesrc_ext, rYsrc_ext, leosparm, rkp);
+        #endif
         for (int sp = 0; sp < neq; sp++) {
           error_reg[sp] += rkp.err_rk64[stage] * dt_rk * ydot[sp];
           soln_reg[sp] =

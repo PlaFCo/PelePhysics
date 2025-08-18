@@ -82,6 +82,7 @@ get_bdf_matrix_and_rhs(
     Jmat1d[(NUM_SPECIES + 1) * (NUM_SPECIES + 1) - 1];
 
   // FIXME: need to change this to Ordering
+#ifndef PELE_USE_NLTE
   utils::fKernelSpec<utils::YCOrder>(
     0, 1, current_time - time_init, reactor_type, soln, ydot, rhoe_init,
     rhoesrc_ext, rYsrc_ext);
@@ -91,6 +92,20 @@ get_bdf_matrix_and_rhs(
       0, 1, current_time - time_init, reactor_type, soln_n, ydot_n, rhoe_init,
       rhoesrc_ext, rYsrc_ext);
   }
+#else
+  const amrex::Real* rhoeelesrc_ext = nullptr;
+  std::cout << "BDF reactor is not compatible with NLTE ";
+  return;
+  utils::fKernelSpec<utils::YCOrder>(
+    0, 1, current_time - time_init, reactor_type, soln, ydot, rhoe_init,
+    rhoesrc_ext, rhoeelesrc_ext , rYsrc_ext);
+
+  if (tstepscheme == TRPZSCHEME) {
+    utils::fKernelSpec<utils::YCOrder>(
+      0, 1, current_time - time_init, reactor_type, soln_n, ydot_n, rhoe_init,
+      rhoesrc_ext, rhoeelesrc_ext, rYsrc_ext);
+  }
+#endif
 
   for (int ii = 0; ii < (NUM_SPECIES + 1); ii++) {
     Jmat2d[ii][ii] += bdfp.TCOEFFMAT[tstepscheme][0] * dt_inv;
