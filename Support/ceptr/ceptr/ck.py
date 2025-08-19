@@ -2411,17 +2411,18 @@ def ckchrgmass(fstream, species_info):
 
 def temp_given_ey(fstream, mechanism, species_list):
     """Write temperature given internal energy."""
-    tmax = 4000  # default value, will be updated below
-    tmin = 90
-    tmax_ar = [0.0 for _ in range(len(species_list))]
-    tmin_ar = [1000.0 for _ in range(len(species_list))]
-    for idx, symbol in enumerate(species_list):
-        species = mechanism.species(symbol)
-        model = species.thermo
-        tmax_ar[idx] = max(tmax_ar[idx], model.max_temp)
-        tmin_ar[idx] = min(tmin_ar[idx], model.min_temp)
+    tmin_ar, tmax_ar = zip(
+        *[
+            (
+                mechanism.species(symbol).thermo.min_temp,
+                mechanism.species(symbol).thermo.max_temp,
+            )
+            for symbol in species_list
+        ]
+    )
     tmax = min(tmax_ar)
     tmin = max(tmin_ar)
+
     cw.writer(fstream)
     cw.writer(
         fstream,
@@ -2445,12 +2446,12 @@ def temp_given_ey(fstream, mechanism, species_list):
     cw.writer(fstream, "#endif")
     cw.writer(
         fstream,
-        "amrex::Real tmin[NUM_TEMP] = {"+f"{tmin}"+"};" + cw.comment("max lower bound for thermo def"),
+        f"amrex::Real tmin = {tmin};" + cw.comment("max lower bound for thermo def"),
     )
-    
+
     cw.writer(
         fstream,
-        "amrex::Real tmax[NUM_TEMP] ={"+f"{tmax}"+"};" + cw.comment("min upper bound for thermo def"),
+        f"amrex::Real tmax = {tmax};" + cw.comment("min upper bound for thermo def"),
     )
     cw.writer(fstream, "amrex::Real t1[NUM_TEMP];")
     cw.writer(fstream, "amrex::Real e1,emin,emax,cv,dt;")
@@ -2491,17 +2492,18 @@ def temp_given_ey(fstream, mechanism, species_list):
 
 def temp_given_hy(fstream, mechanism, species_list):
     """Write temperature given enthalpy."""
-    tmax = 4000  # default value, will be updated below
-    tmin = 90
-    tmax_ar = [0.0 for _ in range(len(species_list))]
-    tmin_ar = [1000.0 for _ in range(len(species_list))]
-    for idx, symbol in enumerate(species_list):
-        species = mechanism.species(symbol)
-        model = species.thermo
-        tmax_ar[idx] = max(tmax_ar[idx], model.max_temp)
-        tmin_ar[idx] = min(tmin_ar[idx], model.min_temp)
+    tmin_ar, tmax_ar = zip(
+        *[
+            (
+                mechanism.species(symbol).thermo.min_temp,
+                mechanism.species(symbol).thermo.max_temp,
+            )
+            for symbol in species_list
+        ]
+    )
     tmax = min(tmax_ar)
     tmin = max(tmin_ar)
+
     cw.writer(
         fstream,
         cw.comment(" get temperature given enthalpy in mass units and mass fracs"),
@@ -2522,12 +2524,12 @@ def temp_given_hy(fstream, mechanism, species_list):
     cw.writer(fstream, "#endif")
     cw.writer(
         fstream,
-        "amrex::Real tmin[NUM_TEMP] = {"+f"{tmin}"+"};" + cw.comment("max lower bound for thermo def"),
+        f"amrex::Real tmin = {tmin};" + cw.comment("max lower bound for thermo def"),
     )
     
     cw.writer(
         fstream,
-        "amrex::Real tmax[NUM_TEMP] ={"+f"{tmax}"+"};" + cw.comment("min upper bound for thermo def"),
+        f"amrex::Real tmax = {tmax};" + cw.comment("min upper bound for thermo def"),
     )
     cw.writer(fstream, "amrex::Real t1[NUM_TEMP];")
     cw.writer(fstream, "amrex::Real h1,hmin,hmax,cp,dt;")

@@ -298,9 +298,9 @@ def generate_thermo_routine(
             variables[k] = v if v else variables[k]
 
     cw.writer(fstream, "const amrex::Real T2 = T[0]*T[0];")
-    cw.writer(fstream, "const amrex::Real T3 = T[0]*T[0]*T[0];")
+    cw.writer(fstream, "const amrex::Real T3 = T[0]*T2;")
     if variables["T4"]:
-        cw.writer(fstream, "const amrex::Real T4 = T[0]*T[0]*T[0]*T[0];")
+        cw.writer(fstream, "const amrex::Real T4 = T[0]*T3;")
     if variables["inv_temp"]:
         cw.writer(fstream, "const amrex::Real invT = 1.0 / T[0];")
     if variables["inv_temp2"]:
