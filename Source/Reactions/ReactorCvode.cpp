@@ -1362,6 +1362,9 @@ ReactorCvode::react(
   amrex::Array4<amrex::Real> const& rY_in,
   amrex::Array4<amrex::Real> const& rYsrc_in,
   amrex::Array4<amrex::Real> const& T_in,
+#ifdef PELE_USE_NLTE
+  amrex::Array4<amrex::Real> const& Te_in,
+#endif
   amrex::Array4<amrex::Real> const& rEner_in,
   amrex::Array4<amrex::Real> const& rEner_src_in,
   amrex::Array4<amrex::Real> const& FC_in,
@@ -1425,7 +1428,11 @@ ReactorCvode::react(
 
   // Fill data
   flatten(
-    box, ncells, rY_in, rYsrc_in, T_in, rEner_in, rEner_src_in, yvec_d,
+    box, ncells, rY_in, rYsrc_in, T_in,
+#ifdef PELE_USE_NLTE
+    Te_in,
+#endif
+    rEner_in, rEner_src_in, yvec_d,
     udata->rYsrc_ext, udata->rhoe_init, udata->rhoesrc_ext);
 
 #ifdef AMREX_USE_OMP
@@ -1465,7 +1472,11 @@ ReactorCvode::react(
   amrex::Gpu::DeviceVector<long int> v_nfe(ncells, nfe);
   long int* d_nfe = v_nfe.data();
   unflatten(
-    box, ncells, rY_in, T_in, rEner_in, rEner_src_in, FC_in, yvec_d,
+    box, ncells, rY_in, T_in, 
+#ifdef PELE_USE_NLTE
+    Te_in,
+#endif
+    rEner_in, rEner_src_in, FC_in, yvec_d,
     udata->rhoe_init, d_nfe, dt_react);
 
   if (udata->verbose > 1) {
@@ -1506,7 +1517,11 @@ ReactorCvode::react(
         amrex::Real* yvec_d = N_VGetArrayPointer(y);
         utils::box_flatten<Ordering>(
           icell, i, j, k, ncells, captured_reactor_type,
-          captured_clean_init_massfrac, rY_in, rYsrc_in, T_in, rEner_in,
+          captured_clean_init_massfrac, rY_in, rYsrc_in, T_in,
+#ifdef PELE_USE_NLTE
+          Te_in,
+#endif
+          rEner_in,
           rEner_src_in, yvec_d, udata->rYsrc_ext, udata->rhoe_init,
           udata->rhoesrc_ext);
 
@@ -1537,7 +1552,11 @@ ReactorCvode::react(
 
         utils::box_unflatten<Ordering>(
           icell, i, j, k, ncells, captured_reactor_type,
-          captured_clean_init_massfrac, rY_in, T_in, rEner_in, rEner_src_in,
+          captured_clean_init_massfrac, rY_in, T_in, 
+#ifdef PELE_USE_NLTE
+          Te_in,
+#endif
+          rEner_in, rEner_src_in,
           FC_in, yvec_d, udata->rhoe_init, nfe_tot, dt_react);
 
         // cppcheck-suppress knownConditionTrueFalse

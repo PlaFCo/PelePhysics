@@ -170,6 +170,9 @@ box_flatten(
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<const amrex::Real> const& frcExt,
   amrex::Array4<const amrex::Real> const& temperature,
+#ifdef PELE_USE_NLTE
+    amrex::Array4<const amrex::Real> const& temperature_e,
+#endif
   amrex::Array4<const amrex::Real> const& rhoE,
   amrex::Array4<const amrex::Real> const& frcEExt,
   amrex::Real* y_vect,
@@ -205,11 +208,11 @@ box_flatten(
 
 #ifndef PELE_USE_NLTE
   amrex::Real temp[1];
-  temp[0] = temperature(i, j, k, 0);
+  temp[0] = temperature(i, j, k);
 #else
   amrex::Real temp[2];
-  temp[0] = temperature(i, j, k, 0);
-  temp[1] = temperature(i, j, k, 1);
+  temp[0] = temperature(i, j, k);
+  temp[1] = temperature_e(i, j, k);
 #endif
   vect_energy[icell] = rhoE(i, j, k, 0);
   src_vect_energy[icell] = frcEExt(i, j, k, 0);
@@ -314,6 +317,9 @@ box_unflatten(
   const bool clean_init_massfrac,
   amrex::Array4<amrex::Real> const& rhoY,
   amrex::Array4<amrex::Real> const& temperature,
+#ifdef PELE_USE_NLTE
+    amrex::Array4<amrex::Real> const& temperature_e,
+#endif
   amrex::Array4<amrex::Real> const& rhoE,
   amrex::Array4<amrex::Real> const& frcEExt,
   amrex::Array4<amrex::Real> const& FC_in,
@@ -376,9 +382,9 @@ box_unflatten(
   } else {
     amrex::Abort("Wrong reactor type. Choose between 1 (e) or 2 (h) or 3 (hlfa).");
   }
-  temperature(i, j, k, 0) = temp[0];
+  temperature(i, j, k) = temp[0];
 #ifdef PELE_USE_NLTE
-  temperature(i, j, k, 1) = temp[1];
+  temperature_e(i, j, k) = temp[1];
 #endif
   FC_in(i, j, k, 0) = static_cast<amrex::Real>(FCunt);
 }
@@ -549,6 +555,9 @@ public:
     amrex::Array4<const amrex::Real> const& rhoY,
     amrex::Array4<const amrex::Real> const& frcExt,
     amrex::Array4<const amrex::Real> const& temperature,
+#ifdef PELE_USE_NLTE
+    amrex::Array4<const amrex::Real> const& temperature_e,
+#endif
     amrex::Array4<const amrex::Real> const& rhoE,
     amrex::Array4<const amrex::Real> const& frcEExt,
     amrex::Real* y_vect,
@@ -564,7 +573,11 @@ public:
         (k - lo.z) * len.x * len.y + (j - lo.y) * len.x + (i - lo.x);
       box_flatten<OrderType>(
         icell, i, j, k, ncells, reactor_type, clean_init_massfrac, rhoY, frcExt,
-        temperature, rhoE, frcEExt, y_vect, src_vect, vect_energy,
+        temperature,
+#ifdef PELE_USE_NLTE
+        temperature_e,
+#endif
+        rhoE, frcEExt, y_vect, src_vect, vect_energy,
         src_vect_energy);
     });
   }
@@ -576,6 +589,9 @@ public:
     const bool clean_init_massfrac,
     amrex::Array4<amrex::Real> const& rhoY,
     amrex::Array4<amrex::Real> const& temperature,
+#ifdef PELE_USE_NLTE
+    amrex::Array4<amrex::Real> const& temperature_e,
+#endif
     amrex::Array4<amrex::Real> const& rhoE,
     amrex::Array4<amrex::Real> const& frcEExt,
     amrex::Array4<amrex::Real> const& FC_in,
@@ -592,7 +608,11 @@ public:
         (k - lo.z) * len.x * len.y + (j - lo.y) * len.x + (i - lo.x);
       box_unflatten<OrderType>(
         icell, i, j, k, ncells, reactor_type, clean_init_massfrac, rhoY,
-        temperature, rhoE, frcEExt, FC_in, y_vect, vect_energy, FCunt[icell],
+        temperature, 
+#ifdef PELE_USE_NLTE
+        temperature_e,
+#endif
+        rhoE, frcEExt, FC_in, y_vect, vect_energy, FCunt[icell],
         dt);
     });
   }

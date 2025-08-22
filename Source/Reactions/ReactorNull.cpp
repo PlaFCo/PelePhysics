@@ -20,6 +20,9 @@ ReactorNull::react(
   amrex::Array4<amrex::Real> const& rY_in,
   amrex::Array4<amrex::Real> const& rYsrc_in,
   amrex::Array4<amrex::Real> const& T_in,
+#ifdef PELE_USE_NLTE
+  amrex::Array4<amrex::Real> const& Te_in,
+#endif
   amrex::Array4<amrex::Real> const& rEner_in,
   amrex::Array4<amrex::Real> const& rEner_src_in,
   amrex::Array4<amrex::Real> const& FC_in,
