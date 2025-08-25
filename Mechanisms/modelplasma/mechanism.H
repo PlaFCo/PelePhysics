@@ -158,8 +158,8 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 cv_R(amrex::Real* species, const amrex::Real* T)
 {
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
 
   // species with no change across T
   // species 2: E
@@ -188,8 +188,8 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 cp_R(amrex::Real* species, const amrex::Real* T)
 {
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
 
   // species with no change across T
   // species 2: E
@@ -218,8 +218,8 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 gibbs(amrex::Real* species, const amrex::Real* T)
 {
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
   const amrex::Real invT = 1.0 / T[0];
   const amrex::Real logT = log(T[0]);
 
@@ -259,8 +259,8 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 helmholtz(amrex::Real* species, const amrex::Real* T)
 {
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
   const amrex::Real invT = 1.0 / T[0];
   const amrex::Real logT = log(T[0]);
 
@@ -299,8 +299,8 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 speciesInternalEnergy(amrex::Real* species, const amrex::Real* T)
 {
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
   const amrex::Real invT = 1.0 / T[0];
 
   // species with no change across T
@@ -334,8 +334,8 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 speciesEnthalpy(amrex::Real* species, const amrex::Real* T)
 {
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
   const amrex::Real invT = 1.0 / T[0];
 
   // species with no change across T
@@ -369,8 +369,8 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 speciesEntropy(amrex::Real* species, const amrex::Real* T)
 {
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
   const amrex::Real logT = log(T[0]);
 
   // species with no change across T
@@ -404,7 +404,7 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
 dcvpRdT(amrex::Real* species, const amrex::Real* T)
 {
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
 
   // species with no change across T
   // species 2: E
@@ -452,8 +452,8 @@ CKCPBS(const amrex::Real T[NUM_TEMP], const amrex::Real y[], amrex::Real& cpbs)
 
   // compute Cp/R at the given temperature
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
 
   // species with no change across T
   // species 2: E
@@ -510,8 +510,8 @@ CKCVBS(const amrex::Real T[NUM_TEMP], const amrex::Real y[], amrex::Real& cvbs)
   amrex::Real result = 0.0;
   // compute Cv/R at the given temperature
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
 
   // species with no change across T
   // species 2: E
@@ -568,14 +568,19 @@ CKHBMS(const amrex::Real T[NUM_TEMP], const amrex::Real y[], amrex::Real& hbms)
 {
   amrex::Real result = 0.0;
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
   const amrex::Real invT = 1.0 / T[0];
+
+  const amrex::Real Te2 = T[1] * T[1];
+  const amrex::Real Te3 = T[1] * Te2;
+  const amrex::Real Te4 = T[1] * Te3;
+  const amrex::Real invTe = 1.0 / T[1];
 
   // species with no change across T
   // species 2: E
   result +=
-    y[2] * (+2.50000000e+00 - 7.45375000e+02 * invT) * 1822.8884868472639482;
+    y[2] * (+2.50000000e+00 - 7.45375000e+02 * invTe) * 1822.8884868472639482;
 
   // species with midpoint at T=1000 kelvin
   if (T[0] < 1000) {
@@ -634,8 +639,8 @@ CKUBMS(const amrex::Real T[NUM_TEMP], const amrex::Real y[], amrex::Real& ubms)
 {
   amrex::Real result = 0.0;
   const amrex::Real T2 = T[0] * T[0];
-  const amrex::Real T3 = T[0] * T[0] * T[0];
-  const amrex::Real T4 = T[0] * T[0] * T[0] * T[0];
+  const amrex::Real T3 = T[0] * T2;
+  const amrex::Real T4 = T[0] * T3;
   const amrex::Real invT = 1.0 / T[0];
 
   // species with no change across T
@@ -746,8 +751,8 @@ GET_T_GIVEN_EY(
   const int maxiter = 200;
   const amrex::Real tol = 1.e-6;
 #endif
-  amrex::Real tmin[NUM_TEMP] = {300.0};  // max lower bound for thermo def
-  amrex::Real tmax[NUM_TEMP] = {5000.0}; // min upper bound for thermo def
+  amrex::Real tmin = 300.0;  // max lower bound for thermo def
+  amrex::Real tmax = 5000.0; // min upper bound for thermo def
   amrex::Real t1[NUM_TEMP];
   amrex::Real e1, emin, emax, cv, dt;
   CKUBMS(tmin, y, emin);
@@ -802,8 +807,8 @@ GET_T_GIVEN_HY(
   const int maxiter = 200;
   const amrex::Real tol = 1.e-6;
 #endif
-  amrex::Real tmin[NUM_TEMP] = {300.0};  // max lower bound for thermo def
-  amrex::Real tmax[NUM_TEMP] = {5000.0}; // min upper bound for thermo def
+  amrex::Real tmin = 300.0;  // max lower bound for thermo def
+  amrex::Real tmax = 5000.0; // min upper bound for thermo def
   amrex::Real t1[NUM_TEMP];
   amrex::Real h1, hmin, hmax, cp, dt;
   CKHBMS(tmin, y, hmin);
@@ -2230,34 +2235,22 @@ egtransetCOFD(amrex::Real* COFD)
   COFD[5] = 2.91297621E+00;
   COFD[6] = -1.61544771E-01;
   COFD[7] = 6.90271324E-03;
-  COFD[8] = -2.41515325E+01;
-  COFD[9] = 5.28689054E+00;
-  COFD[10] = -4.42932076E-01;
-  COFD[11] = 1.80445515E-02;
-  COFD[12] = -1.42056728E+01;
-  COFD[13] = 2.91297621E+00;
-  COFD[14] = -1.61544771E-01;
-  COFD[15] = 6.90271324E-03;
-  COFD[16] = -1.42056679E+01;
-  COFD[17] = 2.91297621E+00;
-  COFD[18] = -1.61544771E-01;
-  COFD[19] = 6.90271324E-03;
-  COFD[20] = -2.41515325E+01;
-  COFD[21] = 5.28689054E+00;
-  COFD[22] = -4.42932076E-01;
-  COFD[23] = 1.80445515E-02;
-  COFD[24] = -2.41515325E+01;
-  COFD[25] = 5.28689054E+00;
-  COFD[26] = -4.42932076E-01;
-  COFD[27] = 1.80445515E-02;
-  COFD[28] = -2.41515325E+01;
-  COFD[29] = 5.28689054E+00;
-  COFD[30] = -4.42932076E-01;
-  COFD[31] = 1.80445515E-02;
-  COFD[32] = -1.82216979E+01;
-  COFD[33] = 1.68992430E+00;
-  COFD[34] = 1.09701574E-01;
-  COFD[35] = -8.81888811E-03;
+  COFD[8] = -1.42056679E+01;
+  COFD[9] = 2.91297621E+00;
+  COFD[10] = -1.61544771E-01;
+  COFD[11] = 6.90271324E-03;
+  COFD[12] = -2.41515325E+01;
+  COFD[13] = 5.28689054E+00;
+  COFD[14] = -4.42932076E-01;
+  COFD[15] = 1.80445515E-02;
+  COFD[16] = -2.41515325E+01;
+  COFD[17] = 5.28689054E+00;
+  COFD[18] = -4.42932076E-01;
+  COFD[19] = 1.80445515E-02;
+  COFD[20] = -1.82216979E+01;
+  COFD[21] = 1.68992430E+00;
+  COFD[22] = 1.09701574E-01;
+  COFD[23] = -8.81888811E-03;
 }
 
 // List of specs with small weight, dim NLITE

@@ -269,6 +269,7 @@ def generate_thermo_routine(
     qss_flag,
     syms=None,
     inline=False,
+    isnlte=False
 ):
     """Write a thermodynamics routine."""
     if not inline:
@@ -310,6 +311,21 @@ def generate_thermo_routine(
     if variables["log_temp"]:
         cw.writer(fstream, "const amrex::Real logT = log(T[0]);")
     cw.writer(fstream)
+
+    if isnlte:
+        cw.writer(fstream, "const amrex::Real Te2 = T[1]*T[1];")
+        cw.writer(fstream, "const amrex::Real Te3 = T[1]*Te2;")
+        if variables["T4"]:
+            cw.writer(fstream, "const amrex::Real Te4 = T[1]*Te3;")
+        if variables["inv_temp"]:
+            cw.writer(fstream, "const amrex::Real invTe = 1.0 / T[1];")
+        if variables["inv_temp2"]:
+            cw.writer(fstream, "const amrex::Real invTe2 = invTe*invTe;")
+        if variables["inv_temp3"]:
+            cw.writer(fstream, "const amrex::Real invTe3 = invTe*invTe*invTe;")
+        if variables["log_temp"]:
+            cw.writer(fstream, "const amrex::Real logTe = log(T[1]);")
+        cw.writer(fstream)
 
     intervals = sorted([x["interval"] for x in models])
     intervals = list(intervals for intervals, _ in itertools.groupby(intervals))
@@ -379,18 +395,32 @@ def generate_thermo_routine(
                     fstream,
                     (f"result += y[{index}] * (" if inline else f"species[{index}] ="),
                 )
-                if syms:
-                    models_smp = (
-                        syms.models_smp_tmp if not qss_flag else syms.models_qss_smp_tmp
-                    )
-                    model_smp = [
-                        x for x in models_smp if x["species"].name == species.name
-                    ][0]
-                    model_smp[name][k] = expression_generator(
-                        fstream, model["coefficients"][k], syms
-                    )
+                if isnlte and species.name == "E" and name in ["speciesEnthalpy", "speciesEnthalpy_qss"]:
+                    if syms:
+                        models_smp = (
+                            syms.models_smp_tmp if not qss_flag else syms.models_qss_smp_tmp
+                        )
+                        model_smp = [
+                            x for x in models_smp if x["species"].name == species.name
+                        ][0]
+                        model_smp[name][k] = expression_generator(
+                            fstream, model["coefficients"][k], syms, eNnlte=True
+                        )
+                    else:
+                        expression_generator(fstream, model["coefficients"][k], eNnlte=True)
                 else:
-                    expression_generator(fstream, model["coefficients"][k])
+                    if syms:
+                        models_smp = (
+                            syms.models_smp_tmp if not qss_flag else syms.models_qss_smp_tmp
+                        )
+                        model_smp = [
+                            x for x in models_smp if x["species"].name == species.name
+                        ][0]
+                        model_smp[name][k] = expression_generator(
+                            fstream, model["coefficients"][k], syms
+                        )
+                    else:
+                        expression_generator(fstream, model["coefficients"][k])
                 if inline:
                     spec_idx = species_info.ordered_idx_map[species.name]
                     sp = species_info.nonqssa_species[spec_idx]
@@ -646,16 +676,26 @@ def internal_energy_nasa7(fstream, parameters, syms=None):
         )
 
 
-def enthalpy_nasa7(fstream, parameters, syms=None):
+def enthalpy_nasa7(fstream, parameters, syms=None, eNnlte=False):
     """Write NASA7 polynomial for enthalpy."""
-    expression = (
-        param2str(parameters[0], "")
-        + param2str(parameters[1] / 2, "* T[0]")
-        + param2str(parameters[2] / 3, "* T2")
-        + param2str(parameters[3] / 4, "* T3")
-        + param2str(parameters[4] / 5, "* T4")
-        + param2str(parameters[5], "* invT")
-    )
+    if eNnlte:
+      expression = (
+            param2str(parameters[0], "")
+            + param2str(parameters[1] / 2, "* T[1]")
+            + param2str(parameters[2] / 3, "* Te2")
+            + param2str(parameters[3] / 4, "* Te3")
+            + param2str(parameters[4] / 5, "* Te4")
+            + param2str(parameters[5], "* invTe")
+        )
+    else:
+        expression = (
+            param2str(parameters[0], "")
+            + param2str(parameters[1] / 2, "* T[0]")
+            + param2str(parameters[2] / 3, "* T2")
+            + param2str(parameters[3] / 4, "* T3")
+            + param2str(parameters[4] / 5, "* T4")
+            + param2str(parameters[5], "* invT")
+        )
     cw.writer(fstream, expression if expression else "0.0")
 
     if syms:
@@ -845,18 +885,30 @@ def internal_energy_nasa9(fstream, parameters, syms=None):
         )
 
 
-def enthalpy_nasa9(fstream, parameters, syms=None):
+def enthalpy_nasa9(fstream, parameters, syms=None, eNnlte=False):
     """Write NASA9 polynomial for enthalpy."""
-    expression = (
-        param2str(-parameters[0], "* invT2")
-        + param2str(parameters[1], "* logT * invT")
-        + param2str(parameters[2])
-        + param2str(parameters[3] / 2, "* T[0]")
-        + param2str(parameters[4] / 3, "* T2")
-        + param2str(parameters[5] / 4, "* T3")
-        + param2str(parameters[6] / 5, "* T4")
-        + param2str(parameters[7], "* invT")
-    )
+    if eNnlte:
+      expression = (
+            param2str(-parameters[0], "* invTe2")
+            + param2str(parameters[1], "* logTe * invTe")
+            + param2str(parameters[2])
+            + param2str(parameters[3] / 2, "* T[1]")
+            + param2str(parameters[4] / 3, "* Te2")
+            + param2str(parameters[5] / 4, "* Te3")
+            + param2str(parameters[6] / 5, "* Te4")
+            + param2str(parameters[7], "* invTe")
+        )
+    else:
+        expression = (
+            param2str(-parameters[0], "* invT2")
+            + param2str(parameters[1], "* logT * invT")
+            + param2str(parameters[2])
+            + param2str(parameters[3] / 2, "* T[0]")
+            + param2str(parameters[4] / 3, "* T2")
+            + param2str(parameters[5] / 4, "* T3")
+            + param2str(parameters[6] / 5, "* T4")
+            + param2str(parameters[7], "* invT")
+        )
     cw.writer(fstream, expression if expression else "0.0")
 
     if syms:

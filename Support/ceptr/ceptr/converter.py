@@ -317,7 +317,11 @@ class Converter:
             cck.ckcvbl(hdr, self.mechanism, self.species_info)
             cck.ckcvbs(hdr, self.mechanism, self.species_info)
             cck.ckhbml(hdr, self.mechanism, self.species_info)
-            cck.ckhbms(hdr, self.mechanism, self.species_info)
+            if self.nlte > 0:
+                isnlte = True
+            else:
+                isnlte = False
+            cck.ckhbms(hdr, self.mechanism, self.species_info, isnlte)
             cck.ckubml(hdr, self.mechanism, self.species_info)
             cck.ckubms(hdr, self.mechanism, self.species_info)
             cck.cksbml(hdr, self.mechanism, self.species_info)

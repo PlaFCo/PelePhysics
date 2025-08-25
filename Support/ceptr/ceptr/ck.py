@@ -363,7 +363,7 @@ def ckhbml(fstream, mechanism, species_info):
     cw.writer(fstream, "}")
 
 
-def ckhbms(fstream, mechanism, species_info):
+def ckhbms(fstream, mechanism, species_info, nlte=False):
     """Write ckhbms."""
     cw.writer(fstream)
     cw.writer(fstream, cw.comment("Returns mean enthalpy of mixture in mass units"))
@@ -386,6 +386,7 @@ def ckhbms(fstream, mechanism, species_info):
         0,
         None,
         True,
+        isnlte=nlte
     )
     cw.writer(fstream)
 
