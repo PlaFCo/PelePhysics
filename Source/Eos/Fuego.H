@@ -98,13 +98,13 @@ struct Fuego
     const amrex::Real /*R*/,
     const amrex::Real T[NUM_TEMP],
     const amrex::Real Y[NUM_SPECIES],
-    amrex::Real& Cpe,
-    amrex::Real& Cpt)
+    amrex::Real& Cpte,
+    amrex::Real& Cpth)
   {
-    amrex::Real Cp;
-    TY2Cp(T, Y, Cp);
-    TY2Cpe(T, Y, Cpe);
-    Cpt = Cp - Cpe;
+    amrex::Real Cpmix;
+    TY2Cp(T, Y, Cpmix);
+    TY2Cpe(T, Y, Cpte);
+    Cpth = Cpmix - Cpte; // heavy species heat capacity Cpmix = sum Cpi Yi = Cpe * Ye + sum_{i\neq e} Yi Cp_i = Cpte + Cpth
   }
   AMREX_GPU_HOST_DEVICE
   AMREX_FORCE_INLINE

@@ -689,11 +689,13 @@ fKernelSpec(
     rhoesrc * (rho_pt_inv / Cv_pt);
   
 #ifdef PELE_USE_NLTE
+  // recalculate energy source affecting only the gas temperature 
+  // calculate energy source affecting only the electron temperature
   amrex::Real Cvt_pt = 1.0;
   amrex::Real Cve_pt = 1.0;
-  amrex::Real rhoeelesrc = rhoeelesrc_ext[icell];
-  amrex::Real rhoelecollesrc = 0.0;
+  amrex::Real rhoeelesrc = 0.0;
   amrex::Real rhoelereactrc = 0.0;
+  amrex::Real rhoelecollesrc = 0.0;
   if (reactor_type != ReactorTypes::hlfa_reactor_type) {
     amrex::Abort("Wrong reactor type. Choose 3 (hlfa).");
   }
@@ -701,26 +703,33 @@ fKernelSpec(
   eos.RTY2Cpe(rho_pt, temp.arr, massfrac.arr, Cve_pt, Cvt_pt);
   eos.RTY2WDOTe(rho_pt, temp.arr, massfrac.arr, cdotsTe_pt.arr);
   eos.RTY2EleColl(rho_pt, temp.arr, massfrac.arr, rhoelecollesrc);
-  // amrex::Real rhoeleesrc = 0.0;
+
+  // add power input and piecewise constant contributions from transport  
+  rhoeelesrc = rhoeelesrc_ext[icell];
+
+  // remove power input from rhoesrc_ext since the power is deposited only to the electrons
+  // (we remove it locally because locally we want to track the change of Th only, we want to keep it in
+  // rhoesrc_ext because during unflatten we want to update the total enthalpy which includes the power input)
+  rhoesrc -= rhoeelesrc;
+  
+  // add contribution from e-impact reactions
   for (int n = 0; n < NUM_SPECIES; n++) {
     const amrex::Real cdotTe_rYs =
       cdotsTe_pt[n] + rYs[spec_index<OrderType>(n, icell, ncells)];
     rhoelereactrc -= cdotTe_rYs * ei_pt[n];
   }
-  rhoesrc -= rhoelereactrc; //remove contribution from e-impact reactions
+  rhoesrc -= rhoelereactrc; //remove contribution from e-impact reactions change of Th only includes not e-impact reactions
   rhoeelesrc += rhoelereactrc; //add contribution from e-impact reactions
 
   // add collisional energy exchange
   rhoesrc -= rhoelecollesrc; //add collisional energy exchange (here source if Te>T)
   rhoeelesrc += rhoelecollesrc; //add collisional energy exchange (here sink if Te>T)
   
-  // rhoesrc_ext is the power input
-  rhoesrc -=  rhoesrc_ext[icell]; //remove external energy source effect on Th (rhoesrc_ext is also the power input since it increases the total enthalpy)
-  // rhoeelesrc +=  rhoesrc_ext[icell]; //external energy source only added to electrons
-  
+  // calculate heavy species temperature change
   ydot_d[vec_index<OrderType>(NUM_SPECIES, icell, ncells)] =
   rhoesrc * (rho_pt_inv / Cvt_pt); //calculate gas temperature source term
 
+  // calculate electron temperature change
   ydot_d[vec_index<OrderType>(NUM_SPECIES + 1, icell, ncells)] = 
   rhoeelesrc * (rho_pt_inv / Cve_pt); // calculate electron temperature source term
 #endif
