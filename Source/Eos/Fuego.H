@@ -498,6 +498,9 @@ struct Fuego
     for (int n = 0; n < NUM_SPECIES; n++) {
       H += Y[n] * hi[n];
     }
+  #ifdef PELE_USE_NLTE
+    H -= Y[E_ID] * hi[E_ID]; // remove electron enthalpy since this H is for heavy species only
+  #endif
   }
 
   AMREX_GPU_HOST_DEVICE
