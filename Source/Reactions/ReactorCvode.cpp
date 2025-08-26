@@ -1363,7 +1363,7 @@ ReactorCvode::react(
   amrex::Array4<amrex::Real> const& rYsrc_in,
   amrex::Array4<amrex::Real> const& T_in,
 #ifdef PELE_USE_NLTE
-  amrex::Array4<amrex::Real> const& Te_in,
+  amrex::Array4<amrex::Real> const& rhohTe_in,
 #endif
   amrex::Array4<amrex::Real> const& rEner_in,
   amrex::Array4<amrex::Real> const& rEner_src_in,
@@ -1430,7 +1430,7 @@ ReactorCvode::react(
   flatten(
     box, ncells, rY_in, rYsrc_in, T_in,
 #ifdef PELE_USE_NLTE
-    Te_in,
+    rhohte_in,
 #endif
     rEner_in, rEner_src_in, yvec_d,
     udata->rYsrc_ext, udata->rhoe_init, udata->rhoesrc_ext);
@@ -1474,7 +1474,7 @@ ReactorCvode::react(
   unflatten(
     box, ncells, rY_in, T_in, 
 #ifdef PELE_USE_NLTE
-    Te_in,
+    rhohte_in,
 #endif
     rEner_in, rEner_src_in, FC_in, yvec_d,
     udata->rhoe_init, d_nfe, dt_react);
@@ -1519,7 +1519,7 @@ ReactorCvode::react(
           icell, i, j, k, ncells, captured_reactor_type,
           captured_clean_init_massfrac, rY_in, rYsrc_in, T_in,
 #ifdef PELE_USE_NLTE
-          Te_in,
+          rhohte_in,
 #endif
           rEner_in,
           rEner_src_in, yvec_d, udata->rYsrc_ext, udata->rhoe_init,
@@ -1554,7 +1554,7 @@ ReactorCvode::react(
           icell, i, j, k, ncells, captured_reactor_type,
           captured_clean_init_massfrac, rY_in, T_in, 
 #ifdef PELE_USE_NLTE
-          Te_in,
+          rhohte_in,
 #endif
           rEner_in, rEner_src_in,
           FC_in, yvec_d, udata->rhoe_init, nfe_tot, dt_react);
