@@ -303,6 +303,42 @@ struct SimpleTransport
     amrex::Real& lam,
     TransParm<EosType, transport_type> const* tparm)
   {
+    transport(
+      wtr_get_xi,
+      wtr_get_mu,
+      wtr_get_lam,
+      wtr_get_Ddiag,
+      wtr_get_chi,
+      Tloc,
+      rholoc,
+      Yloc,
+      Ddiag,
+      chi_mix,
+      mu,
+      xi,
+      lam,
+      tparm,
+      false);
+  }
+
+  AMREX_GPU_HOST_DEVICE
+  AMREX_FORCE_INLINE static void transport(
+    const bool wtr_get_xi,
+    const bool wtr_get_mu,
+    const bool wtr_get_lam,
+    const bool wtr_get_Ddiag,
+    const bool wtr_get_chi,
+    const amrex::Real Tloc,
+    const amrex::Real rholoc,
+    amrex::Real* Yloc,
+    amrex::Real* Ddiag,
+    amrex::Real* chi_mix,
+    amrex::Real& mu,
+    amrex::Real& xi,
+    amrex::Real& lam,
+    TransParm<EosType, transport_type> const* tparm,
+    const bool ignore_electrons)
+  {
     amrex::Real trace = 1.e-15;
     amrex::Real Xloc[NUM_SPECIES] = {0.0};
     amrex::Real muloc[NUM_SPECIES] = {0.0};
@@ -364,10 +400,15 @@ struct SimpleTransport
     if (wtr_get_lam) {
       amrex::Real lamloc[NUM_SPECIES] = {0.0};
       for (int i = 0; i < NUM_SPECIES; ++i) {
+
         lamloc[i] = tparm->fitlam[4 * i] + tparm->fitlam[1 + 4 * i] * logT[0] +
                     tparm->fitlam[2 + 4 * i] * logT[1] +
                     tparm->fitlam[3 + 4 * i] * logT[2];
         lamloc[i] = std::exp(lamloc[i]);
+      }
+
+      if(ignore_electrons) { // NLTE: ignore electrons in thermal conductivity
+          lamloc[E_ID] = 0.0;
       }
 
       lam = 0.0;
