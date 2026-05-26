@@ -1,0 +1,257 @@
+description: |-
+  Test mechanism based on "Chemical Kinetics of Methane Pyrolysis in Microwave
+  Plasma at Atmospheric Pressure".
+  Species NASA7 polynomials reference: https://respecth.elte.hu/burcat.php
+  Transport data: https://ignis.usc.edu:80/Mechanisms/USC-Mech%20II/USC_Mech%20II.htm
+units: {length: cm, time: s, quantity: mol, activation-energy: kJ/kmol}
+
+phases:
+- name: gas
+  thermo: ideal-gas
+  elements: [Ar, H, C]
+  species: [Ar, H2, H, CH3, CH4, C2H,
+            C2H2, C2H3, C2H4, C2H5, C2H6, C6H6]
+  kinetics: gas
+  transport: mixture-averaged
+  state: {T: 300.0, P: 1 atm}
+  explicit-third-body-duplicates: mark-duplicate
+
+species:
+- name: Ar
+  composition: {Ar: 1}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [2.50000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+       0.00000000e+00, -7.45375000e+02, 4.37967491e+00]
+    - [2.50000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+       0.00000000e+00, -7.45375000e+02, 4.37967491e+00]
+  transport:
+    model: gas
+    geometry: atom
+    well-depth: 136.5
+    diameter: 3.33
+    dipole: 0.0
+    polarizability: 0.0
+    rotational-relaxation: 0.0 
+
+- name: H
+  composition: {H: 1}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [2.50000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+       2.54736600e+04, -4.46682850e-01]
+    - [2.50000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+       2.54736600e+04, -4.46682850e-01]
+  transport:
+    model: gas
+    geometry: atom
+    well-depth: 145.0
+    diameter: 2.05
+
+- name: H2 #Hydrogen
+  composition: {H: 2}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [3.50207268e+00, 8.65475654e-05, -2.63683344e-07, 3.37306621e-10, -2.92359706e-14,
+       -1.04631279e+03, -4.25875759e+00]
+    - [2.98711895e+00, 7.36069465e-04, -9.00982609e-08, -7.41224720e-13, 6.58618037e-16,
+       -8.35448659e+02, -1.33268877e+00]
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 38.0
+    diameter: 2.92
+    polarizability: 0.79
+    rotational-relaxation: 280.0
+
+- name: CH3 #Methyl
+  composition: {C: 1, H: 3}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [3.65717970e+00, 2.12659790e-03, 5.45838830e-06, -6.61810030e-09, 2.46570740e-12,
+       1.64227160e+04, 1.67353540e+00]
+    - [2.97812060e+00, 5.79785200e-03, -1.97558000e-06, 3.07297900e-10, -1.79174160e-14,
+       1.65095130e+04, 4.72247990e+00]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 144.0
+    diameter: 3.8
+
+- name: CH4 #Methane
+  composition: {C: 1, H: 4}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [5.14825732e+00, -1.37002410e-02, 4.93749414e-05, -4.91952339e-08, 1.70097299e-11,
+       -1.02453222e+04, -4.63322726e+00]
+    - [1.91178600e+00, 9.60267960e-03, -3.38387841e-06, 5.38797240e-10, -3.19306807e-14,
+       -1.00992136e+04, 8.48241861e+00]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 141.4
+    diameter: 3.746
+    polarizability: 2.6
+    rotational-relaxation: 13.0
+
+- name: C2H #Ethynyl
+  composition: {C: 2, H: 1}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [2.89867676e+00, 1.32988489e-02, -2.80733327e-05, 2.89484755e-08, -1.07502351e-11,
+       6.70616050e+04, 6.18547632e+00]
+    - [3.66270248e+00, 3.82492252e-03, -1.36632500e-06, 2.13455040e-10, -1.23216848e-14,
+       6.71683790e+04, 3.92205792e+00]
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 209.0
+    diameter: 4.1
+    rotational-relaxation: 2.5
+
+- name: C2H2 #Acetylene
+  composition: {C: 2, H: 2}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [8.08679682e-01, 2.33615762e-02, -3.55172234e-05, 2.80152958e-08, -8.50075165e-12,
+       2.64289808e+04, 1.39396761e+01]
+    - [4.65878489e+00, 4.88396667e-03, -1.60828888e-06, 2.46974544e-10, -1.38605959e-14,
+       2.57594042e+04, -3.99838194e+00]
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 209.0
+    diameter: 4.1
+    rotational-relaxation: 2.5
+
+- name: C2H3 #Vinyl radical
+  composition: {C: 2, H: 3}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [3.36377642e+00, 2.65765722e-04, 2.79620704e-05, -3.72986942e-08, 1.51590176e-11,
+       3.44749589e+04, 7.91510092e+00]
+    - [4.15026763e+00, 7.54021341e-03, -2.62997847e-06, 4.15974048e-10, -2.45407509e-14,
+       3.38566380e+04, 1.72812235e+00]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 209.0
+    diameter: 4.1
+    rotational-relaxation: 1.0
+
+- name: C2H4 #Ethylene
+  composition: {C: 2, H: 4}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [3.95920063e+00, -7.57051373e-03, 5.70989993e-05, -6.91588352e-08, 2.69884190e-11,
+       5.08977598e+03, 4.09730213e+00]
+    - [3.99182724e+00, 1.04833908e-02, -3.71721342e-06, 5.94628366e-10, -3.53630386e-14,
+       4.26865851e+03, -2.69081762e-01]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 280.8
+    diameter: 3.971
+    rotational-relaxation: 1.5
+
+- name: C2H5 #Ethyl radical
+  composition: {C: 2, H: 5}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [4.24185905e+00, -3.56905235e-03, 4.82667202e-05, -5.85401009e-08, 2.25804514e-11,
+       1.29690344e+04, 4.44703782e+00]
+    - [4.32195633e+00, 1.23930542e-02, -4.39680960e-06, 7.03519917e-10, -4.18435239e-14,
+       1.21759475e+04, 1.71103809e-01]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 252.3
+    diameter: 4.302
+    rotational-relaxation: 1.5
+
+- name: C2H6 #Ethane
+  composition: {C: 2, H: 6}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [4.29142572e+00, -5.50154901e-03, 5.99438458e-05, -7.08466469e-08, 2.68685836e-11,
+       -1.15222056e+04, 2.66678994e+00]
+    - [4.04666411e+00, 1.53538802e-02, -5.47039485e-06, 8.77826544e-10, -5.23167531e-14,
+       -1.24473499e+04, -9.68698313e-01]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 252.3
+    diameter: 4.302
+    rotational-relaxation: 1.5
+
+- name: C6H6 #Benzene
+  composition: {C: 6, H: 6}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 6000.0]
+    data:
+    - [5.04818632E-01, 1.85020642E-02, 7.38345881E-05, -1.18135741E-07, 5.07210429E-11,
+       8.55247913E+03, 2.16412893E+01]
+    - [1.10809576E+01, 2.07176746E-02, -7.52145991E-06, 1.22320984E-09, -7.36091279E-14,
+       4.30641035E+03, -4.00413310E+01]
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 464.8
+    diameter: 5.29
+    dipole: 0.0
+    polarizability: 10.32
+    rotational-relaxation: 0.0
+
+reactions:
+- equation: CH3 + H <=> CH4  # R1
+  rate-constant: {A: 3.674e23, b: -2.713, Ea: 1.913e2}
+
+- equation: CH4 + H <=> CH3 + H2  # R2
+  rate-constant: {A: 9.439e8, b: 1.409, Ea: 3.307e4}
+
+- equation: CH3 + CH3 <=> C2H6  # R3
+  rate-constant: {A: 6.028e18, b: 0.1215, Ea: 1.891e4}
+
+- equation: CH3 + CH3 <=> C2H5 + H  # R4
+  rate-constant: {A: 8.752e14, b: -0.9293, Ea: 4.356e2}
+
+- equation: C2H6 + H <=> C2H5 + H2  # R5
+  rate-constant: {A: 1.265e8, b: 2.281, Ea: 4.812e4}
+
+- equation: C2H4 + H <=> C2H5  # R6
+  rate-constant: {A: 7.315e14, b: -0.6492, Ea: 1.100e2}
+
+- equation: C2H4 + H <=> C2H3 + H2  # R7
+  rate-constant: {A: 2.464e7, b: 1.851, Ea: 1.559e4}
+
+- equation: C2H2 + H <=> C2H + H2  # R8
+  rate-constant: {A: 3.207e15, b: -0.09410, Ea: 2.458e5}
+
+- equation: C2H2 + H <=> C2H3  # R9
+  rate-constant: {A: 8.633e13, b: -0.2163, Ea: 1.099e4}
+
+- equation: 3 C2H2 <=> C6H6  # R10
+  rate-constant: {A: 7.581e10, b: -0.001516, Ea: 2.414e1}
