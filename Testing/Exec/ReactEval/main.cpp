@@ -510,7 +510,7 @@ main(int argc, char* argv[])
           int tmp_fc;
           if (omp_thread == 0) {
             amrex::Print() << "  [" << lev << "]"
-                           << " integrating " << nc << " cells \n";
+                           << " integrating " << nc << " cells \n\n";
           }
           /* Solve */
           BL_PROFILE_VAR_START(ReactInLoop);
@@ -522,6 +522,15 @@ main(int argc, char* argv[])
               amrex::Gpu::gpuStream()
 #endif
             );
+            if (omp_thread == 0) {
+              amrex::Print() << -1*time << " " <<  T(0, 0, 0) 
+                                        << " " <<  1000*rhoY(0, 0, 0, CH4_ID) 
+                                        << " " <<  1000*rhoY(0, 0, 0, H2_ID) 
+                                        << " " <<  1000*rhoY(0, 0, 0, C2H2_ID) 
+                                        << " " <<  1000*rhoY(0, 0, 0, C2H4_ID) 
+                                        << " " <<  1000*rhoY(0, 0, 0, C2H6_ID) 
+                                        <<   "\n";
+            }
             dt_incr = dt_lev / ndt;
             amrex::Gpu::Device::streamSynchronize();
           }
@@ -690,7 +699,7 @@ main(int argc, char* argv[])
     // TODO multilevel max.
     {
       amrex::Vector<double> typ_vals(NUM_SPECIES + 1);
-      amrex::Print() << "ode.typ_vals= ";
+      amrex::Print() << "\n\n ode.typ_vals= ";
       for (int i = 0; i < NUM_SPECIES + 1; ++i) {
         amrex::Print() << amrex::max<amrex::Real>(1.e-10, mf[0].max(i)) << " ";
       }
