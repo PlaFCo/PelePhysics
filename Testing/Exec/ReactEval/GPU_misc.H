@@ -26,7 +26,7 @@ initialize_data(
   const amrex::Real* phi = geomdata.ProbHi();
   const amrex::Real* dx = geomdata.CellSize();
 
-  amrex::Real Temp_lo = 2000.0;
+  amrex::Real Temp_lo = 1800.0;
   amrex::Real Temp_hi = 2500.0;
   amrex::Real dTemp = 100.0;
   amrex::Real pressure = 1013250.0;
@@ -50,9 +50,7 @@ initialize_data(
   for (int n = 0; n < NUM_SPECIES; n++) {
     X[n] = 0.0;
   }
-  X[O2_ID] = 0.2;
-  X[fuel_id] = 0.1;
-  X[N2_ID] = 0.7;
+  X[fuel_id] = 1.0;
 
   auto eos = pele::physics::PhysicsType::eos();
 
