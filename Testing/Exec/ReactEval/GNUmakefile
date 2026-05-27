@@ -25,7 +25,7 @@ PELE_USE_MAGMA = FALSE
 DEFINES  += -DMOD_REACTOR
 
 Eos_Model       = Fuego
-Chemistry_Model = drm19
+Chemistry_Model = grimech30
 Transport_Model = Simple
 
 Bpack   := ./Make.package
