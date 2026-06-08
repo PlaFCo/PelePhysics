@@ -869,9 +869,9 @@ reactions:
 - equation: C2H + C2H <=> C2H2 + C2  #R84
   rate-constant: {A: 1.81e+12, b: 0.0, Ea: 0.0}
 
-- equation: C2H2 + M <=> C2 + H2 + M  #R85
-  type: three-body
-  rate-constant: {A: 4.57e+07, b: 0.0, Ea: 17.20}
+ - equation: C2H2 + M <=> C2 + H2 + M  #R85
+   type: three-body
+   rate-constant: {A: 4.57e+07, b: 0.0, Ea: 17.20}
 
 - equation: C2H + M <=> C2 + H + M  #R86
   type: three-body
