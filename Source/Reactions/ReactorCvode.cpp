@@ -975,6 +975,10 @@ ReactorCvode::allocUserData(
   udata->mask =
     static_cast<int*>(amrex::The_Arena()->alloc(a_ncells * sizeof(int)));
 
+#ifdef PELE_USE_ELECTRON_ENERGY
+  udata->Te_init = static_cast<amrex::Real*>(
+      amrex::The_Arena()->alloc(a_ncells * sizeof(amrex::Real)));
+#endif
 #ifndef AMREX_USE_GPU
   udata->FCunt =
     static_cast<int*>(amrex::The_Arena()->alloc(a_ncells * sizeof(int)));
@@ -1271,6 +1275,9 @@ ReactorCvode::react(
   amrex::Array4<amrex::Real> const& rY_in,
   amrex::Array4<amrex::Real> const& rYsrc_in,
   amrex::Array4<amrex::Real> const& T_in,
+#ifdef PELE_USE_ELECTRON_ENERGY
+  amrex::Array4<const amrex::Real> const& Te_in,
+#endif
   amrex::Array4<amrex::Real> const& rEner_in,
   amrex::Array4<amrex::Real> const& rEner_src_in,
   amrex::Array4<amrex::Real> const& FC_in,
@@ -1728,6 +1735,10 @@ ReactorCvode::freeUserData(CVODEUserData* data_wk)
   amrex::The_Arena()->free(data_wk->rhoe_init);
   amrex::The_Arena()->free(data_wk->rhoesrc_ext);
   amrex::The_Arena()->free(data_wk->mask);
+
+#ifdef PELE_USE_ELECTRON_ENERGY
+  amrex::The_Arena()->free(data_wk->Te_init);
+#endif
 
 #ifdef AMREX_USE_GPU
 

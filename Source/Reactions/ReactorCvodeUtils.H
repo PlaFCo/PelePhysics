@@ -51,7 +51,9 @@ struct CVODEUserData
   amrex::Real gamma;    // System Chem. jacobian coefficient
   int nbBlocks;         // GPU kernel launch parameter
   int nbThreads;        // GPU kernel launch parameter
-
+#ifdef PELE_USE_ELECTRON_ENERGY
+  amrex::Real* Te_init = nullptr;
+#endif
 #ifdef AMREX_USE_GPU
   // Matrix data
   int* csr_row_count_h;   // Host CSR sparse mat
