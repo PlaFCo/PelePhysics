@@ -1340,6 +1340,22 @@ ReactorCvode::react(
     box, ncells, rY_in, rYsrc_in, T_in, rEner_in, rEner_src_in, yvec_d,
     udata->rYsrc_ext, udata->rhoe_init, udata->rhoesrc_ext);
 
+#ifdef PELE_USE_ELECTRON_ENERGY
+const auto len = amrex::length(box);
+const auto lo = amrex::lbound(box);
+auto* Te_init = udata->Te_init;
+amrex::ParallelFor(
+    box,
+    [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept
+    {
+        const int icell =
+            (k - lo.z) * len.x * len.y +
+            (j - lo.y) * len.x +
+            (i - lo.x);
+        Te_init[icell] = Te_in(i, j, k);
+    });
+#endif
+
 #ifdef AMREX_USE_OMP
   amrex::Gpu::Device::streamSynchronize();
 #endif
@@ -1421,6 +1437,10 @@ ReactorCvode::react(
           captured_clean_init_massfrac, rY_in, rYsrc_in, T_in, rEner_in,
           rEner_src_in, yvec_d, udata->rYsrc_ext, udata->rhoe_init,
           udata->rhoesrc_ext);
+
+#ifdef PELE_USE_ELECTRON_ENERGY
+        udata->Te_init[icell] = Te_in(i, j, k);
+#endif
 
         // ReInit CVODE is faster
         CVodeReInit(cvode_mem, time_start, y);
@@ -1719,9 +1739,16 @@ ReactorCvode::cF_RHS(
   auto* rhoe_init = udata->rhoe_init;
   auto* rhoesrc_ext = udata->rhoesrc_ext;
   auto* rYsrc_ext = udata->rYsrc_ext;
+
   amrex::ParallelFor(ncells, [=] AMREX_GPU_DEVICE(int icell) noexcept {
+#ifdef PELE_USE_ELECTRON_ENERGY
+      const amrex::Real Te = udata->Te_init[icell];
+#endif
     utils::fKernelSpec<Ordering>(
       icell, ncells, dt_save, reactor_type, yvec_d, ydot_d, rhoe_init,
+#ifdef PELE_USE_ELECTRON_ENERGY
+      Te,
+#endif  
       rhoesrc_ext, rYsrc_ext);
   });
   amrex::Gpu::Device::streamSynchronize();

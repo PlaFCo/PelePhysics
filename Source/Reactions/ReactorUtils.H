@@ -365,6 +365,9 @@ fKernelSpec(
   const amrex::Real* yvec_d,
   amrex::Real* ydot_d, // NOLINT(readability-non-const-parameter)
   const amrex::Real* rhoe_init,
+#ifdef PELE_USE_ELECTRON_ENERGY
+  const amrex::Real Te,
+#endif
   const amrex::Real* rhoesrc_ext,
   const amrex::Real* rYs,
   const pele::physics::eos::EosParm<pele::physics::PhysicsType::eos_type>*
@@ -402,6 +405,16 @@ fKernelSpec(
 
   amrex::GpuArray<amrex::Real, NUM_SPECIES> cdots_pt = {0.0};
   eos.RTY2WDOT(rho_pt, temp_pt, massfrac.arr, cdots_pt.arr);
+
+#ifdef PELE_USE_ELECTRON_ENERGY
+  constexpr amrex::Real alpha = 1.0e-4; // 1 / (s K)
+  const amrex::Real k_e = alpha * Te;
+  // Synthetic A + e -> B + e
+  const amrex::Real rate = k_e * massdens[A_ID];
+  cdots_pt[A_ID] -= rate;
+  cdots_pt[B_ID] += rate;
+  std::cout << icell <<" Te ->" << Te << " K, rhok[A_ID] ->" << massdens[A_ID] << " kg/m^3, rhok[B_ID] ->" << massdens[B_ID] << " kg/m^3, rhok[E_ID] ->" << massdens[E_ID] << " kg/m^3, ke " << k_e << "  rate ->" << rate << " kg/m^3/s\n";
+#endif
 
   amrex::Real rhoesrc = rhoesrc_ext[icell];
   for (int n = 0; n < NUM_SPECIES; n++) {

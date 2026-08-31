@@ -102,9 +102,16 @@ ReactorRK64::react(
         sp = 0.0;
       }
       for (int stage = 0; stage < rkp.nstages_rk64; stage++) {
+#ifdef PELE_USE_ELECTRON_ENERGY
+        const amrex::Real Te = soln_reg[NUM_SPECIES];
+#endif
         utils::fKernelSpec<Ordering>(
           0, 1, current_time - time_init, captured_reactor_type, soln_reg, ydot,
-          rhoe_init, rhoesrc_ext, rYsrc_ext, leosparm);
+          rhoe_init, 
+#ifdef PELE_USE_ELECTRON_ENERGY
+          Te,
+#endif
+          rhoesrc_ext, rYsrc_ext, leosparm);
 
         for (int sp = 0; sp < neq; sp++) {
           error_reg[sp] += rkp.err_rk64[stage] * dt_rk * ydot[sp];
@@ -214,7 +221,9 @@ ReactorRK64::react(
     amrex::Real rYsrc_ext[NUM_SPECIES] = {0.0};
     amrex::Real current_time = time_init;
     const int neq = (NUM_SPECIES + 1);
-
+#ifdef PELE_USE_ELECTRON_ENERGY
+    const amrex::Real Te = T_in(i, j, k);
+#endif
     auto eos = pele::physics::PhysicsType::eos(leosparm);
     for (int sp = 0; sp < NUM_SPECIES; sp++) {
       soln_reg[sp] = rY_in(i, j, k, sp);
@@ -257,7 +266,11 @@ ReactorRK64::react(
       for (int stage = 0; stage < rkp.nstages_rk64; stage++) {
         utils::fKernelSpec<Ordering>(
           0, 1, current_time - time_init, captured_reactor_type, soln_reg, ydot,
-          rhoe_init, rhoesrc_ext, rYsrc_ext, leosparm);
+          rhoe_init, 
+#ifdef PELE_USE_ELECTRON_ENERGY
+          Te,
+#endif
+          rhoesrc_ext, rYsrc_ext, leosparm);
 
         for (int sp = 0; sp < neq; sp++) {
           error_reg[sp] += rkp.err_rk64[stage] * dt_rk * ydot[sp];

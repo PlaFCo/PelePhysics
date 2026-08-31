@@ -407,8 +407,15 @@ ReactorArkode::cF_RHS(
   auto* rhoesrc_ext = udata->rhoesrc_ext;
   auto* rYsrc_ext = udata->rYsrc_ext;
   amrex::ParallelFor(udata->ncells, [=] AMREX_GPU_DEVICE(int icell) noexcept {
+#ifdef PELE_USE_ELECTRON_ENERGY
+    const amrex::Real temp_pt = yvec_d[icell * (NUM_SPECIES + 1) + NUM_SPECIES];
+    const amrex::Real Te = temp_pt;
+#endif
     utils::fKernelSpec<Ordering>(
       icell, ncells, dt_save, reactor_type, yvec_d, ydot_d, rhoe_init,
+#ifdef PELE_USE_ELECTRON_ENERGY
+     Te,
+#endif
       rhoesrc_ext, rYsrc_ext);
   });
 

@@ -81,14 +81,24 @@ get_bdf_matrix_and_rhs(
     -bdfp.FCOEFFMAT[tstepscheme][0] *
     Jmat1d[(NUM_SPECIES + 1) * (NUM_SPECIES + 1) - 1];
 
+#ifdef PELE_USE_ELECTRON_ENERGY
+    const amrex::Real temp_pt = soln[NUM_SPECIES];
+    const amrex::Real Te = temp_pt;
+#endif
   // FIXME: need to change this to Ordering
   utils::fKernelSpec<utils::YCOrder>(
     0, 1, current_time - time_init, reactor_type, soln, ydot, rhoe_init,
+#ifdef PELE_USE_ELECTRON_ENERGY
+    Te,
+#endif
     rhoesrc_ext, rYsrc_ext);
 
   if (tstepscheme == TRPZSCHEME) {
     utils::fKernelSpec<utils::YCOrder>(
       0, 1, current_time - time_init, reactor_type, soln_n, ydot_n, rhoe_init,
+#ifdef PELE_USE_ELECTRON_ENERGY
+      Te,
+#endif
       rhoesrc_ext, rYsrc_ext);
   }
 
