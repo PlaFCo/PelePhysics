@@ -14,7 +14,7 @@ ReactorCvode::init(int reactor_type, int /*ncells*/)
   // Only parsing/checks are performed here, no actual initialization of
   // the SUNDIALs CVode object.
   m_reactor_type = reactor_type;
-  ReactorTypes::check_reactor_type(m_reactor_type);
+  ReactorTypes::check_reactor_type(m_reactor_type, /*allow_isobaric*/true);
   amrex::ParmParse pp("ode");
   pp.query("verbose", verbose);
   pp.query("rtol", relTol);
@@ -973,6 +973,10 @@ ReactorCvode::allocUserData(
     amrex::The_Arena()->alloc(a_ncells * sizeof(amrex::Real)));
   udata->rhoesrc_ext = static_cast<amrex::Real*>(
     amrex::The_Arena()->alloc(a_ncells * sizeof(amrex::Real)));
+  udata->p_init = static_cast<amrex::Real*>(
+    amrex::The_Arena()->alloc(a_ncells * sizeof(amrex::Real)));
+  udata->hsrc_ext = static_cast<amrex::Real*>(
+    amrex::The_Arena()->alloc(a_ncells * sizeof(amrex::Real)));
   udata->mask =
     static_cast<int*>(amrex::The_Arena()->alloc(a_ncells * sizeof(int)));
 
@@ -1328,10 +1332,14 @@ ReactorCvode::react(
   amrex::Gpu::streamSynchronize();
   allocUserData(udata, ncells, A, stream);
 
+  const bool isobaric = (m_reactor_type == ReactorTypes::p_reactor_type);
+  amrex::Real* nrg_init = isobaric ? udata->p_init : udata->rhoe_init;
+  amrex::Real* nrg_src = isobaric ? udata->hsrc_ext : udata->rhoesrc_ext;
+
   // Fill data
   flatten(
     box, ncells, rY_in, rYsrc_in, T_in, rEner_in, rEner_src_in, yvec_d,
-    udata->rYsrc_ext, udata->rhoe_init, udata->rhoesrc_ext);
+    udata->rYsrc_ext, nrg_init, nrg_src);
 
 #ifdef AMREX_USE_OMP
   amrex::Gpu::Device::streamSynchronize();
@@ -1371,7 +1379,7 @@ ReactorCvode::react(
   long int* d_nfe = v_nfe.data();
   unflatten(
     box, ncells, rY_in, T_in, rEner_in, rEner_src_in, FC_in, yvec_d,
-    udata->rhoe_init, d_nfe, dt_react);
+    nrg_init, d_nfe, dt_react);
 
   if (udata->verbose > 1) {
     print_final_stats(cvode_mem, LS != nullptr);
@@ -1409,11 +1417,20 @@ ReactorCvode::react(
       if (mask(i, j, k) != -1) {
 
         amrex::Real* yvec_d = N_VGetArrayPointer(y);
-        utils::box_flatten<Ordering>(
-          icell, i, j, k, ncells, captured_reactor_type,
-          captured_clean_init_massfrac, rY_in, rYsrc_in, T_in, rEner_in,
-          rEner_src_in, yvec_d, udata->rYsrc_ext, udata->rhoe_init,
-          udata->rhoesrc_ext);
+
+        if (captured_reactor_type == ReactorTypes::p_reactor_type)
+        {
+          utils::box_flatten<Ordering>(
+            IsobaricTag{}, icell, i, j, k, ncells,
+            captured_clean_init_massfrac, rY_in, rYsrc_in, T_in, rEner_src_in,
+            yvec_d, udata->rYsrc_ext, udata->p_init, udata->hsrc_ext);
+        } else {
+          utils::box_flatten<Ordering>(
+            icell, i, j, k, ncells, captured_reactor_type,
+            captured_clean_init_massfrac, rY_in, rYsrc_in, T_in, rEner_in,
+            rEner_src_in, yvec_d, udata->rYsrc_ext, udata->rhoe_init,
+            udata->rhoesrc_ext);
+        }
 
         // ReInit CVODE is faster
         CVodeReInit(cvode_mem, time_start, y);
@@ -1433,11 +1450,17 @@ ReactorCvode::react(
         }
         const long int nfe_tot = nfe + nfeLS;
 
-        utils::box_unflatten<Ordering>(
-          icell, i, j, k, ncells, captured_reactor_type,
-          captured_clean_init_massfrac, rY_in, T_in, rEner_in, rEner_src_in,
-          FC_in, yvec_d, udata->rhoe_init, nfe_tot, dt_react);
-
+        if (captured_reactor_type == ReactorTypes::p_reactor_type)
+        {
+          utils::box_unflatten<Ordering>(
+            IsobaricTag{}, icell, i, j, k, ncells, rY_in, T_in, rEner_in,
+            FC_in, yvec_d, udata->p_init, nfe_tot);
+        } else {
+          utils::box_unflatten<Ordering>(
+            icell, i, j, k, ncells, captured_reactor_type,
+            captured_clean_init_massfrac, rY_in, T_in, rEner_in, rEner_src_in,
+            FC_in, yvec_d, udata->rhoe_init, nfe_tot, dt_react);
+        }
         // cppcheck-suppress knownConditionTrueFalse
         if ((udata->verbose > 3) && (omp_thread == 0)) {
           amrex::Print() << "END : time curr is " << CvodeActual_time_final
@@ -1712,11 +1735,24 @@ ReactorCvode::cF_RHS(
   auto* rhoe_init = udata->rhoe_init;
   auto* rhoesrc_ext = udata->rhoesrc_ext;
   auto* rYsrc_ext = udata->rYsrc_ext;
-  amrex::ParallelFor(ncells, [=] AMREX_GPU_DEVICE(int icell) noexcept {
-    utils::fKernelSpec<Ordering>(
-      icell, ncells, dt_save, reactor_type, yvec_d, ydot_d, rhoe_init,
-      rhoesrc_ext, rYsrc_ext);
+
+  if (reactor_type == ReactorTypes::p_reactor_type)
+  {
+    auto* p_init = udata->p_init;
+    auto* hsrc_ext = udata->hsrc_ext;
+    amrex::ParallelFor(ncells, [=] AMREX_GPU_DEVICE(int icell) noexcept {
+      utils::fKernelSpec<Ordering>(
+        IsobaricTag{}, icell, ncells, yvec_d, ydot_d, p_init, hsrc_ext,
+        rYsrc_ext);
+    });
+  } else {
+  
+    amrex::ParallelFor(ncells, [=] AMREX_GPU_DEVICE(int icell) noexcept {
+      utils::fKernelSpec<Ordering>(
+        icell, ncells, dt_save, reactor_type, yvec_d, ydot_d, rhoe_init,
+        rhoesrc_ext, rYsrc_ext);
   });
+  }
   amrex::Gpu::Device::streamSynchronize();
   return 0;
 }
@@ -1727,6 +1763,8 @@ ReactorCvode::freeUserData(CVODEUserData* data_wk)
   amrex::The_Arena()->free(data_wk->rYsrc_ext);
   amrex::The_Arena()->free(data_wk->rhoe_init);
   amrex::The_Arena()->free(data_wk->rhoesrc_ext);
+  amrex::The_Arena()->free(data_wk->p_init);
+  amrex::The_Arena()->free(data_wk->hsrc_ext);
   amrex::The_Arena()->free(data_wk->mask);
 
 #ifdef AMREX_USE_GPU

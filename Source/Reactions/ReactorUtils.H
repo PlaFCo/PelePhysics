@@ -419,4 +419,7 @@ N_Vector
 setNVectorGPU(int nvsize, int atomic_reduction, amrex::gpuStream_t stream);
 #endif
 } // namespace pele::physics::reactions::utils
+
+#include "ReactorUtilsIsobaric.H"
+
 #endif

@@ -45,6 +45,8 @@ struct CVODEUserData
   amrex::Real* rhoe_init = nullptr; // Initial energy (rhoE for C, rhoH for LM)
   amrex::Real* rhoesrc_ext = nullptr; // External energy forcing
   amrex::Real* rYsrc_ext = nullptr;   // External species forcing
+  amrex::Real* p_init = nullptr; // pressure for isobaric reactor
+  amrex::Real* hsrc_ext = nullptr; // specific heat source for isobaric reactor
   int* mask =
     nullptr; // Masking tagging cells where integration should not be performed
   int* FCunt = nullptr; // Number of RHS evaluations (not used on GPU)

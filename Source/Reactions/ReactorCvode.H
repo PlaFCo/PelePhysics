@@ -122,10 +122,25 @@ public:
     amrex::Real* vect_energy,
     amrex::Real* src_vect_energy) override
   {
+    if (m_reactor_type == ReactorTypes::p_reactor_type)
+    {
+      const auto len = amrex::length(box);
+      const auto lo = amrex::lbound(box);
+      const bool clean = m_clean_init_massfrac;
+      amrex::ParallelFor(
+        box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+          const int icell = (k - lo.z) * len.x * len.y + (j - lo.y) * len.x + (i - lo.x);
+          utils::box_flatten<Ordering>(
+            IsobaricTag{}, icell, i, j, k, ncells, clean, rhoY, frcExt,
+            temperature, frcEExt, y_vect, src_vect, vect_energy,
+            src_vect_energy);
+      });
+    } else{
     flatten_ops.flatten(
       box, ncells, m_reactor_type, m_clean_init_massfrac, rhoY, frcExt,
       temperature, rhoE, frcEExt, y_vect, src_vect, vect_energy,
       src_vect_energy);
+    }
   }
 
   void unflatten(
@@ -141,9 +156,23 @@ public:
     long int* FCunt,
     amrex::Real dt) override
   {
+    if (m_reactor_type == ReactorTypes::p_reactor_type)
+    {
+      const auto len = amrex::length(box);
+      const auto lo = amrex::lbound(box);
+      amrex::ParallelFor(
+        box, [=] AMREX_GPU_DEVICE (int i, int j, int k) noexcept {
+          const int icell =
+            (k - lo.z) * len.x * len.y + (j - lo.y) * len.x + (i - lo.x);
+          utils::box_unflatten<Ordering>(
+            IsobaricTag{}, icell, i, j, k, ncells, rhoY, temperature, rhoE,
+            FC_in, y_vect, vect_energy, FCunt[icell]);
+      });
+    } else {
     flatten_ops.unflatten(
       box, ncells, m_reactor_type, m_clean_init_massfrac, rhoY, temperature,
       rhoE, frcEExt, FC_in, y_vect, vect_energy, FCunt, dt);
+    }
   }
 
 private:
