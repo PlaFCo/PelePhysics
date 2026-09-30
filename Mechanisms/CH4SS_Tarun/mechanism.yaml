@@ -1,0 +1,109 @@
+description: |-
+  A single step reaction mechanism for a toy CH4 combustion system.
+
+units: {length: cm, time: s, quantity: mol, activation-energy: cal/mol}
+
+elements:
+- symbol: O
+  atomic-weight: 15.9994
+- symbol: H
+  atomic-weight: 1.00794
+- symbol: C
+  atomic-weight: 12.011
+- symbol: N
+  atomic-weight: 14.0067
+
+phases:
+- name: gas
+  thermo: ideal-gas
+  elements: [O, H, C, N]
+  species: [O2, H2O, CH4, CO2, N2]
+  kinetics: gas
+  state: {T: 300.0, P: 1 atm}
+
+species:
+- name: O2
+  composition: {O: 2}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 3500.0]
+    data:
+    - [3.78245636, -2.99673416e-03, 9.84730201e-06, -9.68129509e-09, 3.24372837e-12, -1063.94356, 3.65767573]
+    - [3.66096065, 6.56365811e-04, -1.41149627e-07, 2.05797935e-11, -1.29913436e-15, -1.21597718e+03, 5.45323129]
+    note: TPIS89
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 107.4
+    diameter: 3.458
+    polarizability: 1.6
+    rotational-relaxation: 3.8
+- name: H2O
+  composition: {H: 2, O: 1}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 3500.0]
+    data:
+    - [4.1986352, -2.0364017e-03, 6.5203416e-06, -5.4879269e-09, 1.7719680e-12, -3.0293726e+04, -0.849032208]
+    - [0.26770389e+01, 0.29731816e-02, -0.77376889e-06, 0.94433514e-10, -0.42689991e-14, -0.29885894e+05, 4.9667701]
+    note: L 8/89
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 572.4
+    diameter: 2.605
+    dipole: 1.844
+    rotational-relaxation: 4.0
+- name: CH4
+  composition: {C: 1, H: 4}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 3500.0]
+    data:
+    - [5.14911468, -1.36622009e-02, 4.91453921e-05, -4.84246767e-08, 1.66603441e-11, -1.02465983e+04, -4.64130376]
+    - [1.65326226, 1.00263099e-02, -3.31661238e-06, 5.36483138e-10, -3.14696758e-14, -1.00095936e+04, 18.437318]
+    note: L 8/88
+  transport:
+    model: gas
+    geometry: nonlinear
+    well-depth: 141.5
+    diameter: 3.758
+    polarizability: 2.6
+    rotational-relaxation: 13.0
+- name: CO2
+  composition: {C: 1, O: 2}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 3500.0]
+    data:
+    - [2.35681300, 8.98412990e-03, -7.12206320e-06, 2.45730080e-09, -1.42885480e-13, -4.83719710e+04, 9.90105222]
+    - [4.63651110, 2.74145690e-03, -9.95897590e-07, 1.60386660e-10, -9.16198570e-15, -4.90249040e+04, 2.27163806]
+    note: L 7/88
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 244.0
+    diameter: 3.763
+    polarizability: 2.65
+    rotational-relaxation: 2.1
+- name: N2
+  composition: {N: 2}
+  thermo:
+    model: NASA7
+    temperature-ranges: [200.0, 1000.0, 3500.0]
+    data:
+    - [3.53100528, -1.23660988e-04, -5.02999433e-07, 2.43530612e-09, -1.40881235e-12, -1.04697628e+03, 3.950372]
+    - [2.95257637, 1.39690040e-03, -4.92631603e-07, 7.86010195e-11, -4.60755204e-15, -9.23948688e+02, 5.980528]
+    note: '121286'
+  transport:
+    model: gas
+    geometry: linear
+    well-depth: 97.53
+    diameter: 3.621
+    polarizability: 1.76
+    rotational-relaxation: 4.0
+
+reactions:
+- equation: CH4 + 2 O2 => CO2 + 2 H2O
+  rate-constant: {A: 1.0e9, b: 0.0, Ea: 0.0}
+  orders: {CH4: 1, O2: 1}
