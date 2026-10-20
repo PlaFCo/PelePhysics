@@ -1,0 +1,266 @@
+description: "Skeletal model reduced from: gri30.yaml"
+generator: YamlWriter
+cantera-version: 3.1.0
+git-commit: '6e00275'
+date: Tue Jul 21 11:45:14 2026
+phases:
+  - name: gri30-skeletal-model
+    thermo: ideal-gas
+    elements: [H, C]
+    species: [H2, H, CH2, CH3, CH4, C2H, C2H2, C2H3, C2H4, C2H5, C2H6, C(s)]
+    kinetics: bulk
+    state:
+      T: 2438.145339459471
+      density: 1.411045588591972e-03
+      Y: {C(s): 0.05806981998105763, C2H: 2.171113072756697e-03,
+      C2H2: 0.4744842622098086, C2H3: 2.100205990165731e-05,
+      C2H4: 2.950365597737016e-05, C2H5: 1.869819682474513e-09,
+      C2H6: 3.803817592976762e-10, CH2: 2.231054680459413e-05,
+      CH3: 1.982599697930434e-04, CH4: 1.535323932973092e-04,
+      H: 0.01702588451372627, H2: 0.4478243093466855}
+    skip-undeclared-third-bodies: true
+species:
+  - name: H2
+    composition: {H: 2.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [2.34433112, 7.98052075e-03, -1.9478151e-05, 2.01572094e-08,
+        -7.37611761e-12, -917.935173, 0.683010238]
+        - [3.3372792, -4.94024731e-05, 4.99456778e-07, -1.79566394e-10,
+        2.00255376e-14, -950.158922, -3.20502331]
+      note: TPIS78
+    transport:
+      model: gas
+      geometry: linear
+      diameter: 2.92
+      well-depth: 38.0
+      polarizability: 0.79
+      rotational-relaxation: 280.0
+  - name: H
+    composition: {H: 1.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [2.5, 7.05332819e-13, -1.99591964e-15, 2.30081632e-18, -9.27732332e-22,
+        2.54736599e+04, -0.446682853]
+        - [2.50000001, -2.30842973e-11, 1.61561948e-14, -4.73515235e-18,
+        4.98197357e-22, 2.54736599e+04, -0.446682914]
+      note: L7/88
+    transport:
+      model: gas
+      geometry: atom
+      diameter: 2.05
+      well-depth: 145.0
+  - name: CH2
+    composition: {C: 1.0, H: 2.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [3.76267867, 9.68872143e-04, 2.79489841e-06, -3.85091153e-09,
+        1.68741719e-12, 4.60040401e+04, 1.56253185]
+        - [2.87410113, 3.65639292e-03, -1.40894597e-06, 2.60179549e-10,
+        -1.87727567e-14, 4.6263604e+04, 6.17119324]
+      note: LS/93
+    transport:
+      model: gas
+      geometry: linear
+      diameter: 3.8
+      well-depth: 144.0
+  - name: CH3
+    composition: {C: 1.0, H: 3.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [3.6735904, 2.01095175e-03, 5.73021856e-06, -6.87117425e-09,
+        2.54385734e-12, 1.64449988e+04, 1.60456433]
+        - [2.28571772, 7.23990037e-03, -2.98714348e-06, 5.95684644e-10,
+        -4.67154394e-14, 1.67755843e+04, 8.48007179]
+      note: L11/89
+    transport:
+      model: gas
+      geometry: linear
+      diameter: 3.8
+      well-depth: 144.0
+  - name: CH4
+    composition: {C: 1.0, H: 4.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [5.14987613, -0.0136709788, 4.91800599e-05, -4.84743026e-08,
+        1.66693956e-11, -1.02466476e+04, -4.64130376]
+        - [0.074851495, 0.0133909467, -5.73285809e-06, 1.22292535e-09,
+        -1.0181523e-13, -9468.34459, 18.437318]
+      note: L8/88
+    transport:
+      model: gas
+      geometry: nonlinear
+      diameter: 3.746
+      well-depth: 141.4
+      polarizability: 2.6
+      rotational-relaxation: 13.0
+  - name: C2H
+    composition: {C: 2.0, H: 1.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [2.88965733, 0.0134099611, -2.84769501e-05, 2.94791045e-08,
+        -1.09331511e-11, 6.68393932e+04, 6.22296438]
+        - [3.16780652, 4.75221902e-03, -1.83787077e-06, 3.04190252e-10,
+        -1.7723277e-14, 6.7121065e+04, 6.63589475]
+      note: L1/91
+    transport:
+      model: gas
+      geometry: linear
+      diameter: 4.1
+      well-depth: 209.0
+      rotational-relaxation: 2.5
+  - name: C2H2
+    composition: {C: 2.0, H: 2.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [0.808681094, 0.0233615629, -3.55171815e-05, 2.80152437e-08,
+        -8.50072974e-12, 2.64289807e+04, 13.9397051]
+        - [4.14756964, 5.96166664e-03, -2.37294852e-06, 4.67412171e-10,
+        -3.61235213e-14, 2.59359992e+04, -1.23028121]
+      note: L1/91
+    transport:
+      model: gas
+      geometry: linear
+      diameter: 4.1
+      well-depth: 209.0
+      rotational-relaxation: 2.5
+  - name: C2H3
+    composition: {C: 2.0, H: 3.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [3.21246645, 1.51479162e-03, 2.59209412e-05, -3.57657847e-08,
+        1.47150873e-11, 3.48598468e+04, 8.51054025]
+        - [3.016724, 0.0103302292, -4.68082349e-06, 1.01763288e-09, -8.62607041e-14,
+        3.46128739e+04, 7.78732378]
+      note: L2/92
+    transport:
+      model: gas
+      geometry: nonlinear
+      diameter: 4.1
+      well-depth: 209.0
+      rotational-relaxation: 1.0
+      note: "*"
+  - name: C2H4
+    composition: {C: 2.0, H: 4.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [3.95920148, -7.57052247e-03, 5.70990292e-05, -6.91588753e-08,
+        2.69884373e-11, 5089.77593, 4.09733096]
+        - [2.03611116, 0.0146454151, -6.71077915e-06, 1.47222923e-09,
+        -1.25706061e-13, 4939.88614, 10.3053693]
+      note: L1/91
+    transport:
+      model: gas
+      geometry: nonlinear
+      diameter: 3.971
+      well-depth: 280.8
+      rotational-relaxation: 1.5
+  - name: C2H5
+    composition: {C: 2.0, H: 5.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [4.30646568, -4.18658892e-03, 4.97142807e-05, -5.99126606e-08,
+        2.30509004e-11, 1.28416265e+04, 4.70720924]
+        - [1.95465642, 0.0173972722, -7.98206668e-06, 1.75217689e-09,
+        -1.49641576e-13, 1.285752e+04, 13.4624343]
+      note: L12/92
+    transport:
+      model: gas
+      geometry: nonlinear
+      diameter: 4.302
+      well-depth: 252.3
+      rotational-relaxation: 1.5
+  - name: C2H6
+    composition: {C: 2.0, H: 6.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 3500.0]
+      data:
+        - [4.29142492, -5.5015427e-03, 5.99438288e-05, -7.08466285e-08,
+        2.68685771e-11, -1.15222055e+04, 2.66682316]
+        - [1.0718815, 0.0216852677, -1.00256067e-05, 2.21412001e-09, -1.9000289e-13,
+        -1.14263932e+04, 15.1156107]
+      note: L8/88
+    transport:
+      model: gas
+      geometry: nonlinear
+      diameter: 4.302
+      well-depth: 252.3
+      rotational-relaxation: 1.5
+  - name: C(s)
+    composition: {C: 1.0}
+    thermo:
+      model: NASA7
+      temperature-ranges: [200.0, 1000.0, 5000.0]
+      data:
+        - [-0.310872072, 4.40353686e-03, 1.90394118e-06, -6.38546966e-09,
+        2.98964248e-12, -108.650794, 1.11382953]
+        - [1.45571829, 1.71702216e-03, -6.97562786e-07, 1.35277032e-10,
+        -9.67590652e-15, -695.138814, -8.52583033]
+    transport:
+      model: gas
+      geometry: atom
+      diameter: 3.298
+      well-depth: 71.4
+      note: "*"
+reactions:
+  - equation: CH3 + H + M <=> CH4 + M
+    rate-constant: {A: 1.852977962981648e+16, b: -1.192450492060759,
+    Ea: 7.086321544587382e+05}
+  - equation: CH4 + H <=> CH3 + H2
+    rate-constant: {A: 352.6839484278481, b: 2.767119167682220, Ea: 6.913353685177605e+07}
+  - equation: 2 CH3 <=> C2H5 + H
+    rate-constant: {A: 3.615219694555484e+07, b: 0.8451202060989955,
+    Ea: 3.250702855123620e+07}
+  - equation: C2H4 + H (+M) <=> C2H5 (+M)
+    rate-constant: {A: 9.867163028418821e+09, b: 1.003041236765750,
+    Ea: 1.079014111377128e+07}
+  - equation: C2H4 + H <=> C2H3 + H2
+    rate-constant: {A: 2.512056325091092e+06, b: 1.538014683281552,
+    Ea: 6.970662054808860e+07}
+  - equation: C2H2 + H (+M) <=> C2H3 (+M)
+    rate-constant: {A: 6.838888646906451e+10, b: -0.8601472671106597,
+    Ea: 1.054025284905431e+07}
+  - equation: C2H + H (+M) <=> C2H2 (+M)
+    rate-constant: {A: 4.668349273454728e+15, b: -0.8031671289083631,
+    Ea: 13.16467014899642}
+  - equation: C2H + H2 <=> C2H2 + H
+    rate-constant: {A: 5.372180165193613e+09, b: 1.608000661573504,
+    Ea: 1.300608352726501e+08}
+  - equation: CH2 + H2 <=> CH3 + H
+    rate-constant: {A: 1.001752451735597e+05, b: 2.686069979559886,
+    Ea: 4.366001260568804e+07}
+  - equation: CH2 + CH3 <=> C2H4 + H
+    rate-constant: {A: 4015.359462733796, b: 0.5755810191590472, Ea: 3691.187310030934}
+  - equation: C2H4 + M <=> C2H2 + H2 + M
+    rate-constant: {A: 4.919126109965727e+10, b: 0.7947342520721467,
+    Ea: 2.631422379195606e+08}
+  - equation: C2H2 <=> 2 C(s) + H2
+    rate-constant: {A: 123.4725883824107, b: -0.2935629385805510,
+    Ea: 4.242326824719697e+04}
+  - equation: 2 CH3 + M <=> C2H6 + M
+    rate-constant: {A: 1.026575730779286e+18, b: -0.5926705384952043,
+    Ea: 5.340502168393450e+06}
+  - equation: C2H6 + H <=> C2H5 + H2
+    rate-constant: {A: 2.853873183905702e+09, b: 1.432947433990923,
+    Ea: 1.033602928487126e+08}
